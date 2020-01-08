@@ -7,8 +7,14 @@ public strictfp class RobotPlayer {
     static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
     static RobotType[] spawnedByMiner = {RobotType.REFINERY, RobotType.VAPORATOR, RobotType.DESIGN_SCHOOL,
             RobotType.FULFILLMENT_CENTER, RobotType.NET_GUN};
+    static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
 
     static int turnCount;
+    static int birthRound;
+    static MapLocation locHQ;
+
+    //Variables specific to robot type
+    static boolean hq_sentLoc = false;
 
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -22,15 +28,22 @@ public strictfp class RobotPlayer {
         RobotPlayer.rc = rc;
 
         turnCount = 0;
+        birthRound = rc.getRoundNum();
 
         System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
             turnCount += 1;
+            if(turnCount > 1) {
+                for (Transaction t : rc.getBlock(rc.getRoundNum() - 1)) {
+                    processMessage(t.getMessage());
+                }
+            }
+
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
                 // Here, we've separated the controls into a different method for each RobotType.
                 // You can add the missing ones or rewrite this into your own control structure.
-                System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
+                //System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
                 switch (rc.getType()) {
                     case HQ:                 runHQ();                break;
                     case MINER:              runMiner();             break;
@@ -53,7 +66,80 @@ public strictfp class RobotPlayer {
         }
     }
 
+    static void processMessage(int[] message) {
+        //Check if the message was made by my team
+        //The way it works: xor all of them with PAD
+        //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
+        int[] m = new int[7];
+        for(int i=0; i<7; i++){
+            m[i] = message[i]^PADS[i];
+        }
+
+        boolean bits[] = new boolean[224];
+        boolean checksum[] = new boolean[28];
+        for(int i=0; i<28; i++){
+            checksum[i] = false;
+        }
+        int ptr = 0;
+        for(int i=1; i<message.length; i++){
+            for(int j=31; j>=0; j--){
+                bits[ptr] = 1==((m[i] >> j)&1);
+                checksum[ptr%28] ^= bits[ptr];
+                ptr++;
+            }
+        }
+        int res = 0;
+        for(int i=0; i<28; i++){
+            if(checksum[i]){
+                res ++;
+            }
+        }
+        if (res != 0) { //Checksum failed, message made for the enemy
+            //May want to store enemy messages here to find patterns to spread misinformation... ;)
+            return;
+        }
+
+        ptr = 0;
+        while(ptr <= 192){   //196-4
+            int id = getInt(bits, ptr, 4);
+            ptr += 4;
+            switch(id){
+                case 0: //0000 Set our HQ
+                    if(ptr <= 184){ //Requires 2 6-bit integers
+                        return;
+                    }
+                    int x = getInt(bits, ptr, 6);
+                    if(x==0)x=64;
+                    ptr += 6;
+                    int y = getInt(bits, ptr, 6);
+                    if(y==0)x=64;
+                    ptr += 6;
+                    locHQ = new MapLocation(x,y);
+                    break;
+                case 15:    //1111 Message terminate
+                    return;
+            }
+        }
+        System.out.println("Message did not exit properly");  //Should've seen 1111.
+        return;
+    }
+
+    static int getInt(boolean[] bits, int ptr, int size){
+        /*Turns the next <size> bits into an integer from 0 to 2**size-1. Used in blockchain parsing*/
+        int x = 0;
+        for(int i=0; i<size; i++){
+            x *= 2;
+            if(bits[ptr+size]) x++;
+        }
+        return x;
+    }
+
+
     static void runHQ() throws GameActionException {
+        if(!hq_sentLoc){
+
+            hq_sentLoc = true;
+        }
         if (turnCount <= 2) {
             for (Direction dir : directions)
                 tryBuild(RobotType.MINER, dir);
