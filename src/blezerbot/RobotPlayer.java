@@ -87,7 +87,6 @@ case HQ: runHq();break;
                 res ++;
             }
         }
-        System.out.println();
 
         if (res != 0) { //Checksum failed, message made for the enemy
             //May want to store enemy messages here to find patterns to spread misinformation... ;)
