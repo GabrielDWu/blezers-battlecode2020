@@ -215,7 +215,7 @@ public strictfp class RobotPlayer {
             }
         }
         if(dest.x == -1 && nearHQ == false){
-            setDest(new MapLocation(7, 6));
+            setDest(new MapLocation(3, 20));
         }
         if(dest.x != -1 && nearHQ == false){
             Direction dir = moveDest();
