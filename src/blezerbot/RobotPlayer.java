@@ -199,41 +199,9 @@ static void sendMessage(int wager) throws GameActionException{
         return;
 }static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};static void runMiner() throws GameActionException {
-    for (Direction dir : directions)
-        if (tryDeliver(dir))
-            System.out.println("I delivered soup!");
 
-    for (Direction dir : directions)
-        if (tryMine(dir))
-            System.out.println("I mined soup! " + rc.getSoupCarrying());
 }
-/**
- * Attempts to mine soup in a given direction.
- *
- * @param dir The intended direction of mining
- * @return true if a move was performed
- * @throws GameActionException
- */
-static boolean tryMine(Direction dir) throws GameActionException {
-    if (rc.isReady() && rc.canMineSoup(dir)) {
-        rc.mineSoup(dir);
-        return true;
-    } else return false;
-}
-
-/**
- * Attempts to deliver soup in a given direction.
- *
- * @param dir The intended direction of refining
- * @return true if a move was performed
- * @throws GameActionException
- */
-static boolean tryDeliver(Direction dir) throws GameActionException {
-    if (rc.isReady() && rc.canDepositSoup(dir)) {
-        rc.depositSoup(dir, rc.getSoupCarrying());
-        return true;
-    } else return false;
-}static void runLandscaper() throws GameActionException {
+static void runLandscaper() throws GameActionException {
 
 }
 static void runDeliveryDrone() throws GameActionException {
