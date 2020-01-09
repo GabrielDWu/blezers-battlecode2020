@@ -1,7 +1,9 @@
-static void processMessage(int[] message) {
+static void processMessage(Transaction t) {
         //Check if the message was made by my team
         //The way it works: xor all of them with PAD
         //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
+        int[] message = t.getMessage();
+
         System.out.println("Message Being Processed");
         int[] m = new int[7];
         for(int i=0; i<7; i++){
@@ -26,6 +28,8 @@ static void processMessage(int[] message) {
         }
 
         if (res != 0) { //Checksum failed, message made for the enemy
+            enemy_msg_cnt++;
+            enemy_msg_sum += t.getCost();
             //May want to store enemy messages here to find patterns to spread misinformation... ;)
             return;
         }
@@ -47,7 +51,23 @@ static void processMessage(int[] message) {
                 ptr += 6;
                 locHQ = new MapLocation(x,y);
                 System.out.println("Now I know that my HQ is at" + locHQ);
-            }else if(id==15){    //1111 Message terminate
+            }else if(id==1){
+                if(ptr >= 177){
+                    System.out.println("Message did not exit properly");
+                    return;
+                }
+                if(type == 0){//Only HQ keeps track of other units
+                    int unit_type = getInt(bits, ptr, 4);
+                    ptr += 4;
+                    int unit_id = getInt(bits, ptr, 15);
+                    ptr += 15;
+                    units.get(unit_type).add(new Unit(unit_type, unit_id));
+                    System.out.println("Added unit" + new Unit(unit_type,unit_id));
+                }else{
+                    ptr += 19;
+                }
+            }
+            else if(id==15){    //1111 Message terminate
                 return;
             }
         }
@@ -87,24 +107,36 @@ static void writeMessage(int id, int[] params){
      */
         if(id==0){ //0000 Set our HQ
             if(messagePtr >= 176){ //Requires id + 2 6-bit integers
-                System.out.println("Message Overflow");
-                return;
+                addMessageToQueue(base_wager);
             }
             writeInt(id, 4);
             writeInt(params[0], 6);
             writeInt(params[1], 6);
+        }if(id==1){ //0000 Set our HQ
+            if(messagePtr >= 169){ //Requires id + 4-bit int + 15-bit int
+                addMessageToQueue(base_wager);
+            }
+            writeInt(id, 4);
+            writeInt(params[0], 4);
+            writeInt(params[1], 15);
         }
         return;
 }
 
-static void sendMessage(int wager) throws GameActionException{
+static void addMessageToQueue(){
+    addMessageToQueue(base_wager);
+}
+
+static void addMessageToQueue(int wager){
     /*Does the following
         Writes the 1111 message end
         Sets the last 28 bits to meet the checksum
         Condenses it into 7 32-bit integers
         Applies the pad
-        Sends the transaction
+        Adds transaction to messageQueue
         resetMessage();
+
+        Returns true if successful
      */
         writeInt(15, 4);
 
@@ -131,7 +163,7 @@ static void sendMessage(int wager) throws GameActionException{
         for(int i=0; i<7; i++){
             words[i] ^= PADS[i];
         }
-        rc.submitTransaction(words, wager);
+        messageQueue.add(new Transaction(wager, words));
         resetMessage();
         return;
 }
