@@ -47,7 +47,6 @@ public strictfp class RobotPlayer {
                 }
             }
 
-
             try {
                 switch (rc.getType()) { case MINER: runMiner();break;
                     case LANDSCAPER: runLandscaper();break;
@@ -203,7 +202,7 @@ public strictfp class RobotPlayer {
         resetMessage();
         return;
     }static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-    static int[] PADS = {-1234, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+    static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
     static void runMiner() throws GameActionException {
         locRecord.add(rc.getLocation());
         RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), Team.A);
