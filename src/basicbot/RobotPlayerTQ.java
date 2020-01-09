@@ -22,14 +22,14 @@ package basicbot;
 import battlecode.common.*;
 import java.util.*;
 
-public strictfp class RobotPlayer {
+public strictfp class RobotPlayerTQ {
     static RobotController rc;
     static int turnCount;
     static int birthRound;  //What round was I born on?
     static boolean[] currMessage;
     static int messagePtr;  //What index in currMessage is my "cursor" at?
     static MapLocation locHQ;   //Where is my HQ?
-    static ArrayList<MapLocation> locRecord = new ArrayList<MapLocation>();
+    static ArrayList<MapLocation> locRecord;
     static MapLocation dest = new MapLocation(-1, -1);
     static int destStartTime = -1;
     public static void run(RobotController rc) throws GameActionException {
@@ -49,15 +49,15 @@ public strictfp class RobotPlayer {
 
             try {
                 switch (rc.getType()) { case MINER: runMiner();break;
-                    case LANDSCAPER: runLandscaper();break;
-                    case DELIVERY_DRONE: runDeliveryDrone();break;
-                    case REFINERY: runRefinery();break;
-                    case VAPORATOR: runVaporator();break;
-                    case DESIGN_SCHOOL: runDesignSchool();break;
-                    case FULFILLMENT_CENTER: runFulfillmentCenter();break;
-                    case NET_GUN: runNetGun();break;
-                    case HQ: runHq();break;
-                }
+case LANDSCAPER: runLandscaper();break;
+case DELIVERY_DRONE: runDeliveryDrone();break;
+case REFINERY: runRefinery();break;
+case VAPORATOR: runVaporator();break;
+case DESIGN_SCHOOL: runDesignSchool();break;
+case FULFILLMENT_CENTER: runFulfillmentCenter();break;
+case NET_GUN: runNetGun();break;
+case HQ: runHq();break;
+ }
                 Clock.yield();
             } catch (Exception e) {
                 System.out.println(rc.getType() + " Exception");
@@ -120,9 +120,9 @@ public strictfp class RobotPlayer {
         }
         System.out.println("Message did not exit properly");  //Should've seen 1111.
         return;
-    }
+}
 
-    static int getInt(boolean[] bits, int ptr, int size){
+static int getInt(boolean[] bits, int ptr, int size){
         /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
         int x = 0;
         for(int i=0; i<size; i++){
@@ -130,25 +130,25 @@ public strictfp class RobotPlayer {
             if(bits[ptr+i]) x++;
         }
         return x;
-    }
+}
 
-    static void writeInt(int x, int size){
+static void writeInt(int x, int size){
         /*Writes the next <size> bits of currMessage with an integer 0 to 2**size-1. Modifies messagePtr.*/
         for(int i=size-1; i>=0; i--){
             currMessage[messagePtr] = 1==((x>>i)&1);
             messagePtr++;
         }
         return;
-    }
+}
 
-    static void resetMessage(){
-        //Resets currMessage to all 0's, and messagePtr to 0.
+static void resetMessage(){
+    //Resets currMessage to all 0's, and messagePtr to 0.
         messagePtr = 0;
         currMessage = new boolean[224];
         return;
-    }
+}
 
-    static void writeMessage(int id, int[] params){
+static void writeMessage(int id, int[] params){
     /*Writes a command into currMessage. Will not do anything if it does not leave 4 bits for message end
       and the 28 bit checksum. This means it can only write up to (but not including) bit 192 (index 191).
      */
@@ -162,9 +162,9 @@ public strictfp class RobotPlayer {
             writeInt(params[1], 6);
         }
         return;
-    }
+}
 
-    static void sendMessage(int wager) throws GameActionException{
+static void sendMessage(int wager) throws GameActionException{
     /*Does the following
         Writes the 1111 message end
         Sets the last 28 bits to meet the checksum
@@ -201,135 +201,114 @@ public strictfp class RobotPlayer {
         rc.submitTransaction(words, wager);
         resetMessage();
         return;
-    }static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-    static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
-    static void runMiner() throws GameActionException {
-        locRecord.add(rc.getLocation());
-        RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), Team.A);
-        boolean nearHQ = false;
-        for(RobotInfo x: near){
-            if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<10){
-                nearHQ = true;
-                break;
-            }
-        }
-        if(dest.x == -1 && nearHQ == false){
-            setDest(new MapLocation(3, 20));
-        }
-        if(dest.x != -1 && nearHQ == false){
-            Direction dir = moveDest();
-            if(dir == Direction.CENTER){
-                setDest(new MapLocation(-1, -1));
-            }
-            else{
-                rc.move(dir);
-            }
-        }
-        for (Direction dir : directions)
-            if (tryDeliver(dir))
-                System.out.println("I delivered soup!");
+}static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+static void runMiner() throws GameActionException {
+    setDest(new MapLocation(5, 5));
+    if(dest.x != -1 && !dest.equals(rc.getLocation())){
+        MapLocation curLoc = rc.getLocation();
+        int best = Integer.MAX_VALUE;
+        Direction go = directions[0];
 
-        for (Direction dir : directions)
-            if (tryMine(dir))
-                System.out.println("I mined soup! " + rc.getSoupCarrying());
-    }
-    /**
-     * Attempts to mine soup in a given direction.
-     *
-     * @param dir The intended direction of mining
-     * @return true if a move was performed
-     * @throws GameActionException
-     */
-    static Direction moveDest(){
-        if(dest.x != -1 && !dest.equals(rc.getLocation())){
-            MapLocation curLoc = rc.getLocation();
-            int best = Integer.MAX_VALUE;
-            Direction go = directions[0];
-            for(Direction dir: directions){
-                if(rc.canMove(dir)){
-                    MapLocation nxt = curLoc.add(dir);
-                    boolean ok = true;
-                    for(int i = destStartTime; i<locRecord.size(); i++) {
-
-                        if (locRecord.get(i).equals(nxt)) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                    if(ok && nxt.distanceSquaredTo(dest) < best){
-                        best = nxt.distanceSquaredTo(dest);
-                        go = dir;
+        for(Direction dir: directions){
+            if(rc.canMove(dir)){
+                MapLocation nxt = curLoc.add(dir);
+                boolean ok = true;
+                for(int i = destStartTime; i<locRecord.size(); i++) {
+                    if (locRecord.get(i).equals(nxt)) {
+                        ok = false;
+                        break;
                     }
                 }
-            }
-            if(rc.canMove(go)){
-                return go;
-            }
-        }
-        return Direction.CENTER;
-    }
-    static void setDest(MapLocation _dest){
-        if(_dest.equals(rc.getLocation())) return;
-        dest = _dest;
-        destStartTime = locRecord.size();
-    }
-    static boolean tryMine(Direction dir) throws GameActionException {
-        if (rc.isReady() && rc.canMineSoup(dir)) {
-            rc.mineSoup(dir);
-            return true;
-        } else return false;
-    }
-
-    /**
-     * Attempts to deliver soup in a given direction.
-     *
-     * @param dir The intended direction of refining
-     * @return true if a move was performed
-     * @throws GameActionException
-     */
-    static boolean tryDeliver(Direction dir) throws GameActionException {
-        if (rc.isReady() && rc.canDepositSoup(dir)) {
-            rc.depositSoup(dir, rc.getSoupCarrying());
-            return true;
-        } else return false;
-    }static void runLandscaper() throws GameActionException {
-
-    }
-    static void runDeliveryDrone() throws GameActionException {
-
-    }
-    static void runRefinery() throws GameActionException {
-
-    }
-    static void runVaporator() throws GameActionException {
-
-    }
-    static void runDesignSchool() throws GameActionException {
-
-    }
-    static void runFulfillmentCenter() throws GameActionException {
-
-    }
-    static void runNetGun() throws GameActionException {
-
-    }
-    static int builtMiners;
-    static boolean hq_sentLoc;
-
-    static void runHq() throws GameActionException {
-        if(!hq_sentLoc){
-            writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
-            sendMessage(5);
-            hq_sentLoc = true;
-        }
-        if (builtMiners < 2) {
-            for (Direction dir : directions) {
-                if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                    rc.buildRobot(RobotType.MINER, dir);
-                    builtMiners++;
+                if(ok && nxt.distanceSquaredTo(curLoc) < best){
+                    best = nxt.distanceSquaredTo(curLoc);
+                    go = dir;
                 }
             }
         }
+        if(rc.canMove(go)){
+            rc.move(go);
+            return;
+        }
     }
+    for (Direction dir : directions)
+        if (tryDeliver(dir))
+            System.out.println("I delivered soup!");
+
+    for (Direction dir : directions)
+        if (tryMine(dir))
+            System.out.println("I mined soup! " + rc.getSoupCarrying());
+
+    locRecord.add(rc.getLocation());
+}
+/**
+ * Attempts to mine soup in a given direction.
+ *
+ * @param dir The intended direction of mining
+ * @return true if a move was performed
+ * @throws GameActionException
+ */
+static void setDest(MapLocation _dest){
+    dest = _dest;
+    destStartTime = locRecord.size();
+}
+static boolean tryMine(Direction dir) throws GameActionException {
+    if (rc.isReady() && rc.canMineSoup(dir)) {
+        rc.mineSoup(dir);
+        return true;
+    } else return false;
+}
+
+/**
+ * Attempts to deliver soup in a given direction.
+ *
+ * @param dir The intended direction of refining
+ * @return true if a move was performed
+ * @throws GameActionException
+ */
+static boolean tryDeliver(Direction dir) throws GameActionException {
+    if (rc.isReady() && rc.canDepositSoup(dir)) {
+        rc.depositSoup(dir, rc.getSoupCarrying());
+        return true;
+    } else return false;
+}static void runLandscaper() throws GameActionException {
+
+}
+static void runDeliveryDrone() throws GameActionException {
+
+}
+static void runRefinery() throws GameActionException {
+
+}
+static void runVaporator() throws GameActionException {
+
+}
+static void runDesignSchool() throws GameActionException {
+
+}
+static void runFulfillmentCenter() throws GameActionException {
+
+}
+static void runNetGun() throws GameActionException {
+
+}
+static int builtMiners;
+static boolean hq_sentLoc;
+
+static void runHq() throws GameActionException {
+	if(!hq_sentLoc){
+		writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
+		sendMessage(5);
+		hq_sentLoc = true;
+	}
+	if (builtMiners < 2) {
+		for (Direction dir : directions) {
+			if (rc.canBuildRobot(RobotType.MINER, dir)) {
+				rc.buildRobot(RobotType.MINER, dir);
+				builtMiners++;
+			}
+		}
+	}
+}
 
 }
