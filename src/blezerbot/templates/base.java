@@ -1,5 +1,6 @@
 package blezerbot;
 import battlecode.common.*;
+import java.util.*;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -9,6 +10,7 @@ public strictfp class RobotPlayer {
     static int messagePtr;  //What index in currMessage is my "cursor" at?
     static MapLocation locHQ;   //Where is my HQ?
     public static void run(RobotController rc) throws GameActionException {
+        if (seen == null) seen = new HashSet<MapLocation>();
         RobotPlayer.rc = rc;
 
         birthRound = rc.getRoundNum();
