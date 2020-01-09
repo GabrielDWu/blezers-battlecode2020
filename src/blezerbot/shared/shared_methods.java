@@ -1,7 +1,7 @@
 static RobotController rc;
 static int turnCount;
 static int birthRound;  //What round was I born on?
-static boolean[] currMessage;
+static int[] currMessage;
 static LinkedList<Transaction> messageQueue = new LinkedList<Transaction>();
 static int messagePtr;  //What index in currMessage is my "cursor" at?
 static MapLocation locHQ;   //Where is my HQ?
@@ -12,7 +12,7 @@ static int enemy_msg_cnt;   //How many enemy messages went through last round?
 static int enemy_msg_sum;   //Total wagers of enemy messages last round.
 
 
-static void startLife(){
+static void startLife() throws GameActionException{
     System.out.println("Got created.");
 
     switch (rc.getType()) {
@@ -27,11 +27,23 @@ static void startLife(){
         case NET_GUN:            type=8;    break;
     }
 
+    //process all messages from beginning of game until you find hq location
+    int checkRound = 1;
+    while (checkRound < rc.getRoundNum()-1 && locHQ == null) {
+        for (Transaction t : rc.getBlock(checkRound)){
+            processMessage(t);
+            if(locHQ != null){
+                break;
+            }
+        }
+        checkRound++;
+    }
     birthRound = rc.getRoundNum();
     resetMessage();
 }
 
 static void startTurn() throws GameActionException{
+    //if(rc.getRoundNum() >= 10){rc.resign();}
     turnCount = rc.getRoundNum()-birthRound+1;
 
     //process all messages for the previous round

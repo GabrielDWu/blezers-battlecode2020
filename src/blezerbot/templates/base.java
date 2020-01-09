@@ -14,7 +14,6 @@ public strictfp class RobotPlayer {
             try {
                 switch (robot_types[type]) { /*{%SWITCH%}*/ }
                 endTurn();
-                System.out.println("Yield...");
                 Clock.yield();
             } catch (Exception e) {
                 System.out.println(robot_types[type] + " Exception");
