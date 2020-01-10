@@ -2,18 +2,47 @@ package blezerbot;
 
 import battlecode.common.*;
 import java.util.*;
-import java.lang.Math;
-
+import java.lang.*;
 public class Miner extends Unit {
 
 	boolean soupSearching = false;
 	boolean returning = false;
-
+	MapLocation dest;
+	ArrayList<MapLocation> destPath;
+	int hugWall = 0;
 	public Miner(RobotController rc) throws GameActionException {
+
 		super(rc);
+
 	}
 
 	public void run() throws GameActionException {
+		System.out.println(hugWall+ " HUGG");
+		if(destPath == null) destPath = new ArrayList<MapLocation>();
+		destPath.add(rc.getLocation());
+		System.out.println(destPath.size() + " SIZE");
+		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), Team.A);
+		boolean nearHQ = false;
+		for(RobotInfo x: near){
+			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<5){
+				nearHQ = true;
+				break;
+			}
+		}
+		if(dest == null && nearHQ == false){
+			setDest(new MapLocation(15, 15));
+		}
+		if(dest != null){
+			Direction dir = moveDest();
+			if(dir == Direction.CENTER){
+				setDest(null);
+			}
+			else{
+				rc.move(dir);
+				return;
+			}
+		}
+		System.out.println("MINERERER");
 		MapLocation myloc = rc.getLocation();
 		visited[myloc.x][myloc.y]++;
 		int w = rc.getMapWidth();
@@ -43,6 +72,7 @@ public class Miner extends Unit {
 		        }
 		    }
 		}
+
 		boolean mined = false;
 		for (Direction dir : directions)
 		        if (tryMine(dir)) {
@@ -54,7 +84,89 @@ public class Miner extends Unit {
 		    findSoup();
 		}
 	}
+	public Direction canMoveClose() throws GameActionException{
+		if(dest == null || dest.equals(rc.getLocation())  || rc.canSenseLocation(dest) && (rc.senseRobotAtLocation(dest) != null || rc.senseFlooding(dest))){
+			setDest(null);
+			return Direction.CENTER;
+		}
+		if(dest != null && !dest.equals(rc.getLocation())){
+			MapLocation curLoc = rc.getLocation();
+			int best = curLoc.distanceSquaredTo(dest);
 
+			Direction go = null;
+			for(Direction dir: directions){
+				if(rc.canMove(dir)){
+					MapLocation nxt = curLoc.add(dir);
+					boolean ok = true;
+					for(MapLocation x: destPath){
+						if(nxt.equals(x)){
+							ok = false;
+							break;
+						}
+					}
+					if(ok && nxt.distanceSquaredTo(dest) < best){
+						best = nxt.distanceSquaredTo(dest);
+						go = dir;
+					}
+				}
+			}
+			if(go != null && rc.canMove(go)){
+				return go;
+			}
+		}
+		return Direction.CENTER;
+	}
+	public Direction moveDest() throws GameActionException{
+		Direction close = canMoveClose();
+		if(close != Direction.CENTER) {
+			hugWall = destPath.size();
+			return close;
+		}
+		System.out.println("THIS	");
+		Direction bestDir = Direction.CENTER;
+		boolean vis = false;
+		for(Direction dir: directions){
+			if(!rc.canMove(dir)) continue;
+			MapLocation nxt = rc.getLocation().add(dir);
+			boolean ok = false;
+			for(Direction dir1: directions){
+				MapLocation adj = nxt.add(dir1);
+				if(adj.equals(rc.getLocation())) continue;
+				if(rc.senseFlooding(adj) || Math.abs(rc.senseElevation(adj) - rc.senseElevation(nxt)) > 3 || rc.senseRobotAtLocation(nxt) == null ){
+					ok = true;
+					break;
+				}
+			}
+			if(ok){
+				ok = false;
+				for(int i = hugWall; i<destPath.size(); i++){
+					if(destPath.get(i).equals(nxt)){
+						ok = true;
+						break;
+					}
+				}
+				if(ok == false) {
+					boolean visited = false;
+					for(MapLocation x: destPath){
+						if (x.equals(nxt)) {
+							visited = true;
+							break;
+						}
+					}
+					if(visited == true) bestDir = dir;
+					else if(vis == false) bestDir = dir;
+				}
+			}
+		}
+		return bestDir;
+	}
+	public void setDest(MapLocation _dest){
+		if(rc.getLocation().equals(_dest)) return;
+		dest = _dest;
+		destPath.clear();
+		hugWall = 0;
+		destPath.add(rc.getLocation());
+	}
 	void findSoup() throws GameActionException {
 	    if (!soupSearching) {
 	        soupSearching = true;
