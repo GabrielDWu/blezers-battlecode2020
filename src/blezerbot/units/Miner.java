@@ -17,32 +17,41 @@ public class Miner extends Unit {
 	}
 
 	public void run() throws GameActionException {
-		System.out.println(hugWall+ " HUGG");
-		if(destPath == null) destPath = new ArrayList<MapLocation>();
-		destPath.add(rc.getLocation());
-		System.out.println(destPath.size() + " SIZE");
-		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), Team.A);
-		boolean nearHQ = false;
-		for(RobotInfo x: near){
-			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<5){
-				nearHQ = true;
-				break;
-			}
-		}
-		if(dest == null && nearHQ == false){
-			setDest(new MapLocation(15, 15));
-		}
-		if(dest != null){
-			Direction dir = moveDest();
-			if(dir == Direction.CENTER){
+		setVisitedAndSeen();
+		boolean mined = false;
+		for (Direction dir : directions)
+		        if (tryMine(dir)) {
+		            mined = true;
+		            returning = true;
+		            soupSearching = false;
+		            destPath = new ArrayList<MapLocation>();
+		            setDest(locHQ);
+		            System.out.println("returning to "+locHQ);
+		        }
+		if (!mined && !returning) {
+		    findSoup();
+		} else if (returning) {
+			if(nearHQ()){
 				setDest(null);
 			}
 			else{
-				rc.move(dir);
-				return;
+				destPath.add(rc.getLocation());
+				tryMove(moveDest());
 			}
 		}
-		System.out.println("MINERERER");
+	}
+
+	public boolean nearHQ() {
+		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam());
+		for(RobotInfo x: near){
+			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<5){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void setVisitedAndSeen() {
 		MapLocation myloc = rc.getLocation();
 		visited[myloc.x][myloc.y]++;
 		int w = rc.getMapWidth();
@@ -72,18 +81,8 @@ public class Miner extends Unit {
 		        }
 		    }
 		}
-
-		boolean mined = false;
-		for (Direction dir : directions)
-		        if (tryMine(dir)) {
-		            mined = true;
-		            returning = true;
-		            soupSearching = false;
-		        }
-		if (!mined && !returning) {
-		    findSoup();
-		}
 	}
+
 	public Direction canMoveClose() throws GameActionException{
 		if(dest == null || dest.equals(rc.getLocation())  || rc.canSenseLocation(dest) && (rc.senseRobotAtLocation(dest) != null || rc.senseFlooding(dest))){
 			setDest(null);
@@ -122,7 +121,6 @@ public class Miner extends Unit {
 			hugWall = destPath.size();
 			return close;
 		}
-		System.out.println("THIS	");
 		Direction bestDir = Direction.CENTER;
 		boolean vis = false;
 		for(Direction dir: directions){
