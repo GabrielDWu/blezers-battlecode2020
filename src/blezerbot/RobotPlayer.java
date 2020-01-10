@@ -64,44 +64,7 @@ case HQ: runHq();break;
             }
         }
     }
-    static Direction randomDirection() {
-    return directions[(int) (Math.random() * directions.length)];
-}
-
-static Direction nextDir(Direction dir) {
-	if (dir.equals(directions[0])) return directions[1];
-	if (dir.equals(directions[1])) return directions[2];
-	if (dir.equals(directions[2])) return directions[3];
-	if (dir.equals(directions[3])) return directions[0];
-	return null;
-}
-
-static boolean tryMove(Direction dir) throws GameActionException {
-    if (rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
-        rc.move(dir);
-        return true;
-    } else return false;
-}
-
-static HashSet<MapLocation> seen;
-
-static boolean onMap(MapLocation l) {
-	return !(l.x < 0 || l.x >= rc.getMapWidth() || l.y < 0 || l.y >= rc.getMapHeight());
-}
-
-static Random r;static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
-static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
-static RobotType[] robot_types = {RobotType.HQ, //0
-        RobotType.MINER, //1
-        RobotType.REFINERY, //2
-        RobotType.VAPORATOR, //3
-        RobotType.DESIGN_SCHOOL, //4
-        RobotType.FULFILLMENT_CENTER, //5
-        RobotType.LANDSCAPER, //6
-        RobotType.DELIVERY_DRONE, //7
-        RobotType.NET_GUN //8
-};
-static void processMessage(int[] message) {
+    static void processMessage(int[] message) {
         //Check if the message was made by my team
         //The way it works: xor all of them with PAD
         //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
@@ -236,7 +199,44 @@ static void sendMessage(int wager) throws GameActionException{
         rc.submitTransaction(words, wager);
         resetMessage();
         return;
-}static boolean soupSearching = false;
+}static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
+static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+static RobotType[] robot_types = {RobotType.HQ, //0
+        RobotType.MINER, //1
+        RobotType.REFINERY, //2
+        RobotType.VAPORATOR, //3
+        RobotType.DESIGN_SCHOOL, //4
+        RobotType.FULFILLMENT_CENTER, //5
+        RobotType.LANDSCAPER, //6
+        RobotType.DELIVERY_DRONE, //7
+        RobotType.NET_GUN //8
+};
+static Direction randomDirection() {
+    return directions[(int) (Math.random() * directions.length)];
+}
+
+static Direction nextDir(Direction dir) {
+	if (dir.equals(directions[0])) return directions[1];
+	if (dir.equals(directions[1])) return directions[2];
+	if (dir.equals(directions[2])) return directions[3];
+	if (dir.equals(directions[3])) return directions[0];
+	return null;
+}
+
+static boolean tryMove(Direction dir) throws GameActionException {
+    if (rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
+        rc.move(dir);
+        return true;
+    } else return false;
+}
+
+static HashSet<MapLocation> seen;
+
+static boolean onMap(MapLocation l) {
+	return !(l.x < 0 || l.x >= rc.getMapWidth() || l.y < 0 || l.y >= rc.getMapHeight());
+}
+
+static Random r;static boolean soupSearching = false;
 static boolean returning = false;
 
 static void runMiner() throws GameActionException {
