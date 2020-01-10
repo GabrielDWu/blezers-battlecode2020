@@ -127,20 +127,10 @@ static void sendMessage(int wager) throws GameActionException{
                 ptr++;
             }
         }
-
-<<<<<<< HEAD
-    for(int i=0; i<7; i++){
-        currMessage[i] ^= PADS[i];
-    }
-    messageQueue.add(new Transaction(wager, currMessage, 1));
-    resetMessage();
-    return;
-=======
         for(int i=0; i<7; i++){
             words[i] ^= PADS[i];
         }
         rc.submitTransaction(words, wager);
         resetMessage();
         return;
->>>>>>> 7d185aa1bb7297c1dc21e60d13f696fc00446eeb
 }
