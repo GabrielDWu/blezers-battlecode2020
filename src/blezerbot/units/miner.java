@@ -1,7 +1,5 @@
-static boolean soupSearching = false;
-static boolean returning = false;
-
 static void runMiner() throws GameActionException {
+<<<<<<< HEAD
     MapLocation myloc = rc.getLocation();
     for (int i = -3; i <= 3; i++) {
         seen.add(new MapLocation(myloc.x+i, myloc.y+5));
@@ -99,17 +97,7 @@ static boolean tryMine(Direction dir) throws GameActionException {
         return true;
     } else return false;
 }
+=======
+>>>>>>> 7d185aa1bb7297c1dc21e60d13f696fc00446eeb
 
-/**
- * Attempts to deliver soup in a given direction.
- *
- * @param dir The intended direction of refining
- * @return true if a move was performed
- * @throws GameActionException
- */
-static boolean tryDeliver(Direction dir) throws GameActionException {
-    if (rc.isReady() && rc.canDepositSoup(dir)) {
-        rc.depositSoup(dir, rc.getSoupCarrying());
-        return true;
-    } else return false;
 }

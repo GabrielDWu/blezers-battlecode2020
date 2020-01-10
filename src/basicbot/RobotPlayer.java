@@ -31,7 +31,8 @@ public strictfp class RobotPlayer {
     static MapLocation locHQ;   //Where is my HQ?
     static ArrayList<MapLocation> locRecord = new ArrayList<MapLocation>();
     static MapLocation dest = new MapLocation(-1, -1);
-    static int destStartTime = -1;
+    static ArrayList<MapLocation> destPath = new ArrayList<MapLocation>();
+    static int hugWall = 0;
     public static void run(RobotController rc) throws GameActionException {
         RobotPlayer.rc = rc;
 
@@ -46,7 +47,6 @@ public strictfp class RobotPlayer {
                     processMessage(t.getMessage());
                 }
             }
-
 
             try {
                 switch (rc.getType()) { case MINER: runMiner();break;
@@ -203,9 +203,10 @@ public strictfp class RobotPlayer {
         resetMessage();
         return;
     }static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-    static int[] PADS = {-1234, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+    static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
     static void runMiner() throws GameActionException {
         locRecord.add(rc.getLocation());
+        destPath.add(rc.getLocation());
         RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), Team.A);
         boolean nearHQ = false;
         for(RobotInfo x: near){
@@ -215,15 +216,18 @@ public strictfp class RobotPlayer {
             }
         }
         if(dest.x == -1 && nearHQ == false){
-            setDest(new MapLocation(7, 6));
+            setDest(new MapLocation(14, 13));
         }
         if(dest.x != -1 && nearHQ == false){
             Direction dir = moveDest();
+            System.out.println(rc.canMove(dir));
+            System.out.println(dir);
             if(dir == Direction.CENTER){
                 setDest(new MapLocation(-1, -1));
             }
             else{
                 rc.move(dir);
+                return;
             }
         }
         for (Direction dir : directions)
@@ -241,18 +245,17 @@ public strictfp class RobotPlayer {
      * @return true if a move was performed
      * @throws GameActionException
      */
-    static Direction moveDest(){
+    static Direction canMoveClose(){
         if(dest.x != -1 && !dest.equals(rc.getLocation())){
             MapLocation curLoc = rc.getLocation();
             int best = Integer.MAX_VALUE;
-            Direction go = directions[0];
+            Direction go = null;
             for(Direction dir: directions){
                 if(rc.canMove(dir)){
                     MapLocation nxt = curLoc.add(dir);
                     boolean ok = true;
-                    for(int i = destStartTime; i<locRecord.size(); i++) {
-
-                        if (locRecord.get(i).equals(nxt)) {
+                    for(MapLocation x: destPath){
+                        if(nxt.equals(x)){
                             ok = false;
                             break;
                         }
@@ -263,8 +266,39 @@ public strictfp class RobotPlayer {
                     }
                 }
             }
-            if(rc.canMove(go)){
+            if(go != null && rc.canMove(go)){
                 return go;
+            }
+        }
+        return Direction.CENTER;
+    }
+    static Direction moveDest() throws GameActionException{
+        Direction close = canMoveClose();
+        if(close != Direction.CENTER) {
+            hugWall = destPath.size();
+            return close;
+        }
+        System.out.println("WUT");
+        for(Direction dir: directions){
+            if(!rc.canMove(dir)) continue;
+            MapLocation nxt = rc.getLocation().add(dir);
+            boolean ok = false;
+            for(Direction dir1: directions){
+                MapLocation adj = nxt.add(dir1);
+                if(rc.senseFlooding(adj) || Math.abs(rc.senseElevation(adj) - rc.senseElevation(nxt)) > 3 || rc.senseRobotAtLocation(nxt) == null ){
+                    ok = true;
+                    break;
+                }
+            }
+            if(ok){
+                ok = false;
+                for(int i = hugWall; i<destPath.size(); i++){
+                    if(destPath.get(i).equals(nxt)){
+                        ok = true;
+                        break;
+                    }
+                }
+                if(ok == false) return dir;
             }
         }
         return Direction.CENTER;
@@ -272,7 +306,9 @@ public strictfp class RobotPlayer {
     static void setDest(MapLocation _dest){
         if(_dest.equals(rc.getLocation())) return;
         dest = _dest;
-        destStartTime = locRecord.size();
+        destPath.clear();
+        hugWall = 0;
+        destPath.add(rc.getLocation());
     }
     static boolean tryMine(Direction dir) throws GameActionException {
         if (rc.isReady() && rc.canMineSoup(dir)) {

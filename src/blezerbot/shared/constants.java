@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
 static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
 static RobotType[] robot_types = {RobotType.HQ, //0
@@ -10,3 +11,7 @@ static RobotType[] robot_types = {RobotType.HQ, //0
         RobotType.DELIVERY_DRONE, //7
         RobotType.NET_GUN //8
 };
+=======
+static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+>>>>>>> 7d185aa1bb7297c1dc21e60d13f696fc00446eeb
