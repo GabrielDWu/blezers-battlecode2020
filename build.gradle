@@ -46,7 +46,6 @@ targetCompatibility = 1.8
 sourceSets {
     main {
         java.srcDirs = [ project.property('source') ]
-        java.exclude 'blezerbot/*/*'
         //scala.srcDirs = [ project.property('source') ]
 
         java.outputDir = file("$buildDir/classes")
@@ -316,8 +315,3 @@ task unpackClient32(type: Copy, dependsOn: configurations.client32) {
 
 unpackClient32.onlyIf { arch32 }
 build.dependsOn('unpackClient32')
-
-task blezerBuild(type: Exec) {
-    commandLine 'python3', 'src/blezerbot/build.py'
-}
-tasks.matching {it != blezerBuild}.all {it.dependsOn('blezerBuild')}
