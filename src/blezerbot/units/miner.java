@@ -35,11 +35,11 @@ static void findSoup() throws GameActionException {
     }
     ArrayList<Integer> newSeenList = new ArrayList<Integer>();
     ArrayList<Direction> newSeenDirs = new ArrayList<Direction>();
+    MapLocation l = rc.getLocation();
     for (Direction dir : directions) {
         newSeenList.add(newVisibleMiner(rc.getLocation(), dir));
         newSeenDirs.add(dir);
     }
-    Random r = new Random();
     Direction maxl = null;
     while (maxl == null || !tryMove(maxl)) {
         ArrayList<Integer> newNewSeenList = (ArrayList<Integer>)newSeenList.clone();
@@ -47,27 +47,41 @@ static void findSoup() throws GameActionException {
         int max = -1;
         while (newNewSeenList.size() > 0) {
             int ri = r.nextInt(newNewSeenList.size());
-            if (newNewSeenList.remove(ri) > max) maxl = newNewSeenDirs.remove(ri); 
+            int newv = newNewSeenList.remove(ri);
+            Direction newl = newNewSeenDirs.remove(ri);
+            if (newv > max && rc.canMove(newl) && !rc.senseFlooding(rc.adjacentLocation(newl))) {
+                maxl = newl;
+                max = newv;
+            }
         }
     }
 }
 
 
-static int[][] aNewVisibleMiner= new int[][]{{6,0},{6,1},{6,-1},{6,2},{6,-2},{6,3},{6,-3},{5,4},{5,-4}};
-static int newVisibleMiner(MapLocation loc, Direction dir) {
+static int[][] aNewVisibleMiner = new int[][]{{6,0},{6,1},{6,-1},{6,2},{6,-2},{6,3},{6,-3},{5,4},{5,-4},{4,5},{4,-5}};
+static int[][] aNewVisibleMinerDiag = new int[][]{{6,-2},{6,-1},{6,0},{6,1},{6,2},{6,3},{6,4},{5,4},{5,5},{4,5},{4,6},{3,6},{2,6},{1,6},{0,6},{-1,6},{-2,6}};
+static int newVisibleMiner(MapLocation loc, Direction dir) throws GameActionException {
     int visible = 0;
-    for (int i = 0; i < aNewVisibleMiner.length; i++) {
+    if (dir.dy == 0) {
+        MapLocation nloc;
         int x = loc.x;
         int y = loc.y;
-        if (dir.dx != 0) {
-            x += aNewVisibleMiner[i][0]*dir.dx;
-            y += aNewVisibleMiner[i][1];
+        for (int i = 0; i < aNewVisibleMiner.length; i++) {
+            nloc = loc.translate(aNewVisibleMiner[i][0]*dir.dx, aNewVisibleMiner[i][1]);
+            if (onMap(nloc) && !seen.contains(nloc)) visible++;
         }
-        if (dir.dy != 0) {
-            x += aNewVisibleMiner[i][0]*dir.dy;
-            y += aNewVisibleMiner[i][1];
+    } else if (dir.dx == 0) {
+        MapLocation nloc;
+        for (int i = 0; i < aNewVisibleMiner.length; i++) {
+            nloc = loc.translate(aNewVisibleMiner[i][1], aNewVisibleMiner[i][0]*dir.dy);
+            if (onMap(nloc) && !seen.contains(nloc)) visible++;
         }
-        if (!seen.contains(new MapLocation(x, y))) visible++;
+    } else {
+        MapLocation nloc;
+        for (int i = 0; i < aNewVisibleMinerDiag.length; i++) {
+            nloc = loc.translate(aNewVisibleMinerDiag[i][0]*dir.dx, aNewVisibleMinerDiag[i][1]*dir.dy);
+            if (onMap(nloc) && !seen.contains(nloc)) visible++;
+        }
     }
     return visible;
 }

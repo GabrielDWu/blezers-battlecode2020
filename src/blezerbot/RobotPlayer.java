@@ -26,6 +26,8 @@ public strictfp class RobotPlayer {
 
 
     public static void run(RobotController rc) throws GameActionException {
+        if (seen == null) seen = new HashSet<MapLocation>();
+        if (r == null) r = new Random(rc.getID());
         RobotPlayer.rc = rc;
         startLife();
 
@@ -50,7 +52,120 @@ case HQ: runHq();break;
             }
         }
     }
-    static void processMessage(Transaction t) {
+    static Direction randomDirection() {
+    return directions[(int) (Math.random() * directions.length)];
+}
+
+static Direction nextDir(Direction dir) {
+	if (dir.equals(directions[0])) return directions[1];
+	if (dir.equals(directions[1])) return directions[2];
+	if (dir.equals(directions[2])) return directions[3];
+	if (dir.equals(directions[3])) return directions[0];
+	return null;
+}
+
+static boolean tryMove(Direction dir) throws GameActionException {
+    if (rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
+        rc.move(dir);
+        return true;
+    } else return false;
+}
+
+static HashSet<MapLocation> seen;
+
+static boolean onMap(MapLocation l) {
+	return !(l.x < 0 || l.x >= rc.getMapWidth() || l.y < 0 || l.y >= rc.getMapHeight());
+}
+
+static Random r;static RobotController rc;
+static int turnCount;
+static int birthRound;  //What round was I born on?
+static int[] currMessage;
+static LinkedList<Transaction> messageQueue = new LinkedList<Transaction>();
+static int messagePtr;  //What index in currMessage is my "cursor" at?
+static MapLocation locHQ;   //Where is my HQ?
+static boolean sentInfo;    //Sent info upon spawn
+static int type;    //Integer from 0 to 8, index of robot_types
+static int base_wager = 2;
+static int enemy_msg_cnt;   //How many enemy messages went through last round?
+static int enemy_msg_sum;   //Total wagers of enemy messages last round.
+
+
+static void startLife() throws GameActionException{
+    System.out.println("Got created.");
+
+    switch (rc.getType()) {
+        case HQ:                 type=0;initHq();    break;
+        case MINER:              type=1;    break;
+        case REFINERY:           type=2;    break;
+        case VAPORATOR:          type=3;    break;
+        case DESIGN_SCHOOL:      type=4;    break;
+        case FULFILLMENT_CENTER: type=5;    break;
+        case LANDSCAPER:         type=6;    break;
+        case DELIVERY_DRONE:     type=7;    break;
+        case NET_GUN:            type=8;    break;
+    }
+
+    //process all messages from beginning of game until you find hq location
+    int checkRound = 1;
+    while (checkRound < rc.getRoundNum()-1 && locHQ == null) {
+        for (Transaction t : rc.getBlock(checkRound)){
+            processMessage(t);
+            if(locHQ != null){
+                break;
+            }
+        }
+        checkRound++;
+    }
+    birthRound = rc.getRoundNum();
+    resetMessage();
+}
+
+static void startTurn() throws GameActionException{
+    //if(rc.getRoundNum() >= 10){rc.resign();}
+    turnCount = rc.getRoundNum()-birthRound+1;
+
+    //process all messages for the previous round
+    if(rc.getRoundNum() > 1) {
+        enemy_msg_cnt = 0;
+        enemy_msg_sum = 0;
+        for (Transaction t : rc.getBlock(rc.getRoundNum() - 1)){
+            processMessage(t);
+        }
+        if(enemy_msg_cnt > 0){
+            base_wager = ((enemy_msg_sum/enemy_msg_cnt + 1) + base_wager)/2;
+        }else{
+            base_wager *= .8;
+        }
+        base_wager = Math.max(base_wager, 1);
+    }
+
+    if(!sentInfo){
+        writeMessage(1, new int[]{type, rc.getID()});
+        addMessageToQueue();
+        sentInfo = true;
+    }
+}
+
+static void endTurn() throws GameActionException{
+    /*submits stuff from messageQueue*/
+    while(messageQueue.size() > 0 && messageQueue.get(0).getCost() <= rc.getTeamSoup()){
+        rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
+        messageQueue.remove(0);
+    }
+}static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
+static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+static RobotType[] robot_types = {RobotType.HQ, //0
+        RobotType.MINER, //1
+        RobotType.REFINERY, //2
+        RobotType.VAPORATOR, //3
+        RobotType.DESIGN_SCHOOL, //4
+        RobotType.FULFILLMENT_CENTER, //5
+        RobotType.LANDSCAPER, //6
+        RobotType.DELIVERY_DRONE, //7
+        RobotType.NET_GUN //8
+};
+static void processMessage(Transaction t) {
     //Check if the message was made by my team
     //The way it works: xor all of them with PAD
     //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
@@ -190,99 +305,141 @@ static void addMessageToQueue(int wager){
     for(int i=0; i<7; i++){
         currMessage[i] ^= PADS[i];
     }
-    messageQueue.add(new Transaction(wager, currMessage));
+    messageQueue.add(new Transaction(wager, currMessage, 1));
     resetMessage();
     return;
-}static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
-static RobotType[] robot_types = {RobotType.HQ, //0
-        RobotType.MINER, //1
-        RobotType.REFINERY, //2
-        RobotType.VAPORATOR, //3
-        RobotType.DESIGN_SCHOOL, //4
-        RobotType.FULFILLMENT_CENTER, //5
-        RobotType.LANDSCAPER, //6
-        RobotType.DELIVERY_DRONE, //7
-        RobotType.NET_GUN //8
-};
-static RobotController rc;
-static int turnCount;
-static int birthRound;  //What round was I born on?
-static int[] currMessage;
-static LinkedList<Transaction> messageQueue = new LinkedList<Transaction>();
-static int messagePtr;  //What index in currMessage is my "cursor" at?
-static MapLocation locHQ;   //Where is my HQ?
-static boolean sentInfo;    //Sent info upon spawn
-static int type;    //Integer from 0 to 8, index of robot_types
-static int base_wager = 2;
-static int enemy_msg_cnt;   //How many enemy messages went through last round?
-static int enemy_msg_sum;   //Total wagers of enemy messages last round.
+}static boolean soupSearching = false;
+static boolean returning = false;
 
-
-static void startLife() throws GameActionException{
-    System.out.println("Got created.");
-
-    switch (rc.getType()) {
-        case HQ:                 type=0;initHq();    break;
-        case MINER:              type=1;    break;
-        case REFINERY:           type=2;    break;
-        case VAPORATOR:          type=3;    break;
-        case DESIGN_SCHOOL:      type=4;    break;
-        case FULFILLMENT_CENTER: type=5;    break;
-        case LANDSCAPER:         type=6;    break;
-        case DELIVERY_DRONE:     type=7;    break;
-        case NET_GUN:            type=8;    break;
+static void runMiner() throws GameActionException {
+    MapLocation myloc = rc.getLocation();
+    for (int i = -3; i <= 3; i++) {
+        seen.add(new MapLocation(myloc.x+i, myloc.y+5));
+        seen.add(new MapLocation(myloc.x+i, myloc.y-5));
     }
+    for (int i = -4; i <= 4; i++) {
+        seen.add(new MapLocation(myloc.x+i, myloc.y+4));
+        seen.add(new MapLocation(myloc.x+i, myloc.y-4));
+    }
+    for (int j = -3; j <= 3; j++) {
+        for (int i = -5; i <= 5; i++) {
+            seen.add(new MapLocation(myloc.x+i, myloc.y+j));
+        }
+    }
+    boolean mined = false;
+    for (Direction dir : directions)
+            if (tryMine(dir)) {
+                System.out.println("I mined soup! " + rc.getSoupCarrying());
+                mined = true;
+                returning = true;
+                soupSearching = false;
+            }
+    if (!mined && !returning) {
+        findSoup();
+    }
+}
 
-    //process all messages from beginning of game until you find hq location
-    int checkRound = 1;
-    while (checkRound < rc.getRoundNum()-1 && locHQ == null) {
-        for (Transaction t : rc.getBlock(checkRound)){
-            processMessage(t);
-            if(locHQ != null){
-                break;
+static void findSoup() throws GameActionException {
+    System.out.println("started findsoup");
+    System.out.println(Clock.getBytecodesLeft());
+    if (!soupSearching) {
+        soupSearching = true;
+    }
+    ArrayList<Integer> newSeenList = new ArrayList<Integer>();
+    ArrayList<Direction> newSeenDirs = new ArrayList<Direction>();
+    MapLocation l = rc.getLocation();
+    for (Direction dir : directions) {
+        System.out.println(Clock.getBytecodesLeft());
+        newSeenList.add(newVisibleMiner(rc.getLocation(), dir));
+        newSeenDirs.add(dir);
+    }
+    System.out.println(newSeenDirs);
+    System.out.println(newSeenList);
+    System.out.println("GOTDIRS");
+    System.out.println(Clock.getBytecodesLeft());
+    Direction maxl = null;
+    while (maxl == null || !tryMove(maxl)) {
+        System.out.println("OUTERWHILE");
+        System.out.println(Clock.getBytecodesLeft());
+        ArrayList<Integer> newNewSeenList = (ArrayList<Integer>)newSeenList.clone();
+        ArrayList<Direction> newNewSeenDirs = (ArrayList<Direction>)newSeenDirs.clone();
+        int max = -1;
+        while (newNewSeenList.size() > 0) {
+            System.out.println("INNERWHILE");
+            System.out.println(Clock.getBytecodesLeft());
+            int ri = r.nextInt(newNewSeenList.size());
+            int newv = newNewSeenList.remove(ri);
+            Direction newl = newNewSeenDirs.remove(ri);
+            if (newv > max && rc.canMove(newl) && !rc.senseFlooding(rc.adjacentLocation(newl))) {
+                maxl = newl;
+                max = newv;
             }
         }
-        checkRound++;
     }
-    birthRound = rc.getRoundNum();
-    resetMessage();
+    System.out.println("finished findsoup");
 }
 
-static void startTurn() throws GameActionException{
-    //if(rc.getRoundNum() >= 10){rc.resign();}
-    turnCount = rc.getRoundNum()-birthRound+1;
 
-    //process all messages for the previous round
-    if(rc.getRoundNum() > 1) {
-        enemy_msg_cnt = 0;
-        enemy_msg_sum = 0;
-        for (Transaction t : rc.getBlock(rc.getRoundNum() - 1)){
-            processMessage(t);
+static int[][] aNewVisibleMiner = new int[][]{{6,0},{6,1},{6,-1},{6,2},{6,-2},{6,3},{6,-3},{5,4},{5,-4},{4,5},{4,-5}};
+static int[][] aNewVisibleMinerDiag = new int[][]{{6,-2},{6,-1},{6,0},{6,1},{6,2},{6,3},{6,4},{5,4},{5,5},{4,5},{4,6},{3,6},{2,6},{1,6},{0,6},{-1,6},{-2,6}};
+static int newVisibleMiner(MapLocation loc, Direction dir) throws GameActionException {
+    System.out.println("NEWVISIBLEMINER()");
+    int visible = 0;
+    if (dir.dy == 0) {
+        MapLocation nloc;
+        int x = loc.x;
+        int y = loc.y;
+        for (int i = 0; i < aNewVisibleMiner.length; i++) {
+            System.out.println(Clock.getBytecodesLeft());
+            nloc = loc.translate(aNewVisibleMiner[i][0]*dir.dx, aNewVisibleMiner[i][1]);
+            if (onMap(nloc) && !seen.contains(nloc)) visible++;
         }
-        if(enemy_msg_cnt > 0){
-            base_wager = ((enemy_msg_sum/enemy_msg_cnt + 1) + base_wager)/2;
-        }else{
-            base_wager *= .8;
+    } else if (dir.dx == 0) {
+        MapLocation nloc;
+        for (int i = 0; i < aNewVisibleMiner.length; i++) {
+            System.out.println(Clock.getBytecodesLeft());
+            nloc = loc.translate(aNewVisibleMiner[i][1], aNewVisibleMiner[i][0]*dir.dy);
+            if (onMap(nloc) && !seen.contains(nloc)) visible++;
         }
-        base_wager = Math.max(base_wager, 1);
+    } else {
+        MapLocation nloc;
+        for (int i = 0; i < aNewVisibleMinerDiag.length; i++) {
+            nloc = loc.translate(aNewVisibleMinerDiag[i][0]*dir.dx, aNewVisibleMinerDiag[i][1]*dir.dy);
+            System.out.println("A "+Clock.getBytecodesLeft());
+            boolean x = !seen.contains(nloc);
+            System.out.println("B "+Clock.getBytecodesLeft());
+            if (onMap(nloc) && !seen.contains(nloc)) visible++;
+        }
     }
-
-    if(!sentInfo){
-        writeMessage(1, new int[]{type, rc.getID()});
-        addMessageToQueue();
-        sentInfo = true;
-    }
+    return visible;
 }
 
-static void endTurn() throws GameActionException{
-    /*submits stuff from messageQueue*/
-    while(messageQueue.size() > 0 && messageQueue.get(0).getCost() <= rc.getTeamSoup()){
-        rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
-        messageQueue.remove(0);
-    }
-}static void runMiner() throws GameActionException {
+/**
+ * Attempts to mine soup in a given direction.
+ *
+ * @param dir The intended direction of mining
+ * @return true if a move was performed
+ * @throws GameActionException
+ */
+static boolean tryMine(Direction dir) throws GameActionException {
+    if (rc.isReady() && rc.canMineSoup(dir)) {
+        rc.mineSoup(dir);
+        return true;
+    } else return false;
+}
 
+/**
+ * Attempts to deliver soup in a given direction.
+ *
+ * @param dir The intended direction of refining
+ * @return true if a move was performed
+ * @throws GameActionException
+ */
+static boolean tryDeliver(Direction dir) throws GameActionException {
+    if (rc.isReady() && rc.canDepositSoup(dir)) {
+        rc.depositSoup(dir, rc.getSoupCarrying());
+        return true;
+    } else return false;
 }
 static void runLandscaper() throws GameActionException {
 
@@ -322,7 +479,7 @@ static void runHq() throws GameActionException {
 		addMessageToQueue();
 		hq_sentLoc = true;
 	}
-	if (builtMiners < 2) {
+	if (builtMiners < 4) {
 		for (Direction dir : directions) {
 			if (rc.canBuildRobot(RobotType.MINER, dir)) {
 				rc.buildRobot(RobotType.MINER, dir);

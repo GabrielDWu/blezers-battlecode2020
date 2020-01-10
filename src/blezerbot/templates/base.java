@@ -7,6 +7,7 @@ public strictfp class RobotPlayer {
 
     public static void run(RobotController rc) throws GameActionException {
         if (seen == null) seen = new HashSet<MapLocation>();
+        if (r == null) r = new Random(rc.getID());
         RobotPlayer.rc = rc;
         startLife();
 

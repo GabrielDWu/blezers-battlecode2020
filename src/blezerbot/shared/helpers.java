@@ -11,10 +11,16 @@ static Direction nextDir(Direction dir) {
 }
 
 static boolean tryMove(Direction dir) throws GameActionException {
-    if (rc.isReady() && !rc.senseFlooding(rc.adjacentLocation(dir)) && rc.canMove(dir)) {
+    if (rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
         rc.move(dir);
         return true;
     } else return false;
 }
 
 static HashSet<MapLocation> seen;
+
+static boolean onMap(MapLocation l) {
+	return !(l.x < 0 || l.x >= rc.getMapWidth() || l.y < 0 || l.y >= rc.getMapHeight());
+}
+
+static Random r;

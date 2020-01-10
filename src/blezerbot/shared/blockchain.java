@@ -138,7 +138,7 @@ static void addMessageToQueue(int wager){
     for(int i=0; i<7; i++){
         currMessage[i] ^= PADS[i];
     }
-    messageQueue.add(new Transaction(wager, currMessage));
+    messageQueue.add(new Transaction(wager, currMessage, 1));
     resetMessage();
     return;
 }
