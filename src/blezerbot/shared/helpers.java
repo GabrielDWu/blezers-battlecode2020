@@ -17,10 +17,15 @@ static boolean tryMove(Direction dir) throws GameActionException {
     } else return false;
 }
 
-static HashSet<MapLocation> seen;
+static boolean[][] seen;
+static int[][] visited;
 
 static boolean onMap(MapLocation l) {
 	return !(l.x < 0 || l.x >= rc.getMapWidth() || l.y < 0 || l.y >= rc.getMapHeight());
+}
+
+static boolean onMap(int x, int y) {
+	return x >= 0 && x < rc.getMapWidth() && y >= 0 && y < rc.getMapHeight();
 }
 
 static Random r;

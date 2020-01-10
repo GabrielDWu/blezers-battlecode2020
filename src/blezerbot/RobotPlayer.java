@@ -21,33 +21,22 @@
 package blezerbot;
 import battlecode.common.*;
 import java.util.*;
+import java.lang.Math;
 
 public strictfp class RobotPlayer {
-    static RobotController rc;
-    static int turnCount;
-    static int birthRound;  //What round was I born on?
-    static boolean[] currMessage;
-    static int messagePtr;  //What index in currMessage is my "cursor" at?
-    static MapLocation locHQ;   //Where is my HQ?
+
+
     public static void run(RobotController rc) throws GameActionException {
-        if (seen == null) seen = new HashSet<MapLocation>();
+        if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
+        if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
         if (r == null) r = new Random(rc.getID());
         RobotPlayer.rc = rc;
+        startLife();
 
-        birthRound = rc.getRoundNum();
-        resetMessage();
         while (true) {
-            turnCount += 1;
-
-            //process all messages for the previous round
-            if(rc.getRoundNum() > 1) {
-                for (Transaction t : rc.getBlock(rc.getRoundNum() - 1)) {
-                    processMessage(t.getMessage());
-                }
-            }
-
+            startTurn();
             try {
-                switch (rc.getType()) { case MINER: runMiner();break;
+                switch (robot_types[type]) { case MINER: runMiner();break;
 case LANDSCAPER: runLandscaper();break;
 case DELIVERY_DRONE: runDeliveryDrone();break;
 case REFINERY: runRefinery();break;
@@ -57,161 +46,15 @@ case FULFILLMENT_CENTER: runFulfillmentCenter();break;
 case NET_GUN: runNetGun();break;
 case HQ: runHq();break;
  }
+                endTurn();
                 Clock.yield();
             } catch (Exception e) {
-                System.out.println(rc.getType() + " Exception");
+                System.out.println(robot_types[type] + " Exception");
                 e.printStackTrace();
             }
         }
     }
-    static void processMessage(int[] message) {
-        //Check if the message was made by my team
-        //The way it works: xor all of them with PAD
-        //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
-        System.out.println("Message Being Processed");
-        int[] m = new int[7];
-        for(int i=0; i<7; i++){
-            m[i] = message[i]^PADS[i];
-        }
-
-        boolean bits[] = new boolean[224];
-        boolean checksum[] = new boolean[28];
-        int ptr = 0;    //This is a local ptr for reading a message, different than messagePtr (which is for writing)
-        for(int i=0; i<message.length; i++){
-            for(int j=31; j>=0; j--){
-                bits[ptr] = 1==((m[i] >> j)&1);
-                checksum[ptr%28] ^= bits[ptr];
-                ptr++;
-            }
-        }
-        int res = 0;
-        for(int i=0; i<28; i++){
-            if(checksum[i]){
-                res ++;
-            }
-        }
-
-        if (res != 0) { //Checksum failed, message made for the enemy
-            //May want to store enemy messages here to find patterns to spread misinformation... ;)
-            return;
-        }
-
-        ptr = 0;
-        while(ptr <= 191){   //195-4
-            int id = getInt(bits, ptr, 4);
-            ptr += 4;
-            if(id==0){ //0000 Set our HQ
-                if(ptr >= 184){ //Requires 2 6-bit integers
-                    System.out.println("Message did not exit properly");
-                    return;
-                }
-                int x = getInt(bits, ptr, 6);
-                if(x==0)x=64;
-                ptr += 6;
-                int y = getInt(bits, ptr, 6);
-                if(y==0)x=64;
-                ptr += 6;
-                locHQ = new MapLocation(x,y);
-                System.out.println("Now I know that my HQ is at" + locHQ);
-            }else if(id==15){    //1111 Message terminate
-                return;
-            }
-        }
-        System.out.println("Message did not exit properly");  //Should've seen 1111.
-        return;
-}
-
-static int getInt(boolean[] bits, int ptr, int size){
-        /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
-        int x = 0;
-        for(int i=0; i<size; i++){
-            x *= 2;
-            if(bits[ptr+i]) x++;
-        }
-        return x;
-}
-
-static void writeInt(int x, int size){
-        /*Writes the next <size> bits of currMessage with an integer 0 to 2**size-1. Modifies messagePtr.*/
-        for(int i=size-1; i>=0; i--){
-            currMessage[messagePtr] = 1==((x>>i)&1);
-            messagePtr++;
-        }
-        return;
-}
-
-static void resetMessage(){
-    //Resets currMessage to all 0's, and messagePtr to 0.
-        messagePtr = 0;
-        currMessage = new boolean[224];
-        return;
-}
-
-static void writeMessage(int id, int[] params){
-    /*Writes a command into currMessage. Will not do anything if it does not leave 4 bits for message end
-      and the 28 bit checksum. This means it can only write up to (but not including) bit 192 (index 191).
-     */
-        if(id==0){ //0000 Set our HQ
-            if(messagePtr >= 176){ //Requires id + 2 6-bit integers
-                System.out.println("Message Overflow");
-                return;
-            }
-            writeInt(id, 4);
-            writeInt(params[0], 6);
-            writeInt(params[1], 6);
-        }
-        return;
-}
-
-static void sendMessage(int wager) throws GameActionException{
-    /*Does the following
-        Writes the 1111 message end
-        Sets the last 28 bits to meet the checksum
-        Condenses it into 7 32-bit integers
-        Applies the pad
-        Sends the transaction
-        resetMessage();
-     */
-        writeInt(15, 4);
-
-        boolean checksum[] = new boolean[28];
-        for(int i=0; i<196; i++){
-            checksum[i%28] ^= currMessage[i];
-        }
-        for(int i=0; i<28; i++){
-            currMessage[i+196] = checksum[i];
-        }
-
-        int[] words = new int[7];
-        int ptr = 0;
-        for(int i=0; i<7; i++){
-            for(int j=0; j<32; j++){
-                words[i] <<= 1;
-                if(currMessage[ptr]){
-                    words[i]++;
-                }
-                ptr++;
-            }
-        }
-        for(int i=0; i<7; i++){
-            words[i] ^= PADS[i];
-        }
-        rc.submitTransaction(words, wager);
-        resetMessage();
-        return;
-}static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
-static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
-static RobotType[] robot_types = {RobotType.HQ, //0
-        RobotType.MINER, //1
-        RobotType.REFINERY, //2
-        RobotType.VAPORATOR, //3
-        RobotType.DESIGN_SCHOOL, //4
-        RobotType.FULFILLMENT_CENTER, //5
-        RobotType.LANDSCAPER, //6
-        RobotType.DELIVERY_DRONE, //7
-        RobotType.NET_GUN //8
-};
-static Direction randomDirection() {
+    static Direction randomDirection() {
     return directions[(int) (Math.random() * directions.length)];
 }
 
@@ -230,34 +73,284 @@ static boolean tryMove(Direction dir) throws GameActionException {
     } else return false;
 }
 
-static HashSet<MapLocation> seen;
+static boolean[][] seen;
+static int[][] visited;
 
 static boolean onMap(MapLocation l) {
 	return !(l.x < 0 || l.x >= rc.getMapWidth() || l.y < 0 || l.y >= rc.getMapHeight());
 }
 
-static Random r;static boolean soupSearching = false;
+static boolean onMap(int x, int y) {
+	return x >= 0 && x < rc.getMapWidth() && y >= 0 && y < rc.getMapHeight();
+}
+
+static Random r;static RobotController rc;
+static int turnCount;
+static int birthRound;  //What round was I born on?
+static int[] currMessage;
+static LinkedList<Transaction> messageQueue = new LinkedList<Transaction>();
+static int messagePtr;  //What index in currMessage is my "cursor" at?
+static MapLocation locHQ;   //Where is my HQ?
+static boolean sentInfo;    //Sent info upon spawn
+static int type;    //Integer from 0 to 8, index of robot_types
+static int base_wager = 2;
+static int enemy_msg_cnt;   //How many enemy messages went through last round?
+static int enemy_msg_sum;   //Total wagers of enemy messages last round.
+
+
+static void startLife() throws GameActionException{
+    System.out.println("Got created.");
+
+    switch (rc.getType()) {
+        case HQ:                 type=0;initHq();    break;
+        case MINER:              type=1;    break;
+        case REFINERY:           type=2;    break;
+        case VAPORATOR:          type=3;    break;
+        case DESIGN_SCHOOL:      type=4;    break;
+        case FULFILLMENT_CENTER: type=5;    break;
+        case LANDSCAPER:         type=6;    break;
+        case DELIVERY_DRONE:     type=7;    break;
+        case NET_GUN:            type=8;    break;
+    }
+
+    //process all messages from beginning of game until you find hq location
+    int checkRound = 1;
+    while (checkRound < rc.getRoundNum()-1 && locHQ == null) {
+        for (Transaction t : rc.getBlock(checkRound)){
+            processMessage(t);
+            if(locHQ != null){
+                break;
+            }
+        }
+        checkRound++;
+    }
+    birthRound = rc.getRoundNum();
+    resetMessage();
+}
+
+static void startTurn() throws GameActionException{
+    //if(rc.getRoundNum() >= 10){rc.resign();}
+    turnCount = rc.getRoundNum()-birthRound+1;
+
+    //process all messages for the previous round
+    if(rc.getRoundNum() > 1) {
+        enemy_msg_cnt = 0;
+        enemy_msg_sum = 0;
+        for (Transaction t : rc.getBlock(rc.getRoundNum() - 1)){
+            processMessage(t);
+        }
+        if(enemy_msg_cnt > 0){
+            base_wager = ((enemy_msg_sum/enemy_msg_cnt + 1) + base_wager)/2;
+        }else{
+            base_wager *= .8;
+        }
+        base_wager = Math.max(base_wager, 1);
+    }
+
+    if(!sentInfo){
+        writeMessage(1, new int[]{type, rc.getID()});
+        addMessageToQueue();
+        sentInfo = true;
+    }
+}
+
+static void endTurn() throws GameActionException{
+    /*submits stuff from messageQueue*/
+    while(messageQueue.size() > 0 && messageQueue.get(0).getCost() <= rc.getTeamSoup()){
+        rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
+        messageQueue.remove(0);
+    }
+}static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
+static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+static RobotType[] robot_types = {RobotType.HQ, //0
+        RobotType.MINER, //1
+        RobotType.REFINERY, //2
+        RobotType.VAPORATOR, //3
+        RobotType.DESIGN_SCHOOL, //4
+        RobotType.FULFILLMENT_CENTER, //5
+        RobotType.LANDSCAPER, //6
+        RobotType.DELIVERY_DRONE, //7
+        RobotType.NET_GUN //8
+};
+static void processMessage(Transaction t) {
+    //Check if the message was made by my team
+    //The way it works: xor all of them with PAD
+    //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
+    int[] message = t.getMessage();
+
+    int[] m = new int[7];
+    for(int i=0; i<7; i++){
+        m[i] = message[i]^PADS[i];
+    }
+
+    int res = (((m[0] >>> 4) ^ (m[0] << 24) ^ (m[1] >>> 8) ^ (m[1] << 20) ^ (m[2] >>> 12) ^ (m[2] << 16) ^
+        (m[3] >>> 16) ^ (m[3] << 12) ^ (m[4] >>> 20) ^ (m[4] << 8) ^ (m[5] >>> 24) ^ (m[5] << 4) ^
+        (m[6] >>> 28) ^ (m[6]))<<4)>>>4;
+
+    if (res != 0) { //Checksum failed, message made for the enemy
+        enemy_msg_cnt++;
+        enemy_msg_sum += t.getCost();
+        //May want to store enemy messages here to find patterns to spread misinformation... ;)
+        return;
+    }
+
+    int ptr = 0;
+    while(ptr <= 191){   //195-4
+        int id = getInt(m, ptr, 4);
+        ptr += 4;
+        if(id==0){ //0000 Set our HQ
+            if(ptr >= 184){ //Requires 2 6-bit integers
+                System.out.println("Message did not exit properly");
+                return;
+            }
+            int x = getInt(m, ptr, 6);
+            if(x==0)x=64;
+            ptr += 6;
+            int y = getInt(m, ptr, 6);
+            if(y==0)x=64;
+            ptr += 6;
+            locHQ = new MapLocation(x,y);
+            System.out.println("Now I know that my HQ is at" + locHQ);
+        }else if(id==1){
+            if(ptr >= 177){
+                System.out.println("Message did not exit properly");
+                return;
+            }
+            if(type == 0){//Only HQ keeps track of other units
+                int unit_type = getInt(m, ptr, 4);
+                ptr += 4;
+                int unit_id = getInt(m, ptr, 15);
+                ptr += 15;
+                units.get(unit_type).add(new Unit(unit_type, unit_id));
+                System.out.println("Added unit" + new Unit(unit_type,unit_id));
+            }else{
+                ptr += 19;
+            }
+        }
+        else if(id==15){    //1111 Message terminate
+            return;
+        }
+    }
+    System.out.println("Message did not exit properly");  //Should've seen 1111.
+    return;
+}
+
+static int getInt(int[] m, int ptr, int size){
+    /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
+    assert(size <= 32);
+    if(32-(ptr%32) < size){
+        return ((m[ptr/32]<<(size-(32-(ptr%32)))) + (m[ptr/32+1]>>>(64-size-(ptr%32))))%(1<<size);
+    }else{
+        return (m[ptr/32]>>>(32-(ptr%32)-size))%(1<<size);
+    }
+}
+
+static void writeInt(int x, int size){
+    /*Writes the next <size> bits of currMessage with an integer 0 to 2**size-1. Modifies messagePtr.*/
+    assert(size <= 32);
+    if(32-(messagePtr%32) < size){
+        currMessage[messagePtr/32] += x >>> (size-(32-(messagePtr%32)));
+        currMessage[messagePtr/32+1] += (x%(1<<(size-(32-(messagePtr%32)))))<<(64-size-(messagePtr%32));
+    }else{
+        currMessage[messagePtr/32] += x << (32-(messagePtr%32)-size);
+    }
+    messagePtr += size;
+    return;
+}
+
+static void resetMessage(){
+    //Resets currMessage to all 0's, and messagePtr to 0.
+    messagePtr = 0;
+    currMessage = new int[7];;
+    return;
+}
+
+static void writeMessage(int id, int[] params){
+/*Writes a command into currMessage. Will not do anything if it does not leave 4 bits for message end
+  and the 28 bit checksum. This means it can only write up to (but not including) bit 192 (index 191).
+ */
+    if(id==0){ //0000 Set our HQ
+        if(messagePtr >= 176){ //Requires id + 2 6-bit integers
+            addMessageToQueue(base_wager);
+        }
+        writeInt(id, 4);
+        writeInt(params[0], 6);
+        writeInt(params[1], 6);
+    }if(id==1){ //0000 Set our HQ
+        if(messagePtr >= 169){ //Requires id + 4-bit int + 15-bit int
+            addMessageToQueue(base_wager);
+        }
+        writeInt(id, 4);
+        writeInt(params[0], 4);
+        writeInt(params[1], 15);
+    }
+    return;
+}
+
+static void addMessageToQueue(){
+    addMessageToQueue(base_wager);
+}
+
+static void addMessageToQueue(int wager){
+    /*Does the following
+    Writes the 1111 message end
+    Sets the last 28 bits to meet the checksum
+    Applies the pad
+    Adds transaction to messageQueue
+    resetMessage();
+    Returns true if successful
+ */
+    writeInt(15, 4);
+
+    int res = (((currMessage[0] >>> 4) ^ (currMessage[0] << 24) ^ (currMessage[1] >>> 8) ^ (currMessage[1] << 20) ^
+        (currMessage[2] >>> 12) ^ (currMessage[2] << 16) ^ (currMessage[3] >>> 16) ^ (currMessage[3] << 12) ^
+        (currMessage[4] >>> 20) ^ (currMessage[4] << 8) ^ (currMessage[5] >>> 24) ^ (currMessage[5] << 4) ^
+        (currMessage[6] >>> 28))<<4)>>>4;
+    currMessage[6] += res;
+
+    for(int i=0; i<7; i++){
+        currMessage[i] ^= PADS[i];
+    }
+    messageQueue.add(new Transaction(wager, currMessage, 1));
+    resetMessage();
+    return;
+}static boolean soupSearching = false;
 static boolean returning = false;
 
 static void runMiner() throws GameActionException {
     MapLocation myloc = rc.getLocation();
-    for (int i = -3; i <= 3; i++) {
-        seen.add(new MapLocation(myloc.x+i, myloc.y+5));
-        seen.add(new MapLocation(myloc.x+i, myloc.y-5));
-    }
-    for (int i = -4; i <= 4; i++) {
-        seen.add(new MapLocation(myloc.x+i, myloc.y+4));
-        seen.add(new MapLocation(myloc.x+i, myloc.y-4));
-    }
-    for (int j = -3; j <= 3; j++) {
-        for (int i = -5; i <= 5; i++) {
-            seen.add(new MapLocation(myloc.x+i, myloc.y+j));
+    visited[myloc.x][myloc.y]++;
+    System.out.println("START "+Clock.getBytecodesLeft());
+    int w = rc.getMapWidth();
+    int h = rc.getMapHeight();
+    int x = myloc.x;
+    int y = myloc.y;
+    int nx;
+    int ny;
+    for (int i = -5; i <= 5; i++) {
+        nx = x+i;
+        if (nx < 0 || nx >= w) continue;
+        boolean[] s = seen[nx];
+        for (int j = -3; j <= 3; j++) {
+            ny = y+j;
+            if (ny >= 0 && ny < h) s[ny] = true;
+        }
+        if (i >= -4 && i <= 4) {
+            ny = y+4;
+            if (ny >= 0 && ny < h) s[ny] = true;
+            ny = y-4;
+            if (ny >= 0 && ny < h) s[ny] = true;
+            if (i >= -3 && i <= 3) {
+                ny = y+5;
+                if (ny >= 0 && ny < h) s[ny] = true;
+                ny = y-5;
+                if (ny >= 0 && ny < h) s[ny] = true;
+            }
         }
     }
     boolean mined = false;
     for (Direction dir : directions)
             if (tryMine(dir)) {
-                System.out.println("I mined soup! " + rc.getSoupCarrying());
                 mined = true;
                 returning = true;
                 soupSearching = false;
@@ -265,6 +358,7 @@ static void runMiner() throws GameActionException {
     if (!mined && !returning) {
         findSoup();
     }
+    System.out.println("TURNOVER "+Clock.getBytecodesLeft());
 }
 
 static void findSoup() throws GameActionException {
@@ -274,15 +368,19 @@ static void findSoup() throws GameActionException {
     ArrayList<Integer> newSeenList = new ArrayList<Integer>();
     ArrayList<Direction> newSeenDirs = new ArrayList<Direction>();
     MapLocation l = rc.getLocation();
+    MapLocation ln;
     for (Direction dir : directions) {
-        newSeenList.add(newVisibleMiner(rc.getLocation(), dir));
-        newSeenDirs.add(dir);
+        ln = l.add(dir);
+        if (onMap(ln)) {
+            newSeenList.add(visited[ln.x][ln.y] > 0 ? -visited[ln.x][ln.y] : newVisibleMiner(l, dir));
+            newSeenDirs.add(dir);
+        }
     }
     Direction maxl = null;
     while (maxl == null || !tryMove(maxl)) {
         ArrayList<Integer> newNewSeenList = (ArrayList<Integer>)newSeenList.clone();
         ArrayList<Direction> newNewSeenDirs = (ArrayList<Direction>)newSeenDirs.clone();
-        int max = -1;
+        int max = -2;
         while (newNewSeenList.size() > 0) {
             int ri = r.nextInt(newNewSeenList.size());
             int newv = newNewSeenList.remove(ri);
@@ -299,26 +397,73 @@ static void findSoup() throws GameActionException {
 static int[][] aNewVisibleMiner = new int[][]{{6,0},{6,1},{6,-1},{6,2},{6,-2},{6,3},{6,-3},{5,4},{5,-4},{4,5},{4,-5}};
 static int[][] aNewVisibleMinerDiag = new int[][]{{6,-2},{6,-1},{6,0},{6,1},{6,2},{6,3},{6,4},{5,4},{5,5},{4,5},{4,6},{3,6},{2,6},{1,6},{0,6},{-1,6},{-2,6}};
 static int newVisibleMiner(MapLocation loc, Direction dir) throws GameActionException {
+    int x = loc.x;
+    int y = loc.y;
+    int nx;
+    int ny;
     int visible = 0;
+    int w = rc.getMapWidth();
+    int h = rc.getMapHeight();
+    boolean within = false;
     if (dir.dy == 0) {
         MapLocation nloc;
-        int x = loc.x;
-        int y = loc.y;
-        for (int i = 0; i < aNewVisibleMiner.length; i++) {
-            nloc = loc.translate(aNewVisibleMiner[i][0]*dir.dx, aNewVisibleMiner[i][1]);
-            if (onMap(nloc) && !seen.contains(nloc)) visible++;
+        nx = x+6*dir.dx;
+        if (nx >= 0 && nx < w) {
+            within = true;
+            for (int d1 = -3; d1 <= 3; d1++) {
+                ny = y+d1;
+                if (ny >= 0 && ny < h && !seen[nx][ny]) visible++;
+            }
+        }
+        if (!within) {
+            nx = x+5*dir.dx;
+        }
+        if (within || nx >= 0 && nx < w) {
+            ny = y+4;
+            if (ny >= 0 && ny < h && !seen[nx][ny]) visible++;
+            ny = y-4;
+            if (ny >= 0 && ny < h && !seen[nx][ny]) visible++;
+        }
+        if (!within) {
+            nx = x+4*dir.dx;
+        }
+        if (within || nx >= 0 && nx < w) {
+            ny = y+5;
+            if (ny >= 0 && ny < h && !seen[nx][ny]) visible++;
+            ny = y-5;
+            if (ny >= 0 && ny < h && !seen[nx][ny]) visible++;
         }
     } else if (dir.dx == 0) {
         MapLocation nloc;
-        for (int i = 0; i < aNewVisibleMiner.length; i++) {
-            nloc = loc.translate(aNewVisibleMiner[i][1], aNewVisibleMiner[i][0]*dir.dy);
-            if (onMap(nloc) && !seen.contains(nloc)) visible++;
+        ny = y+6*dir.dy;
+        if (ny >= 0 && ny < h) {
+            within = true;
+            for (int d1 = -3; d1 <= 3; d1++) {
+                nx = x+d1;
+                if (nx >= 0 && nx < w && !seen[nx][ny]) visible++;
+            }
+        }
+        if (!within) ny = y+5*dir.dy;
+        if (within || ny >= 0 && ny < h) {
+            nx = x+4;
+            if (nx >= 0 && nx < w && !seen[nx][ny]) visible++;
+            nx = x-4;
+            if (nx >= 0 && nx < w && !seen[nx][ny]) visible++;
+        }
+        if (!within) ny = y+4*dir.dy;
+        if (within || ny >= 0 && ny < h) {
+            nx = x+5;
+            if (nx >= 0 && nx < w && !seen[nx][ny]) visible++;
+            nx = x-5;
+            if (nx >= 0 && nx < w && !seen[nx][ny]) visible++;
         }
     } else {
         MapLocation nloc;
         for (int i = 0; i < aNewVisibleMinerDiag.length; i++) {
-            nloc = loc.translate(aNewVisibleMinerDiag[i][0]*dir.dx, aNewVisibleMinerDiag[i][1]*dir.dy);
-            if (onMap(nloc) && !seen.contains(nloc)) visible++;
+            int[] t = aNewVisibleMinerDiag[i];
+            nx = x+t[0]*dir.dx;
+            ny = y+t[1]*dir.dy;
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h && !seen[nx][ny]) visible++;
         }
     }
     return visible;
@@ -360,14 +505,22 @@ static void runNetGun() throws GameActionException {
 }
 static int builtMiners;
 static boolean hq_sentLoc;
+static ArrayList<ArrayList<Unit> > units;
+
+static void initHq() {
+	units = new ArrayList<ArrayList<Unit> >(10);
+	for(int i=0; i<10; i++){
+		units.add(i,new ArrayList<Unit>());
+	}
+}
 
 static void runHq() throws GameActionException {
 	if(!hq_sentLoc){
 		writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
-		sendMessage(5);
+		addMessageToQueue();
 		hq_sentLoc = true;
 	}
-	if (builtMiners < 2) {
+	if (builtMiners < 4) {
 		for (Direction dir : directions) {
 			if (rc.canBuildRobot(RobotType.MINER, dir)) {
 				rc.buildRobot(RobotType.MINER, dir);
@@ -377,4 +530,19 @@ static void runHq() throws GameActionException {
 	}
 }
 
+static class Unit{
+	/*HQ uses this class to keep track of all of our units.*/
+	public int type;
+	public int id;
+	public MapLocation lastSent;
+
+	public Unit(int t, int id){
+		this.type = t;
+		this.id = id;
+	}
+
+	public String toString(){
+		return robot_types[type] + " (" + id + ")";
+	}
+}
 }
