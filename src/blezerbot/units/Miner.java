@@ -6,17 +6,12 @@ import java.lang.*;
 import blezerbot.*;
 
 public class Miner extends Unit {
-	MapLocation dest;
 	boolean searching = true;
 	boolean mining = false;
 	boolean returning = false;
 	boolean depositing = false;
 	MapLocation soupLoc = null;
 	int[][] soupTries;
-
-	boolean hugging = false;
-	//boolean clockwise = false;
-	int lastDist = -1;
 
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
@@ -27,6 +22,13 @@ public class Miner extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		if (Math.random() < 0.02) {
+			for (Direction dir : directions) {
+				if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
+					rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
+				}
+			}
+		}
 		if (!(searching || mining || returning || depositing)) searching = true;
 		setVisitedAndSeen();
 		MapLocation nloc = null;
@@ -39,7 +41,6 @@ public class Miner extends Unit {
 				for (int y = -5; y <= 5; y++) {
 					nloc = mloc.translate(x, y);
 					if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
-						System.out.println("badsoup");
 						continue;
 					}
 					if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
@@ -90,7 +91,7 @@ public class Miner extends Unit {
 			}
 		} else if (returning) {
 			goTo(locHQ);
-			if (nearHQ()) {
+			if (distHQ() < 3) {
 				returning = false;
 				depositing = true;
 			}
@@ -102,93 +103,6 @@ public class Miner extends Unit {
 				} else searching = true;
 				depositing = false;
 			}
-		}
-	}
-
-	public boolean nearHQ() {
-		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam());
-		for(RobotInfo x: near){
-			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<3){
-				return true;
-			}
-		}
-		return false;
-	}
-
-
-	public void goTo(MapLocation loc) throws GameActionException {
-		if(!rc.isReady()) return;
-		if (loc != dest) {
-			lastDist = 0;
-			hugging = false;
-		}
-		MapLocation mloc = rc.getLocation();
-
-		//Check if still should be hugging (if nothing around you, hugging=false)
-		if(hugging){
-			hugging = false;
-			for(Direction dir: directions){
-				if(!canMove(dir)){
-					hugging = true;
-					break;
-				}
-			}
-		}
-		if (!hugging) {
-			Direction dir = mloc.directionTo(loc);
-			if (tryMove(dir)) return;
-
-			//Turn right until you see an empty space
-			facing = (orthogonal(dir) ? dir : dir.rotateRight());
-			int cnt = 0;
-			while(!canMove(facing)){
-				facing = nextDir90(facing, true);
-				cnt++;
-				if(cnt>4) return;
-			}
-			lastDist = mloc.distanceSquaredTo(loc);
-			hugging = true;
-		}
-		if (mloc.distanceSquaredTo(loc) < lastDist) {
-			hugging = false;
-			goTo(loc);
-			return;
-		}
-		Direction dir = nextDir90(facing, false);
-		//Left turn
-		if(tryMove(dir)){
-			facing=dir;
-			return;
-		}
-		dir = dir.rotateRight();
-
-		//Left forward diagonal turn
-		if(tryMove(dir)){
-			facing = dir.rotateLeft();
-
-			return;
-		}
-		dir = dir.rotateRight();
-
-		//Forward
-		if(tryMove(dir))return;
-		dir = dir.rotateRight();
-
-		//Right forward diagonal turn
-		if(tryMove(dir))return;
-		dir = dir.rotateRight();
-
-		//Right turn
-		if(tryMove(dir)){
-			facing = dir;
-			return;
-		}
-		dir = dir.rotateRight();
-
-		//Right back diagonal turn
-		if(tryMove(dir)){
-			facing = dir.rotateLeft();
-			return;
 		}
 	}
 
