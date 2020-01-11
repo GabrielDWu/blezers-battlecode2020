@@ -21,7 +21,8 @@ public abstract class Robot {
 	public boolean[][] seen;
 	public int[][] visited;
 	public Random r;
-	public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
+	//public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
+	public Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.SOUTHEAST};
 	public int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
 	public RobotType[] robot_types = {RobotType.HQ, //0
 	        RobotType.MINER, //1
@@ -34,8 +35,20 @@ public abstract class Robot {
 	        RobotType.NET_GUN //8
 	};
 	ArrayList<ArrayList<InternalUnit>> units;
-
-
+	public int getDirectionValue(Direction dir){
+		for(int i = 0; i<8; i++){
+			if(directions[i] == dir) return i;
+		}
+		return -1;
+	}
+	public Direction directionClockwise(Direction dir){
+		int val = getDirectionValue(dir);
+		return directions[(val+1)%8];
+	}
+	public Direction directionCounterClockwise(Direction dir){
+		int val = getDirectionValue(dir);
+		return directions[(val+7)%8];
+	}
 	public Robot(RobotController rc) throws GameActionException {
 		if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
 		if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
