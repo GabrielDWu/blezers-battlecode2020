@@ -12,7 +12,7 @@ public class Miner extends Unit {
 	boolean depositing = false;
 
 	boolean hugging = false;
-	boolean clockwise = false;
+	//boolean clockwise = false;
 	int lastDist = -1;
 
 	public Miner(RobotController rc) throws GameActionException {
@@ -66,31 +66,41 @@ public class Miner extends Unit {
 		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam());
 		for(RobotInfo x: near){
 			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<2){
+				System.out.println("nearhq");
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public Direction nextDir(Direction dir) {
-		switch (dir) {
-			case NORTH: return Direction.NORTHEAST;
-			case NORTHEAST: return Direction.EAST;
-			case EAST: return Direction.SOUTHEAST;
-			case SOUTHEAST: return Direction.SOUTH;
-			case SOUTH: return Direction.SOUTHWEST;
-			case SOUTHWEST: return Direction.WEST;
-			case WEST: return Direction.NORTHWEST;
-			case NORTHWEST: return Direction.NORTH;
-		}
-		return null;
-	}
 
 	public void goTo(MapLocation loc) throws GameActionException {
+		if(!rc.isReady()) return;
 		MapLocation mloc = rc.getLocation();
-		Direction dir = mloc.directionTo(loc);
+
+		//Check if still should be hugging (if nothing around you, hugging=false)
+		if(hugging){
+			System.out.println("Hugging");
+			hugging = false;
+			for(Direction dir: directions){
+				if(!rc.canMove(dir)){
+					hugging = true;
+					break;
+				}
+			}
+		}
 		if (!hugging) {
+			Direction dir = mloc.directionTo(loc);
 			if (tryMove(dir)) return;
+
+			//Turn right until you see an empty space
+			facing = (orthogonal(dir) ? dir : dir.rotateRight());
+			int cnt = 0;
+			while(!rc.canMove(dir)){
+				facing = nextDir90(facing, true);
+				cnt++;
+				if(cnt>4) return;
+			}
 			lastDist = mloc.distanceSquaredTo(loc);
 			hugging = true;
 		}
@@ -99,8 +109,42 @@ public class Miner extends Unit {
 			goTo(loc);
 			return;
 		}
-		dir = nextDir(dir);
-		while (!tryMove(dir)) dir = nextDir(dir);
+		Direction dir = nextDir90(facing, false);
+		//Left turn
+		if(tryMove(dir)){
+			facing=dir;
+			return;
+		}
+		dir = dir.rotateRight();
+
+		//Left forward diagonal turn
+		if(tryMove(dir)){
+			facing = dir.rotateLeft();
+
+			return;
+		}
+		dir = dir.rotateRight();
+
+		//Forward
+		if(tryMove(dir))return;
+		dir = dir.rotateRight();
+
+		//Right forward diagonal turn
+		if(tryMove(dir))return;
+		dir = dir.rotateRight();
+
+		//Right turn
+		if(tryMove(dir)){
+			facing = dir;
+			return;
+		}
+		dir = dir.rotateRight();
+
+		//Right back diagonal turn
+		if(tryMove(dir)){
+			facing = dir.rotateLeft();
+			return;
+		}
 	}
 
 	public void setVisitedAndSeen() throws GameActionException {
@@ -147,15 +191,16 @@ public class Miner extends Unit {
 	            newSeenDirs.add(dir);
 	        }
 	    }
+	    int numDir = newSeenList.size();
 	    Direction maxl = null;
-	    while (maxl == null || !tryMove(maxl)) {
-	        ArrayList<Integer> newNewSeenList = (ArrayList<Integer>)newSeenList.clone();
-	        ArrayList<Direction> newNewSeenDirs = (ArrayList<Direction>)newSeenDirs.clone();
+	    while (maxl == null || tryMove(maxl)) {
 	        int max = -2;
-	        while (newNewSeenList.size() > 0) {
-	            int ri = r.nextInt(newNewSeenList.size());
-	            int newv = newNewSeenList.remove(ri);
-	            Direction newl = newNewSeenDirs.remove(ri);
+
+	        //I'm pretty sure this is random enough and preserves teh bytecode
+			int ri = r.nextInt(numDir);
+	        for(int i=0; i<numDir; i++) {
+	            int newv = newSeenList.get((i+ri)%numDir);
+	            Direction newl = newSeenDirs.get((i+ri)%numDir);
 	            if (newv > max && rc.canMove(newl) && !rc.senseFlooding(rc.adjacentLocation(newl))) {
 	                maxl = newl;
 	                max = newv;

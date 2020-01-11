@@ -21,8 +21,9 @@ public abstract class Robot {
 	public boolean[][] seen;
 	public int[][] visited;
 	public Random r;
+	public Direction facing;
 	//public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
-	public Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.SOUTHEAST};
+	public Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	public int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
 	public RobotType[] robot_types = {RobotType.HQ, //0
 	        RobotType.MINER, //1
@@ -50,9 +51,12 @@ public abstract class Robot {
 		return directions[(val+7)%8];
 	}
 	public Robot(RobotController rc) throws GameActionException {
+		//System.out.println("CP 1");
+		//System.out.println("HI");
 		if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
 		if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (r == null) r = new Random(rc.getID());
+		//System.out.println("CP 2");
 		this.rc = rc;
 		startLife();
 		while (true) {
@@ -73,6 +77,7 @@ public abstract class Robot {
 	public void init() throws GameActionException {}
 
 	public void startLife() throws GameActionException{
+		if(rc.getTeam() == Team.A) PADS[0] += 1;
 	    System.out.println("Got created.");
 
 	    switch (rc.getType()) {
@@ -90,6 +95,7 @@ public abstract class Robot {
 	    //process all messages from beginning of game until you find hq location
 	    int checkRound = 1;
 	    while (checkRound < rc.getRoundNum()-1 && locHQ == null) {
+	    	System.out.println("checking round " + checkRound);
 	        for (Transaction t : rc.getBlock(checkRound)){
 	            processMessage(t);
 	            if(locHQ != null){
@@ -148,12 +154,13 @@ public abstract class Robot {
 	    return directions[(int) (Math.random() * directions.length)];
 	}
 
-	public Direction nextDir(Direction dir) {
-		if (dir.equals(directions[0])) return directions[1];
-		if (dir.equals(directions[1])) return directions[2];
-		if (dir.equals(directions[2])) return directions[3];
-		if (dir.equals(directions[3])) return directions[0];
-		return null;
+	public Direction nextDir90(Direction dir, boolean cw) {
+		/*90 degrees rotation*/
+		if(cw){
+			return dir.rotateRight().rotateRight();
+		}else{
+			return dir.rotateLeft().rotateLeft();
+		}
 	}
 
 	public boolean tryMove(Direction dir) throws GameActionException {
@@ -161,6 +168,18 @@ public abstract class Robot {
 	        rc.move(dir);
 	        return true;
 	    } else return false;
+	}
+
+	public boolean tileClear(Direction dir) throws GameActionException {
+		/*True if the tile is within 3 elevation and not flooded. Ignores cooldown*/
+		if (rc.isLocationOccupied(rc.adjacentLocation(dir)) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
+			return true;
+		} else return false;
+	}
+
+	public boolean orthogonal(Direction dir){
+		return (dir.equals(directions[0]) || dir.equals(directions[2]) || dir.equals(directions[4])
+				|| dir.equals(directions[6]));
 	}
 
 	/***** BLOCKCHAIN ******/

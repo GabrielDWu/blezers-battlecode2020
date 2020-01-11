@@ -1,6 +1,7 @@
 package blezerbot;
 
 import battlecode.common.*;
+import blezerbot.*;
 
 public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
