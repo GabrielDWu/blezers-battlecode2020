@@ -3,6 +3,8 @@ package blezerbot;
 import battlecode.common.*;
 import java.util.*;
 import java.lang.Math;
+import blezerbot.units.*;
+import blezerbot.buildings.*;
 
 public abstract class Robot {
 
@@ -35,7 +37,7 @@ public abstract class Robot {
 	        RobotType.DELIVERY_DRONE, //7
 	        RobotType.NET_GUN //8
 	};
-	ArrayList<ArrayList<InternalUnit>> units;
+	public ArrayList<ArrayList<InternalUnit>> units;
 	public int getDirectionValue(Direction dir){
 		for(int i = 0; i<8; i++){
 			if(directions[i] == dir) return i;
@@ -81,7 +83,7 @@ public abstract class Robot {
 	    System.out.println("Got created.");
 
 	    switch (rc.getType()) {
-	        case HQ:                 type=0;init();    break;
+	        case HQ:                 type=0;    break;
 	        case MINER:              type=1;    break;
 	        case REFINERY:           type=2;    break;
 	        case VAPORATOR:          type=3;    break;
@@ -91,6 +93,8 @@ public abstract class Robot {
 	        case DELIVERY_DRONE:     type=7;    break;
 	        case NET_GUN:            type=8;    break;
 	    }
+
+	    init();
 
 	    //process all messages from beginning of game until you find hq location
 	    int checkRound = 1;

@@ -1,7 +1,8 @@
-package blezerbot;
+package blezerbot.buildings;
 
 import battlecode.common.*;
 import java.util.*;
+import blezerbot.*;
 
 public class HQ extends Building {
 

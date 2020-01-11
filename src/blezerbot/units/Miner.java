@@ -1,24 +1,29 @@
-package blezerbot;
+package blezerbot.units;
 
 import battlecode.common.*;
 import java.util.*;
 import java.lang.*;
+import blezerbot.*;
 
 public class Miner extends Unit {
-	int pathState = 0;
+	MapLocation dest;
 	boolean searching = true;
 	boolean mining = false;
 	boolean returning = false;
 	boolean depositing = false;
+	MapLocation soupLoc = null;
+	int[][] soupTries;
 
 	boolean hugging = false;
 	//boolean clockwise = false;
 	int lastDist = -1;
 
 	public Miner(RobotController rc) throws GameActionException {
-
 		super(rc);
+	}
 
+	public void init() throws GameActionException {
+		if (soupTries == null) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 	}
 
 	public void run() throws GameActionException {
@@ -26,28 +31,62 @@ public class Miner extends Unit {
 		setVisitedAndSeen();
 		MapLocation nloc = null;
 		MapLocation mloc = rc.getLocation();
+		int h = rc.getMapHeight();
+		int w = rc.getMapWidth();
 		if (searching) {
-			findSoup();
-			for (Direction dir : directions) {
-				nloc = mloc.add(dir);
-				if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
-					mining = true;
-					searching = false;
+			for (int x = -5; x <= 5; x++) {
+				if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
+				for (int y = -5; y <= 5; y++) {
+					nloc = mloc.translate(x, y);
+					if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
+						System.out.println("badsoup");
+						continue;
+					}
+					if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
+						mining = true;
+						searching = false;
+						soupLoc = nloc;
+						break;
+					}
+				}
+				if (searching == false) break;
+			}
+			if (searching) findSoup();
+		} else if (mining) {
+			if (!mloc.isAdjacentTo(soupLoc)) {
+				for (Direction dir : directions) {
+					if (tryMine(dir)) { 
+						soupLoc = mloc.add(dir);
+						break;
+					}
+				}
+				if (soupTries[soupLoc.x][soupLoc.y] <= 6) {
+					goTo(soupLoc);
+					soupTries[soupLoc.x][soupLoc.y]++;
+				}
+				else {
+					soupLoc = null;
+					mining = false;
+					searching = true;
 				}
 			}
-		} else if (mining) {
-			boolean mined = false;
-			for (Direction dir : directions) {
-				if (tryMine(dir)) mined = true;
-			}
-			if (!mined) {
-				mining = false;
-				searching = true;
-			}
-			if (rc.getSoupCarrying() >= 100) {
-				mining = false;
-				searching = false;
-				returning = true;
+			else {
+				boolean mined = tryMine(mloc.directionTo(soupLoc));
+				if (!mined) {
+					mining = false;
+					searching = true;
+					soupLoc = null;
+				}
+				if (rc.getSoupCarrying() >= 100) {
+					mining = false;
+					searching = false;
+					returning = true;
+				}
+				else if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
+					soupLoc = null;
+					mining = false;
+					if (!returning) searching = true;
+				}
 			}
 		} else if (returning) {
 			goTo(locHQ);
@@ -56,8 +95,12 @@ public class Miner extends Unit {
 				depositing = true;
 			}
 		} else if (depositing) {
-			for (Direction dir : directions) {
-				if (rc.canDepositSoup(dir)) rc.depositSoup(dir, rc.getSoupCarrying());
+			if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
+			if (rc.getSoupCarrying() == 0) {
+				if (soupLoc !=  null) {
+					mining = true;
+				} else searching = true;
+				depositing = false;
 			}
 		}
 	}
@@ -65,7 +108,7 @@ public class Miner extends Unit {
 	public boolean nearHQ() {
 		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam());
 		for(RobotInfo x: near){
-			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<2){
+			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<3){
 				return true;
 			}
 		}
@@ -75,6 +118,10 @@ public class Miner extends Unit {
 
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady()) return;
+		if (loc != dest) {
+			lastDist = 0;
+			hugging = false;
+		}
 		MapLocation mloc = rc.getLocation();
 
 		//Check if still should be hugging (if nothing around you, hugging=false)
@@ -191,8 +238,8 @@ public class Miner extends Unit {
 	    }
 	    int numDir = newSeenList.size();
 	    Direction maxl = null;
-	    while (maxl == null || tryMove(maxl)) {
-	        int max = -2;
+	    while (maxl == null || !tryMove(maxl)) {
+	        int max = Integer.MIN_VALUE;
 
 	        //I'm pretty sure this is random enough and preserves teh bytecode
 			int ri = r.nextInt(numDir);

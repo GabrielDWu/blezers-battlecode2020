@@ -1,6 +1,7 @@
-package blezerbot;
+package blezerbot.units;
 
 import battlecode.common.*;
+import blezerbot.*;
 
 public abstract class Unit extends Robot {
 
