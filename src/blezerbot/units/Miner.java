@@ -6,8 +6,10 @@ import java.lang.*;
 
 public class Miner extends Unit {
 	int pathState = 0;
-	boolean soupSearching = false;
+	boolean searching = true;
+	boolean mining = false;
 	boolean returning = false;
+	boolean depositing = false;
 
 	boolean hugging = false;
 	boolean clockwise = false;
@@ -20,20 +22,54 @@ public class Miner extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		if (!(searching || mining || returning || depositing)) searching = true;
 		setVisitedAndSeen();
-		boolean mined = false;
-		for (Direction dir : directions)
-			if (tryMine(dir)) {
-				mined = true;
-				returning = true;
-				soupSearching = false;
-				System.out.println("returning to "+locHQ);
+		MapLocation nloc = null;
+		MapLocation mloc = rc.getLocation();
+		if (searching) {
+			findSoup();
+			for (Direction dir : directions) {
+				nloc = mloc.add(dir);
+				if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
+					mining = true;
+					searching = false;
+				}
 			}
-		if (!mined && !returning) {
-		    findSoup();
+		} else if (mining) {
+			boolean mined = false;
+			for (Direction dir : directions) {
+				if (tryMine(dir)) mined = true;
+			}
+			if (!mined) {
+				mining = false;
+				searching = true;
+			}
+			if (rc.getSoupCarrying() >= 100) {
+				mining = false;
+				searching = false;
+				returning = true;
+			}
 		} else if (returning) {
 			goTo(locHQ);
+			if (nearHQ()) {
+				returning = false;
+				depositing = true;
+			}
+		} else if (depositing) {
+			for (Direction dir : directions) {
+				if (rc.canDepositSoup(dir)) rc.depositSoup(dir, rc.getSoupCarrying());
+			}
 		}
+	}
+
+	public boolean nearHQ() {
+		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam());
+		for(RobotInfo x: near){
+			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<2){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public Direction nextDir(Direction dir) {
@@ -100,9 +136,6 @@ public class Miner extends Unit {
 	}
 
 	void findSoup() throws GameActionException {
-	    if (!soupSearching) {
-	        soupSearching = true;
-	    }
 	    ArrayList<Integer> newSeenList = new ArrayList<Integer>();
 	    ArrayList<Direction> newSeenDirs = new ArrayList<Direction>();
 	    MapLocation l = rc.getLocation();
