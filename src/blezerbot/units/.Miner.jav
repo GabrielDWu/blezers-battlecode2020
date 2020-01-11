@@ -10,9 +10,10 @@ public class Miner extends Unit {
 	boolean mining = false;
 	boolean returning = false;
 	boolean depositing = false;
+	MapLocation soupLoc = null;
 
 	boolean hugging = false;
-	//boolean clockwise = false;
+	boolean clockwise = false;
 	int lastDist = -1;
 
 	public Miner(RobotController rc) throws GameActionException {
@@ -22,126 +23,116 @@ public class Miner extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		System.out.println("START "+Clock.getBytecodesLeft());
 		if (!(searching || mining || returning || depositing)) searching = true;
 		setVisitedAndSeen();
 		MapLocation nloc = null;
 		MapLocation mloc = rc.getLocation();
 		if (searching) {
-			findSoup();
-			for (Direction dir : directions) {
-				nloc = mloc.add(dir);
-				if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
-					mining = true;
-					searching = false;
+			System.out.println("SEARCHING");
+			for (int x = -5; x <= 5; x++) {
+				for (int y = -5; y <= 5; y++) {
+					nloc = mloc.translate(x, y);
+					if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
+						mining = true;
+						searching = false;
+						soupLoc = nloc;
+						break;
+					}
+				}
+				if (searching == false) break;
+			}
+			if (searching) findSoup();
+			else {
+				int[] col;
+				boolean[] col2;
+				for (int x = 0; x < visited.length; x++) {
+					col = visited[x];
+					col2 = seen[x];
+					for (int y = 0; y < col.length; y++) {
+						col[y] = 0;
+						col2[y] = false;
+					}
 				}
 			}
 		} else if (mining) {
-			boolean mined = false;
-			for (Direction dir : directions) {
-				if (tryMine(dir)) mined = true;
-			}
-			if (!mined) {
-				mining = false;
-				searching = true;
-			}
-			if (rc.getSoupCarrying() >= 100) {
-				mining = false;
-				searching = false;
-				returning = true;
+			if (!mloc.isAdjacentTo(soupLoc)) goTo(soupLoc);
+			else {
+				hugging = false;
+				boolean mined = tryMine(mloc.directionTo(soupLoc));
+				if (!mined) {
+					mining = false;
+					searching = true;
+					soupLoc = null;
+				}
+				if (rc.getSoupCarrying() >= 100) {
+					mining = false;
+					searching = false;
+					returning = true;
+				}
+				if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
+					soupLoc = null;
+					mining = false;
+					if (!returning) searching = true;
+				}
 			}
 		} else if (returning) {
 			goTo(locHQ);
 			if (nearHQ()) {
+				hugging = false;
 				returning = false;
 				depositing = true;
 			}
 		} else if (depositing) {
-			for (Direction dir : directions) {
-				if (rc.canDepositSoup(dir)) rc.depositSoup(dir, rc.getSoupCarrying());
+			if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
+			if (rc.getSoupCarrying() == 0) {
+				depositing = false;
+				searching = true;
 			}
 		}
+		System.out.println("END "+Clock.getBytecodesLeft());
 	}
 
 	public boolean nearHQ() {
 		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam());
 		for(RobotInfo x: near){
-			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<2){
+			if(x.getType() == RobotType.HQ && rc.getLocation().distanceSquaredTo(x.getLocation())<=2){
 				return true;
 			}
 		}
 		return false;
 	}
 
+	public Direction nextDir(Direction dir) {
+		switch (dir) {
+			case NORTH: return Direction.NORTHEAST;
+			case NORTHEAST: return Direction.EAST;
+			case EAST: return Direction.SOUTHEAST;
+			case SOUTHEAST: return Direction.SOUTH;
+			case SOUTH: return Direction.SOUTHWEST;
+			case SOUTHWEST: return Direction.WEST;
+			case WEST: return Direction.NORTHWEST;
+			case NORTHWEST: return Direction.NORTH;
+		}
+		return null;
+	}
 
 	public void goTo(MapLocation loc) throws GameActionException {
-		if(!rc.isReady()) return;
 		MapLocation mloc = rc.getLocation();
-
-		//Check if still should be hugging (if nothing around you, hugging=false)
-		if(hugging){
-			hugging = false;
-			for(Direction dir: directions){
-				if(!canMove(dir)){
-					hugging = true;
-					break;
-				}
-			}
-		}
+		Direction dir = mloc.directionTo(loc);
 		if (!hugging) {
-			Direction dir = mloc.directionTo(loc);
 			if (tryMove(dir)) return;
-
-			//Turn right until you see an empty space
-			facing = (orthogonal(dir) ? dir : dir.rotateRight());
-			int cnt = 0;
-			while(!canMove(facing)){
-				facing = nextDir90(facing, true);
-				cnt++;
-				if(cnt>4) return;
-			}
 			lastDist = mloc.distanceSquaredTo(loc);
 			hugging = true;
+			dir = nextDir(dir);
 		}
 		if (mloc.distanceSquaredTo(loc) < lastDist) {
 			hugging = false;
 			goTo(loc);
 			return;
 		}
-		Direction dir = nextDir90(facing, false);
-		//Left turn
-		if(tryMove(dir)){
-			facing=dir;
-			return;
-		}
-		dir = dir.rotateRight();
-
-		//Left forward diagonal turn
-		if(tryMove(dir)){
-			facing = dir.rotateLeft();
-
-			return;
-		}
-		dir = dir.rotateRight();
-
-		//Forward
-		if(tryMove(dir))return;
-		dir = dir.rotateRight();
-
-		//Right forward diagonal turn
-		if(tryMove(dir))return;
-		dir = dir.rotateRight();
-
-		//Right turn
-		if(tryMove(dir)){
-			facing = dir;
-			return;
-		}
-		dir = dir.rotateRight();
-
-		//Right back diagonal turn
-		if(tryMove(dir)){
-			facing = dir.rotateLeft();
-			return;
+		while (!tryMove(dir)) {
+			dir = nextDir(dir);
 		}
 	}
 
@@ -189,16 +180,17 @@ public class Miner extends Unit {
 	            newSeenDirs.add(dir);
 	        }
 	    }
-	    int numDir = newSeenList.size();
+	    System.out.println(newSeenDirs);
+	    System.out.println(newSeenList);
 	    Direction maxl = null;
-	    while (maxl == null || tryMove(maxl)) {
+	    while (maxl == null || !tryMove(maxl)) {
+	        ArrayList<Integer> newNewSeenList = (ArrayList<Integer>)newSeenList.clone();
+	        ArrayList<Direction> newNewSeenDirs = (ArrayList<Direction>)newSeenDirs.clone();
 	        int max = -2;
-
-	        //I'm pretty sure this is random enough and preserves teh bytecode
-			int ri = r.nextInt(numDir);
-	        for(int i=0; i<numDir; i++) {
-	            int newv = newSeenList.get((i+ri)%numDir);
-	            Direction newl = newSeenDirs.get((i+ri)%numDir);
+	        while (newNewSeenList.size() > 0) {
+	            int ri = r.nextInt(newNewSeenList.size());
+	            int newv = newNewSeenList.remove(ri);
+	            Direction newl = newNewSeenDirs.remove(ri);
 	            if (newv > max && rc.canMove(newl) && !rc.senseFlooding(rc.adjacentLocation(newl))) {
 	                maxl = newl;
 	                max = newv;
@@ -291,7 +283,7 @@ public class Miner extends Unit {
 	        }
 	        nx = x+4*dir.dx;
 	        ny = y+5*dir.dy;
-	        if ((within || nx >= 0 && nx < w) && ny >= 0 && ny < h && !seen[nx][ny]) visible++;
+	        if (ny >= 0 && ny < h && !seen[nx][ny]) visible++;
 	        ny = y+6*dir.dy;
 	        if (ny >= 0 && ny < h) {
 	            within = true;
@@ -300,6 +292,12 @@ public class Miner extends Unit {
 	                if (nx >= 0 && nx < w && !seen[nx][ny]) visible++;
 	            }
 	        }
+	        /*for (int i = 0; i < aNewVisibleMinerDiag.length; i++) {
+	            int[] t = aNewVisibleMinerDiag[i];
+	            nx = x+t[0]*dir.dx;
+	            ny = y+t[1]*dir.dy;
+	            if (nx >= 0 && nx < w && ny >= 0 && ny < h && !seen[nx][ny]) visible++;
+	        }*/
 	    }
 	    return visible;
 	}
