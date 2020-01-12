@@ -2,6 +2,7 @@ package blezerbot.units;
 
 import battlecode.common.*;
 import blezerbot.*;
+import java.util.*;
 
 public abstract class Unit extends Robot {
 	
@@ -16,7 +17,6 @@ public abstract class Unit extends Robot {
 	public Unit(RobotController rc) throws GameActionException {
 		super(rc);
 	};
-
 	public void run() throws GameActionException {
 		super.run();
 		if (sentInfo) {
@@ -28,7 +28,38 @@ public abstract class Unit extends Robot {
 			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		}
 	}
+	ArrayList<MapLocation> returnGetLocationInRadius = new ArrayList<MapLocation> ();
+	void getLocationInRadiusHelper(MapLocation center, int dx, int dy){
+		int x = dx + center.x;
+		int y = dy  +center.y;
+		if(x<0 || x>=  rc.getMapWidth()) return;
+		if(y<0 || y>= rc.getMapHeight()) return;
+		returnGetLocationInRadius.add(new MapLocation(x, y));
+	}
+	public ArrayList<MapLocation> getLocationsInRadius(MapLocation center, int radiusSquared){
+		returnGetLocationInRadius.clear();
+		for(int dx = 0; dx*dx<=radiusSquared; dx++) {
+			for (int dy = 0; dx * dx + dy * dy <= radiusSquared; dy++) {
+				if (dx == 0 && dy == 0) {
+					getLocationInRadiusHelper(center, dx, dy);
+				} else if (dx == 0) {
+					getLocationInRadiusHelper(center, dx, -dy);
+					getLocationInRadiusHelper(center, dx, -dy);
+				} else if (dy == 0) {
+					getLocationInRadiusHelper(center, -dx, dy);
+					getLocationInRadiusHelper(center, dx, dy);
 
+				} else {
+					for (int s1 = 0; s1 < 2; s1++) {
+						for (int s2 = 0; s2 < 2; s2++) {
+							getLocationInRadiusHelper(center, dx * (2 * s1 - 1), dy * (2 * s2 - 1));
+						}
+					}
+				}
+			}
+		}
+		return returnGetLocationInRadius;
+	}
 	public int distHQ() {
 
 		if(locHQ == null) return Integer.MAX_VALUE;

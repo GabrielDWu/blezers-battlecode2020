@@ -18,12 +18,14 @@ public class DeliveryDrone extends Unit {
 	MapLocation[] enemyHQs;
 	MapLocation lastSeen;
 	MapLocation dropLocation;
+	ArrayList<MapLocation> waterLocations = new ArrayList<MapLocation>();
 	int searchID = 0;
 	int enemyHQc;
 
 	public DeliveryDrone(RobotController rc) throws GameActionException {
 		super(rc);
 	}
+
 
 	public void run() throws GameActionException {
 		super.run();
@@ -33,8 +35,10 @@ public class DeliveryDrone extends Unit {
 			enemyHQc = -1;
 		}
 		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DROP_OFF){
-			if(rc.canDropUnit(Direction.CENTER)){
-				rc.dropUnit(Direction.CENTER);
+			for(Direction dir: directions){
+				if(rc.canDropUnit(dir)){
+					rc.dropUnit(dir);
+				}
 			}
 		}
 		if (locHQ == null) return;
@@ -58,22 +62,68 @@ public class DeliveryDrone extends Unit {
 			goTo(locHQ);
 		}
 	}
+	void searchWater(){
+		// write search for water
+	}
+
+	MapLocation closestSafe(MapLocation loc) throws GameActionException {
+		ArrayList<MapLocation>  nearby = getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared());
+		MapLocation best = null;
+		int closest = Integer.MAX_VALUE;
+		for(MapLocation x: nearby){
+			if(rc.senseRobotAtLocation(x) == null && rc.senseFlooding(x) == false && netGunRadius(x) == false){
+				if(best == null){
+					best = x;
+					closest = loc.distanceSquaredTo(x);
+				}
+				else{
+					if(closest>loc.distanceSquaredTo(x)){
+						best = x;
+						closest = loc.distanceSquaredTo(x);
+					}
+				}
+			}
+		}
+		return best;
+	}
+	void dropWater(){
+		if(waterLocations.size() == 0){
+			searchWater();
+		}
+		else{
+			MapLocation best = null;
+			int closest = Integer.MAX_VALUE;
+			for(MapLocation x: waterLocations){
+				if(x.distanceSquaredTo(rc.getLocation())<closest){
+					best = x;
+					closest = x.distanceSquaredTo(rc.getLocation());
+				}
+			}
+			dropLocation = best;
+		}
+	}
+	void patrolEnemy(){
+
+	}
 	void dropOff() throws GameActionException {
 		if(rc.canSenseLocation(dropLocation)) {
-			if (rc.isLocationOccupied(dropLocation) ) {
+			if (rc.isLocationOccupied(dropLocation) == false) {
 				if (rc.getLocation().isAdjacentTo(dropLocation)) {
 					rc.dropUnit(rc.getLocation().directionTo(dropLocation));
 					status = DeliveryDroneStatus.NOTHING;
 					return;
 				}
-				goTo(dropLocation);
 			}
 			else{
-				if(rc.canDropUnit(Direction.CENTER)){
-					rc.dropUnit(Direction.CENTER);
+				MapLocation close = closestSafe(dropLocation);
+				if(close == null){
+					status = DeliveryDroneStatus.RETURNING;
+					return;
 				}
-				status = DeliveryDroneStatus.RETURNING;
-				return;
+				else{
+					dropLocation = close;
+					dropOff();
+				}
 			}
 		}
 		goTo(dropLocation);
