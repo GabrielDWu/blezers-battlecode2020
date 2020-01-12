@@ -60,8 +60,8 @@ public abstract class Robot {
 		this.rc = rc;
 		startLife();
 		while (true) {
-		    startTurn();
 		    try {
+		    	startTurn();
 		    	run();
 		        endTurn();
 		        Clock.yield();
