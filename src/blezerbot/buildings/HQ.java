@@ -67,9 +67,11 @@ public class HQ extends Building {
 		if(id==1){
 			int unit_type = getInt(m, ptr, 4);
 			ptr += 4;
+			MapLocation loc = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
+			ptr += 12;
 			int unit_id = getInt(m, ptr, 15);
-			units.get(unit_type).add(new InternalUnit(unit_type, unit_id));
-			System.out.println("Added unit" + new InternalUnit(unit_type,unit_id));
+			units.get(unit_type).add(new InternalUnit(unit_type, unit_id, loc));
+			System.out.println("Added unit " + new InternalUnit(unit_type,unit_id, loc));
 			return true;
 		}
 		return false;
@@ -81,13 +83,14 @@ public class HQ extends Building {
 		public int id;
 		public MapLocation lastSent;
 
-		public InternalUnit(int t, int id){
+		public InternalUnit(int t, int id, MapLocation loc){
 			this.type = t;
 			this.id = id;
+			lastSent = loc;
 		}
 
 		public String toString(){
-			return robot_types[type] + " (" + id + ")";
+			return robot_types[type] + " (" + id + ") "+lastSent;
 		}
 	}
 

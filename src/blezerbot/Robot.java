@@ -127,7 +127,7 @@ public abstract class Robot {
 	    }
 
 	    if(!sentInfo){
-	        writeMessage(1, new int[]{type, rc.getID()});
+	        writeMessage(1, new int[]{type, rc.getLocation().x, rc.getLocation().y, rc.getID()});
 	        addMessageToQueue();
 	        sentInfo = true;
 	    }
@@ -223,11 +223,11 @@ public abstract class Robot {
 				}
 				ptr += 12;
 			}else if(id==1){
-	            if(ptr >= 177){
+	            if(ptr >= 165){
 	                System.out.println("Message did not exit properly");
 	                return;
 	            }
-	            ptr += 19;
+	            ptr += 19+12;
 	        }else if(id==2){ //0010 Set enemy HQ
 				if(ptr >= 184){ //Requires 2 6-bit integers
 					System.out.println("Message did not exit properly");
@@ -316,12 +316,14 @@ public abstract class Robot {
 	        writeInt(params[0], 6);
 	        writeInt(params[1], 6);
 	    }if(id==1){ //0001 Announce birth
-			if(messagePtr >= 169){ //Requires id + 4-bit int + 15-bit int
+			if(messagePtr >= 157){ //Requires id + 4-bit int 2 6-bit ints + 15-bit int
 				addMessageToQueue(base_wager);
 			}
 			writeInt(id, 4);
 			writeInt(params[0], 4);
-			writeInt(params[1], 15);
+			writeInt(params[1], 6);
+			writeInt(params[2], 6);
+			writeInt(params[3], 15);
 		}if(id==2){ //0010 Set enemy HQ
 			if(messagePtr >= 176){ //Requires id + 2 6-bit integers
 				addMessageToQueue(base_wager);
