@@ -262,10 +262,8 @@ public abstract class Robot {
 				return true;
 			}
 			int x = getInt(m, ptr, 6);
-			if(x==0)x=64;
 			ptr += 6;
 			int y = getInt(m, ptr, 6);
-			if(y==0)x=64;
 
 			enemyHQ = new MapLocation(x,y);
 			System.out.println("Now I know that the opposing HQ is at" + enemyHQ);
