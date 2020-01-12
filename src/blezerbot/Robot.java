@@ -60,9 +60,9 @@ public abstract class Robot {
 		this.rc = rc;
 		startLife();
 		while (true) {
-		    startTurn();
 		    try {
-		    	run();
+				startTurn();
+				run();
 		        endTurn();
 		        Clock.yield();
 		    } catch (Exception e) {
@@ -196,6 +196,10 @@ public abstract class Robot {
 	    //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
 	    int[] message = t.getMessage();
 
+	    if(message.length != 7){
+	    	return;
+		}
+
 	    int[] m = new int[7];
 	    for(int i=0; i<7; i++){
 	        m[i] = message[i]^PADS[i];
@@ -249,10 +253,8 @@ public abstract class Robot {
 		//Messages applicable to all robots
 		if(id==0){
 			int x = getInt(m, ptr, 6);
-			if(x==0)x=64;
 			ptr += 6;
 			int y = getInt(m, ptr, 6);
-			if(y==0)x=64;
 
 			locHQ = new MapLocation(x,y);
 			System.out.println("Now I know that my HQ is at" + locHQ);
@@ -262,10 +264,8 @@ public abstract class Robot {
 				return true;
 			}
 			int x = getInt(m, ptr, 6);
-			if(x==0)x=64;
 			ptr += 6;
 			int y = getInt(m, ptr, 6);
-			if(y==0)x=64;
 
 			enemyHQ = new MapLocation(x,y);
 			System.out.println("Now I know that the opposing HQ is at" + enemyHQ);
