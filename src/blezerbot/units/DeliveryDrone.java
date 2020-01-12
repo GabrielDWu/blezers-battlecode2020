@@ -59,22 +59,45 @@ public class DeliveryDrone extends Unit {
 			goTo(locHQ);
 		}
 	}
+	MapLocation closestSafe(MapLocation loc) throws GameActionException {
+		ArrayList<MapLocation>  nearby = getLocationsInRadius(rc.getCurrentSensorRadiusSquared());
+		MapLocation best = null;
+		int closest = Integer.MAX_VALUE;
+		for(MapLocation x: nearby){
+			if(rc.senseRobotAtLocation(x) == null && rc.senseFlooding(x) == false && netGunRadius(x) == false){
+				if(best == null){
+					best = x;
+					closest = loc.distanceSquaredTo(x);
+				}
+				else{
+					if(closest>loc.distanceSquaredTo(x)){
+						best = x;
+						closest = loc.distanceSquaredTo(x);
+					}
+				}
+			}
+		}
+		return best;
+	}
 	void dropOff() throws GameActionException {
 		if(rc.canSenseLocation(dropLocation)) {
-			if (rc.isLocationOccupied(dropLocation) ) {
+			if (rc.isLocationOccupied(dropLocation) == false) {
 				if (rc.getLocation().isAdjacentTo(dropLocation)) {
 					rc.dropUnit(rc.getLocation().directionTo(dropLocation));
 					status = DeliveryDroneStatus.NOTHING;
 					return;
 				}
-				goTo(dropLocation);
 			}
 			else{
-				if(rc.canDropUnit(Direction.CENTER)){
-					rc.dropUnit(Direction.CENTER);
+				MapLocation close = closestSafe(dropLocation);
+				if(close == null){
+					status = DeliveryDroneStatus.RETURNING;
+					return;
 				}
-				status = DeliveryDroneStatus.RETURNING;
-				return;
+				else{
+					dropLocation = close;
+					dropOff();
+				}
 			}
 		}
 		goTo(dropLocation);
