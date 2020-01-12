@@ -104,7 +104,7 @@ public abstract class Robot {
 	}
 
 	public void startTurn() throws GameActionException{
-	    //if(rc.getRoundNum() >= 10){rc.resign();}
+	    //if(rc.getRoundNum() >= 20){rc.resign();}
 	    turnCount = rc.getRoundNum()-birthRound+1;
 
 	    //process all messages for the previous round
@@ -133,7 +133,7 @@ public abstract class Robot {
 	public void endTurn() throws GameActionException{
 	    /*submits stuff from messageQueue*/
 	    while(messageQueue.size() > 0 && messageQueue.get(0).getCost() <= rc.getTeamSoup()){
-	        rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
+			rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
 	        messageQueue.remove(0);
 	    }
 	    if (queuedInfo && messageQueue.size() == 0){
@@ -281,7 +281,8 @@ public abstract class Robot {
 	    /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
 	    assert(size <= 32);
 	    if(32-(ptr%32) < size){
-	        return ((m[ptr/32]<<(size-(32-(ptr%32)))) + (m[ptr/32+1]>>>(64-size-(ptr%32))))%(1<<size);
+	        int result = ((m[ptr/32]<<(size-(32-(ptr%32)))) + (m[ptr/32+1]>>>(64-size-(ptr%32))))%(1<<size);
+	        return (result < 0) ? result + (1<<size) : result;
 	    }else{
 	        return (m[ptr/32]>>>(32-(ptr%32)-size))%(1<<size);
 	    }
