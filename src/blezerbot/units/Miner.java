@@ -11,7 +11,8 @@ public class Miner extends Unit {
 		SEARCHING,
 		MINING,
 		RETURNING,
-		DEPOSITING
+		DEPOSITING,
+		NOTHING
 	}
 
 	MinerStatus status = null;
@@ -29,13 +30,14 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 
-		if (Math.random() < 0.02) {
+		if (Math.random() < 0.01) {
 			for (Direction dir : directions) {
-				if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
-					//rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
+				if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, dir)) {
+					rc.buildRobot(RobotType.FULFILLMENT_CENTER, dir);
 				}
 			}
 		}
+		if (status == MinerStatus.NOTHING) return;
 		if (status == null) status = MinerStatus.SEARCHING;
 		setVisitedAndSeen();
 		MapLocation nloc = null;
