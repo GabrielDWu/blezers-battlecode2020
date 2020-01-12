@@ -35,8 +35,10 @@ public class DeliveryDrone extends Unit {
 			enemyHQc = -1;
 		}
 		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DROP_OFF){
-			if(rc.canDropUnit(Direction.CENTER)){
-				rc.dropUnit(Direction.CENTER);
+			for(Direction dir: directions){
+				if(rc.canDropUnit(dir)){
+					rc.dropUnit(dir);
+				}
 			}
 		}
 		if (locHQ == null) return;
