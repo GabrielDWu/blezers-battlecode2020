@@ -17,12 +17,11 @@ public abstract class Robot {
 	public MapLocation locHQ;   //Where is my HQ?
 	public MapLocation enemyHQ;   //Where is enemy HQ?
 	public boolean sentInfo;    //Sent info upon spawn
+	public boolean queuedInfo;
 	public int type;    //Integer from 0 to 8, index of robot_types
 	public int base_wager = 2;
 	public int enemy_msg_cnt;   //How many enemy messages went through last round?
 	public int enemy_msg_sum;   //Total wagers of enemy messages last round.
-	public boolean[][] seen;
-	public int[][] visited;
 	public Random r;
 	public Direction facing;
 	//public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
@@ -53,8 +52,6 @@ public abstract class Robot {
 		return directions[(val+7)%8];
 	}
 	public Robot(RobotController rc) throws GameActionException {
-		if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
-		if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (r == null) r = new Random(rc.getID());
 
 		this.rc = rc;
@@ -107,7 +104,7 @@ public abstract class Robot {
 	}
 
 	public void startTurn() throws GameActionException{
-	    //if(rc.getRoundNum() >= 10){rc.resign();}
+	    //if(rc.getRoundNum() >= 20){rc.resign();}
 	    turnCount = rc.getRoundNum()-birthRound+1;
 
 	    //process all messages for the previous round
@@ -126,19 +123,23 @@ public abstract class Robot {
 	        base_wager = Math.max(base_wager, 1);
 	    }
 
-	    if(!sentInfo){
-	        writeMessage(1, new int[]{type, rc.getID()});
+	    if(!sentInfo && !queuedInfo){
+	        writeMessage(1, new int[]{type, rc.getLocation().x, rc.getLocation().y, rc.getID()});
 	        addMessageToQueue();
-	        sentInfo = true;
+	        queuedInfo = true;
 	    }
 	}
 
 	public void endTurn() throws GameActionException{
 	    /*submits stuff from messageQueue*/
 	    while(messageQueue.size() > 0 && messageQueue.get(0).getCost() <= rc.getTeamSoup()){
-	        rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
+			rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
 	        messageQueue.remove(0);
 	    }
+	    if (queuedInfo && messageQueue.size() == 0){
+	    	queuedInfo = false;
+	    	sentInfo = true;	
+	    } 
 	}
 
 	public boolean onMap(MapLocation l) {
@@ -227,11 +228,11 @@ public abstract class Robot {
 				}
 				ptr += 12;
 			}else if(id==1){
-	            if(ptr >= 177){
+	            if(ptr >= 165){
 	                System.out.println("Message did not exit properly");
 	                return;
 	            }
-	            ptr += 19;
+	            ptr += 19+12;
 	        }else if(id==2){ //0010 Set enemy HQ
 				if(ptr >= 184){ //Requires 2 6-bit integers
 					System.out.println("Message did not exit properly");
@@ -280,7 +281,8 @@ public abstract class Robot {
 	    /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
 	    assert(size <= 32);
 	    if(32-(ptr%32) < size){
-	        return ((m[ptr/32]<<(size-(32-(ptr%32)))) + (m[ptr/32+1]>>>(64-size-(ptr%32))))%(1<<size);
+	        int result = ((m[ptr/32]<<(size-(32-(ptr%32)))) + (m[ptr/32+1]>>>(64-size-(ptr%32))))%(1<<size);
+	        return (result < 0) ? result + (1<<size) : result;
 	    }else{
 	        return (m[ptr/32]>>>(32-(ptr%32)-size))%(1<<size);
 	    }
@@ -318,12 +320,14 @@ public abstract class Robot {
 	        writeInt(params[0], 6);
 	        writeInt(params[1], 6);
 	    }if(id==1){ //0001 Announce birth
-			if(messagePtr >= 169){ //Requires id + 4-bit int + 15-bit int
+			if(messagePtr >= 157){ //Requires id + 4-bit int 2 6-bit ints + 15-bit int
 				addMessageToQueue(base_wager);
 			}
 			writeInt(id, 4);
 			writeInt(params[0], 4);
-			writeInt(params[1], 15);
+			writeInt(params[1], 6);
+			writeInt(params[2], 6);
+			writeInt(params[3], 15);
 		}if(id==2){ //0010 Set enemy HQ
 			if(messagePtr >= 176){ //Requires id + 2 6-bit integers
 				addMessageToQueue(base_wager);

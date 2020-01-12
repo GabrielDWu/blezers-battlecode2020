@@ -11,15 +11,21 @@ public abstract class Unit extends Robot {
 	int lastDist = -1;
 	long[][] unitVisited;
 	int unitVisitedIndex;
+	public boolean[][] seen;
+	public int[][] visited;
 
 	public Unit(RobotController rc) throws GameActionException {
 		super(rc);
 	};
 	public void run() throws GameActionException {
 		super.run();
-		if (unitVisited == null) {
-			unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
-			unitVisitedIndex = -1;
+		if (sentInfo) {
+			if (unitVisited == null) {
+				unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
+				unitVisitedIndex = -1;
+			}
+			if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
+			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		}
 	}
 	public ArrayList<MapLocation> getLocationsInRadius(int radiusSquared){
@@ -76,6 +82,7 @@ public abstract class Unit extends Robot {
 	}
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady()) return;
+		if (unitVisited == null) return;
 		if (loc != dest) {
 			dest = loc;
 			lastDist = 0;
