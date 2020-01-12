@@ -26,6 +26,16 @@ public class HQ extends Building {
 			addMessageToQueue();
 			hq_sentLoc = true;
 		}
+
+		//Shoot enemy drones
+		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.A)?Team.A:Team.B)){
+			if(enemy.type == robot_types[7]){
+				if(rc.canShootUnit(enemy.id)){
+					rc.shootUnit(enemy.id);
+					break;
+				}
+			}
+		}
 		if (builtMiners < 4) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.MINER, dir)) {
@@ -34,6 +44,8 @@ public class HQ extends Building {
 				}
 			}
 		}
+
+
 	}
 
 }
