@@ -31,7 +31,6 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(status+" "+Clock.getBytecodesLeft());
 
 		if (Math.random() < 0.002) {
 			for (Direction dir : directions) {
@@ -120,7 +119,6 @@ public class Miner extends Unit {
 				}
 				break;
 		}
-		System.out.println("END "+status+" "+Clock.getBytecodesLeft());
 	}
 
 	public void setVisitedAndSeen() throws GameActionException {
