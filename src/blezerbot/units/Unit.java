@@ -28,31 +28,37 @@ public abstract class Unit extends Robot {
 			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		}
 	}
-	public ArrayList<MapLocation> getLocationsInRadius(int radiusSquared){
-		ArrayList<MapLocation> ret = new ArrayList<MapLocation>();
-		for(int dx = 0; dx*dx<=radiusSquared; dx++){
-			for(int dy = 0; dx*dx + dy*dy<=radiusSquared; dy++){
+	ArrayList<MapLocation> returnGetLocationInRadius = new ArrayList<MapLocation> ();
+	void getLocationInRadiusHelper(MapLocation center, int dx, int dy){
+		int x = dx + center.x;
+		int y = dy  +center.y;
+		if(x<0 || x>=  rc.getMapWidth()) return;
+		if(y<0 || y>= rc.getMapHeight()) return;
+		returnGetLocationInRadius.add(new MapLocation(x, y));
+	}
+	public ArrayList<MapLocation> getLocationsInRadius(MapLocation center, int radiusSquared){
+		returnGetLocationInRadius.clear();
+		for(int dx = 0; dx*dx<=radiusSquared; dx++) {
+			for (int dy = 0; dx * dx + dy * dy <= radiusSquared; dy++) {
 				if (dx == 0 && dy == 0) {
-					ret.add(new MapLocation(dx, dy));
-				}
-				else if(dx == 0){
-					ret.add(new MapLocation(dx, dy));
-					ret.add(new MapLocation(dx, -dy));
-				}
-				else if(dy == 0){
-					ret.add(new MapLocation(-dx, dy));
-					ret.add(new MapLocation(dx, dy));
-				}
-				else{
-					for(int s1 = 0; s1<2; s1++){
-						for(int s2 = 0; s2<2; s2++){
-							ret.add(new MapLocation(dx*(2*s1-1), dy*(2*s2-1)));
+					getLocationInRadiusHelper(center, dx, dy);
+				} else if (dx == 0) {
+					getLocationInRadiusHelper(center, dx, -dy);
+					getLocationInRadiusHelper(center, dx, -dy);
+				} else if (dy == 0) {
+					getLocationInRadiusHelper(center, -dx, dy);
+					getLocationInRadiusHelper(center, dx, dy);
+
+				} else {
+					for (int s1 = 0; s1 < 2; s1++) {
+						for (int s2 = 0; s2 < 2; s2++) {
+							getLocationInRadiusHelper(center, dx * (2 * s1 - 1), dy * (2 * s2 - 1));
 						}
 					}
 				}
 			}
 		}
-		return ret;
+		return returnGetLocationInRadius;
 	}
 	public int distHQ() {
 

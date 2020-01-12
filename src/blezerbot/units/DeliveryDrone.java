@@ -65,7 +65,7 @@ public class DeliveryDrone extends Unit {
 	}
 
 	MapLocation closestSafe(MapLocation loc) throws GameActionException {
-		ArrayList<MapLocation>  nearby = getLocationsInRadius(rc.getCurrentSensorRadiusSquared());
+		ArrayList<MapLocation>  nearby = getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared());
 		MapLocation best = null;
 		int closest = Integer.MAX_VALUE;
 		for(MapLocation x: nearby){
