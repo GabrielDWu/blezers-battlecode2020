@@ -24,16 +24,24 @@ public class Miner extends Unit {
 		super(rc);
 	}
 
-	public void init() throws GameActionException {
+	public void startLife() throws GameActionException {
+		super.startLife();
 		if (soupTries == null) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 	}
 
 	public void run() throws GameActionException {
 
-		if (Math.random() < 0.01) {
+		if (Math.random() < 0.002) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, dir)) {
 					rc.buildRobot(RobotType.FULFILLMENT_CENTER, dir);
+				}
+			}
+		}
+		if (Math.random() < 0.001) {
+			for (Direction dir : directions) {
+				if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
+					rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
 				}
 			}
 		}

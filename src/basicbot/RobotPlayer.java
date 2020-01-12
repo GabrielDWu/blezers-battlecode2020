@@ -70,7 +70,6 @@ public strictfp class RobotPlayer {
         //Check if the message was made by my team
         //The way it works: xor all of them with PAD
         //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
-        System.out.println("Message Being Processed");
         int[] m = new int[7];
         for(int i=0; i<7; i++){
             m[i] = message[i]^PADS[i];
@@ -203,7 +202,7 @@ public strictfp class RobotPlayer {
         resetMessage();
         return;
     }static Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-    static int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+    static int[] PADS = {-9, -5392, -9532, 224, 1665065435, 422836453, 325111185};
     static void runMiner() throws GameActionException {
         locRecord.add(rc.getLocation());
         destPath.add(rc.getLocation());
@@ -220,8 +219,8 @@ public strictfp class RobotPlayer {
         }
         if(dest.x != -1 && nearHQ == false){
             Direction dir = moveDest();
-            System.out.println(rc.canMove(dir));
-            System.out.println(dir);
+            //System.out.println(rc.canMove(dir));
+            //System.out.println(dir);
             if(dir == Direction.CENTER){
                 setDest(new MapLocation(-1, -1));
             }
@@ -278,7 +277,7 @@ public strictfp class RobotPlayer {
             hugWall = destPath.size();
             return close;
         }
-        System.out.println("WUT");
+        //System.out.println("WUT");
         for(Direction dir: directions){
             if(!rc.canMove(dir)) continue;
             MapLocation nxt = rc.getLocation().add(dir);
