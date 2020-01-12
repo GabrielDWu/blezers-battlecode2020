@@ -149,14 +149,14 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public boolean tryMove(Direction dir) throws GameActionException {
-	    if (rc.isReady() && rc.canMove(dir)) {
+	    if (rc.isReady() && canMove(dir)) {
 	        rc.move(dir);
 	        return true;
 	    } else return false;
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return canMove(dir)&&(!netGunRadius(rc.getLocation().add(dir)));
+		return rc.canMove(dir)&&(!netGunRadius(rc.getLocation().add(dir)));
 	}
 
 }
