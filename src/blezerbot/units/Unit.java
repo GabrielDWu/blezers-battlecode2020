@@ -23,6 +23,7 @@ public abstract class Unit extends Robot {
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady()) return;
 		if (loc != dest) {
+			dest = loc;
 			lastDist = 0;
 			hugging = false;
 		}
@@ -31,7 +32,7 @@ public abstract class Unit extends Robot {
 		//Check if still should be hugging (if nothing around you, hugging=false)
 		if(hugging){
 			hugging = false;
-			for(Direction dir: directions){
+			for(Direction dir : directions){
 				if(!canMove(dir)){
 					hugging = true;
 					break;

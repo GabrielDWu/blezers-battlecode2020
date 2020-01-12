@@ -6,10 +6,16 @@ import java.lang.*;
 import blezerbot.*;
 
 public class Miner extends Unit {
-	boolean searching = true;
-	boolean mining = false;
-	boolean returning = false;
-	boolean depositing = false;
+
+	enum MinerStatus {
+		SEARCHING,
+		MINING,
+		RETURNING,
+		DEPOSITING
+	}
+
+	MinerStatus status = null;
+
 	MapLocation soupLoc = null;
 	int[][] soupTries;
 
@@ -25,84 +31,81 @@ public class Miner extends Unit {
 		if (Math.random() < 0.02) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
-					rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
+					//rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
 				}
 			}
 		}
-		if (!(searching || mining || returning || depositing)) searching = true;
+		if (status == null) status = MinerStatus.SEARCHING;
 		setVisitedAndSeen();
 		MapLocation nloc = null;
 		MapLocation mloc = rc.getLocation();
 		int h = rc.getMapHeight();
 		int w = rc.getMapWidth();
-		if (searching) {
-			for (int x = -5; x <= 5; x++) {
-				if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
-				for (int y = -5; y <= 5; y++) {
-					nloc = mloc.translate(x, y);
-					if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
-						continue;
+		switch (status) {
+			case SEARCHING:
+				for (int x = -5; x <= 5; x++) {
+					if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
+					for (int y = -5; y <= 5; y++) {
+						nloc = mloc.translate(x, y);
+						if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
+							continue;
+						}
+						if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
+							status = MinerStatus.MINING;
+							soupLoc = nloc;
+							break;
+						}
 					}
-					if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
-						mining = true;
-						searching = false;
-						soupLoc = nloc;
-						break;
-					}
+					if (status != MinerStatus.SEARCHING) break;
 				}
-				if (searching == false) break;
-			}
-			if (searching) findSoup();
-		} else if (mining) {
-			if (!mloc.isAdjacentTo(soupLoc)) {
-				for (Direction dir : directions) {
-					if (tryMine(dir)) { 
-						soupLoc = mloc.add(dir);
-						break;
+				if (status == MinerStatus.SEARCHING) findSoup();
+				break;
+			case MINING:
+				if (!mloc.isAdjacentTo(soupLoc)) {
+					for (Direction dir : directions) {
+						if (tryMine(dir)) { 
+							soupLoc = mloc.add(dir);
+							break;
+						}
 					}
-				}
-				if (soupTries[soupLoc.x][soupLoc.y] <= 6) {
-					goTo(soupLoc);
-					if(rc.getLocation().distanceSquaredTo(soupLoc) <= 35) soupTries[soupLoc.x][soupLoc.y]++;
+					if (soupTries[soupLoc.x][soupLoc.y] <= 6) {
+						goTo(soupLoc);
+						if(rc.getLocation().distanceSquaredTo(soupLoc) <= 35) soupTries[soupLoc.x][soupLoc.y]++;
+					}
+					else {
+						soupLoc = null;
+						status = MinerStatus.SEARCHING;
+					}
 				}
 				else {
-					soupLoc = null;
-					mining = false;
-					searching = true;
+					boolean mined = tryMine(mloc.directionTo(soupLoc));
+					if (rc.senseSoup(soupLoc) == 0) {
+						status = MinerStatus.SEARCHING;
+						soupLoc = null;
+					}
+					if (rc.getSoupCarrying() >= 100) {
+						status = MinerStatus.RETURNING;
+					}
+					else if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
+						soupLoc = null;
+						if (status != MinerStatus.RETURNING) status = MinerStatus.SEARCHING;
+					}
 				}
-			}
-			else {
-				boolean mined = tryMine(mloc.directionTo(soupLoc));
-				if (rc.senseSoup(soupLoc) == 0) {
-					mining = false;
-					searching = true;
-					soupLoc = null;
+				break;
+			case RETURNING:
+				goTo(locHQ);
+				if (distHQ() < 3) {
+					status = MinerStatus.DEPOSITING;
 				}
-				if (rc.getSoupCarrying() >= 100) {
-					mining = false;
-					searching = false;
-					returning = true;
+				break;
+			case DEPOSITING:
+				if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
+				if (rc.getSoupCarrying() == 0) {
+					if (soupLoc !=  null) {
+						status = MinerStatus.MINING;
+					} else status = MinerStatus.SEARCHING;
 				}
-				else if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
-					soupLoc = null;
-					mining = false;
-					if (!returning) searching = true;
-				}
-			}
-		} else if (returning) {
-			goTo(locHQ);
-			if (distHQ() < 3) {
-				returning = false;
-				depositing = true;
-			}
-		} else if (depositing) {
-			if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
-			if (rc.getSoupCarrying() == 0) {
-				if (soupLoc !=  null) {
-					mining = true;
-				} else searching = true;
-				depositing = false;
-			}
+				break;
 		}
 	}
 
