@@ -12,6 +12,7 @@ public class Miner extends Unit {
 		MINING,
 		RETURNING,
 		DEPOSITING,
+		BUILDING,
 		NOTHING
 	}
 
@@ -19,6 +20,9 @@ public class Miner extends Unit {
 
 	MapLocation soupLoc = null;
 	int[][] soupTries;
+
+	RobotType buildingType = null;
+	int buildingTries = 0;
 
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
@@ -28,20 +32,6 @@ public class Miner extends Unit {
 		super.run();
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
-			if (Math.random() < 0.002) {
-				for (Direction dir : directions) {
-					if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, dir)) {
-						rc.buildRobot(RobotType.FULFILLMENT_CENTER, dir);
-					}
-				}
-			}
-			if (Math.random() < 0.001) {
-				for (Direction dir : directions) {
-					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
-						rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
-					}
-				}
-			}
 			if (status == MinerStatus.NOTHING) return;
 			if (status == null) status = MinerStatus.SEARCHING;
 			setVisitedAndSeen();
@@ -50,6 +40,15 @@ public class Miner extends Unit {
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
 			switch (status) {
+				case BUILDING:
+					if (buildingTries++ > 3) status = MinerStatus.MINING;
+					if (mloc.distanceSquaredTo(locHQ) < 4) {
+						goTo(mloc.translate(4, 4));
+					} else {
+						if (tryBuild(buildingType)) status = MinerStatus.MINING;
+						else goTo(mloc.translate(4, 4));
+					}
+					break;
 				case SEARCHING:
 					for (int x = -5; x <= 5; x++) {
 						if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
@@ -68,7 +67,7 @@ public class Miner extends Unit {
 					if (status == MinerStatus.SEARCHING) findSoup();
 					break;
 				case MINING:
-					if (!mloc.isAdjacentTo(soupLoc)) {
+					if (soupLoc != null && !mloc.isAdjacentTo(soupLoc)) {
 						for (Direction dir : directions) {
 							if (tryMine(dir)) { 
 								soupLoc = mloc.add(dir);
@@ -86,8 +85,9 @@ public class Miner extends Unit {
 						}
 					}
 					else {
-						boolean mined = tryMine(mloc.directionTo(soupLoc));
-						if (rc.senseSoup(soupLoc) == 0) {
+						boolean mined;
+						if (soupLoc != null) mined = tryMine(mloc.directionTo(soupLoc));
+						if (soupLoc == null || rc.senseSoup(soupLoc) == 0) {
 							status = MinerStatus.SEARCHING;
 							soupLoc = null;
 						}
@@ -277,6 +277,23 @@ public class Miner extends Unit {
 	        }
 	    }
 	    return visible;
+	}
+
+	public boolean executeMessage(int id, int[] m, int ptr){
+		/*Returns true if message applies to me*/
+		if(super.executeMessage(id, m, ptr)){
+			return true;
+		}
+		if(id == 3){
+			RobotType type = robot_types[getInt(m, ptr, 4)];
+			ptr += 4;
+			if (getInt(m, ptr, 15) != rc.getID()) return false;
+			buildingType = type;
+			buildingTries = 0;
+			status = MinerStatus.BUILDING;
+			return true;
+		}
+		return false;
 	}
 
 	boolean tryMine(Direction dir) throws GameActionException {

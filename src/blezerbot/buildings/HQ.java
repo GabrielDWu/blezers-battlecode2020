@@ -7,6 +7,8 @@ import blezerbot.*;
 public class HQ extends Building {
 
 	int builtMiners;
+	int buildingFulfillment;
+	int buildingDesignSchool;
 	boolean hq_sentLoc;
 	public ArrayList<ArrayList<InternalUnit>> units;
 
@@ -16,6 +18,7 @@ public class HQ extends Building {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
+		buildingFulfillment = Integer.MAX_VALUE;
 		units = new ArrayList<ArrayList<InternalUnit> >(10);
 		for(int i=0; i<10; i++){
 			units.add(i,new ArrayList<InternalUnit>());
@@ -24,10 +27,26 @@ public class HQ extends Building {
 
 	public void run() throws GameActionException {
 		super.run();
+		if (buildingFulfillment < Integer.MAX_VALUE) buildingFulfillment++;
+		if (buildingDesignSchool < Integer.MAX_VALUE) buildingDesignSchool++;
 		if(!hq_sentLoc){
 			writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
 			addMessageToQueue();
 			hq_sentLoc = true;
+		}
+
+		if (units.get(5 /*fulfillment center*/).size() == 0 && units.get(1).size() > 0 /*miner*/ && Math.abs(buildingFulfillment) > 4 && rc.getTeamSoup() > 150) {
+			buildingFulfillment = 1;
+			ArrayList<InternalUnit> miners = units.get(1);
+			writeMessage(3, new int[]{5, miners.get(r.nextInt(miners.size())).id});
+			addMessageToQueue();
+		}
+
+		if (units.get(4 /*design school*/).size() == 0 && units.get(1).size() > 0 /*miner*/ && Math.abs(buildingDesignSchool) > 4 && rc.getTeamSoup() > 150) {
+			buildingDesignSchool = 1;
+			ArrayList<InternalUnit> miners = units.get(1);
+			writeMessage(3, new int[]{4, miners.get(r.nextInt(miners.size())).id});
+			addMessageToQueue();
 		}
 
 		//Shoot enemy drones

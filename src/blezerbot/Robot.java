@@ -69,23 +69,28 @@ public abstract class Robot {
 		}
 	}
 
+	public int getRobotType(RobotType r) {
+		switch (r) {
+		    case HQ:                 return 0;
+		    case MINER:              return 1;
+		    case REFINERY:           return 2;
+		    case VAPORATOR:          return 3;
+		    case DESIGN_SCHOOL:      return 4;
+		    case FULFILLMENT_CENTER: return 5;
+		    case LANDSCAPER:         return 6;
+		    case DELIVERY_DRONE:     return 7;
+		    case NET_GUN:            return 8;
+		}
+		return -1;
+	}
+
 	public void run() throws GameActionException {}
 
 	public void startLife() throws GameActionException{
 		if(rc.getTeam() == Team.A) PADS[0] += 1;
 	    System.out.println("Got created.");
 
-	    switch (rc.getType()) {
-	        case HQ:                 type=0;    break;
-	        case MINER:              type=1;    break;
-	        case REFINERY:           type=2;    break;
-	        case VAPORATOR:          type=3;    break;
-	        case DESIGN_SCHOOL:      type=4;    break;
-	        case FULFILLMENT_CENTER: type=5;    break;
-	        case LANDSCAPER:         type=6;    break;
-	        case DELIVERY_DRONE:     type=7;    break;
-	        case NET_GUN:            type=8;    break;
-	    }
+	    type = getRobotType(rc.getType());
 
 	    //process all messages from beginning of game until you find hq location
 	    int checkRound = 1;
@@ -174,6 +179,16 @@ public abstract class Robot {
 	    } else return false;
 	}
 
+	public boolean tryBuild (RobotType r) throws GameActionException {
+		for (Direction dir : directions) {
+			if (rc.canBuildRobot(r, dir)) {
+				rc.buildRobot(r, dir);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public boolean tileClear(Direction dir) throws GameActionException {
 		/*True if the tile is within 3 elevation and not flooded. Ignores cooldown*/
 		if (rc.isLocationOccupied(rc.adjacentLocation(dir)) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
@@ -241,6 +256,12 @@ public abstract class Robot {
 				ptr += 12;
 			}else if(id==15){    //1111 Message terminate
 	            return;
+	        } else if (id == 3) {
+	        	if (ptr >= 196 - 4 - 15) {
+	        		System.out.println("Message did not exit properly");
+	        		return;
+	        	}
+	        	ptr += 4+15;
 	        }
             executeMessage(id, m, messageStart);
 	    }
@@ -319,7 +340,7 @@ public abstract class Robot {
 	        writeInt(id, 4);
 	        writeInt(params[0], 6);
 	        writeInt(params[1], 6);
-	    }if(id==1){ //0001 Announce birth
+	    }else if(id==1){ //0001 Announce birth
 			if(messagePtr >= 157){ //Requires id + 4-bit int 2 6-bit ints + 15-bit int
 				addMessageToQueue(base_wager);
 			}
@@ -328,13 +349,20 @@ public abstract class Robot {
 			writeInt(params[1], 6);
 			writeInt(params[2], 6);
 			writeInt(params[3], 15);
-		}if(id==2){ //0010 Set enemy HQ
+		}else if(id==2){ //0010 Set enemy HQ
 			if(messagePtr >= 176){ //Requires id + 2 6-bit integers
 				addMessageToQueue(base_wager);
 			}
 			writeInt(id, 4);
 			writeInt(params[0], 6);
 			writeInt(params[1], 6);
+		} else if (id == 3) { //0011 build a unit (arbitrary location, specific builder)
+			if (messagePtr >= 192 - 4*2 /*id, type*/ - 15 /*target id*/ ) {
+				addMessageToQueue(base_wager);
+			}
+			writeInt(id, 4);
+			writeInt(params[0], 4);
+			writeInt(params[1], 15);
 		}
 	    return;
 	}
