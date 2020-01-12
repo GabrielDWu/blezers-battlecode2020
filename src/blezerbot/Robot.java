@@ -53,12 +53,10 @@ public abstract class Robot {
 		return directions[(val+7)%8];
 	}
 	public Robot(RobotController rc) throws GameActionException {
-		//System.out.println("CP 1");
-		//System.out.println("HI");
 		if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
 		if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (r == null) r = new Random(rc.getID());
-		//System.out.println("CP 2");
+
 		this.rc = rc;
 		startLife();
 		while (true) {

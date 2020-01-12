@@ -14,13 +14,10 @@ public abstract class Unit extends Robot {
 	};
 
 	public int distHQ() {
-		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam());
-		for(RobotInfo x: near){
-			if(x.getType() == RobotType.HQ){
-				return rc.getLocation().distanceSquaredTo(x.getLocation());
-			}
-		}
-		return Integer.MAX_VALUE;
+
+		if(locHQ == null) return Integer.MAX_VALUE;
+		return rc.getLocation().distanceSquaredTo(locHQ);
+
 	}
 
 	public void goTo(MapLocation loc) throws GameActionException {

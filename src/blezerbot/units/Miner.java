@@ -63,7 +63,7 @@ public class Miner extends Unit {
 				}
 				if (soupTries[soupLoc.x][soupLoc.y] <= 6) {
 					goTo(soupLoc);
-					soupTries[soupLoc.x][soupLoc.y]++;
+					if(rc.getLocation().distanceSquaredTo(soupLoc) <= 35) soupTries[soupLoc.x][soupLoc.y]++;
 				}
 				else {
 					soupLoc = null;
@@ -73,7 +73,7 @@ public class Miner extends Unit {
 			}
 			else {
 				boolean mined = tryMine(mloc.directionTo(soupLoc));
-				if (!mined) {
+				if (rc.senseSoup(soupLoc) == 0) {
 					mining = false;
 					searching = true;
 					soupLoc = null;
@@ -155,7 +155,7 @@ public class Miner extends Unit {
 	    while (maxl == null || !tryMove(maxl)) {
 	        int max = Integer.MIN_VALUE;
 
-	        //I'm pretty sure this is random enough and preserves teh bytecode
+	        //I'm pretty sure this is random enough and preserves the bytecode
 			int ri = r.nextInt(numDir);
 	        for(int i=0; i<numDir; i++) {
 	            int newv = newSeenList.get((i+ri)%numDir);
