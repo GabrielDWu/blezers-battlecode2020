@@ -2,6 +2,7 @@ package blezerbot.units;
 
 import battlecode.common.*;
 import blezerbot.*;
+import java.util.*;
 
 public abstract class Unit extends Robot {
 	
@@ -14,7 +15,6 @@ public abstract class Unit extends Robot {
 	public Unit(RobotController rc) throws GameActionException {
 		super(rc);
 	};
-
 	public void run() throws GameActionException {
 		super.run();
 		if (unitVisited == null) {
@@ -22,7 +22,32 @@ public abstract class Unit extends Robot {
 			unitVisitedIndex = -1;
 		}
 	}
-
+	public ArrayList<MapLocation> getLocationsInRadius(int radiusSquared){
+		ArrayList<MapLocation> ret = new ArrayList<MapLocation>();
+		for(int dx = 0; dx*dx<=radiusSquared; dx++){
+			for(int dy = 0; dx*dx + dy*dy<=radiusSquared; dy++){
+				if (dx == 0 && dy == 0) {
+					ret.add(new MapLocation(dx, dy));
+				}
+				else if(dx == 0){
+					ret.add(new MapLocation(dx, dy));
+					ret.add(new MapLocation(dx, -dy));
+				}
+				else if(dy == 0){
+					ret.add(new MapLocation(-dx, dy));
+					ret.add(new MapLocation(dx, dy));
+				}
+				else{
+					for(int s1 = 0; s1<2; s1++){
+						for(int s2 = 0; s2<2; s2++){
+							ret.add(new MapLocation(dx*(2*s1-1), dy*(2*s2-1)));
+						}
+					}
+				}
+			}
+		}
+		return ret;
+	}
 	public int distHQ() {
 
 		if(locHQ == null) return Integer.MAX_VALUE;

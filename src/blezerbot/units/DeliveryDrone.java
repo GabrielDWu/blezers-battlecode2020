@@ -25,6 +25,7 @@ public class DeliveryDrone extends Unit {
 		super(rc);
 	}
 
+
 	public void run() throws GameActionException {
 		super.run();
 		if (enemyHQs == null) {
