@@ -18,6 +18,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation[] enemyHQs;
 	MapLocation lastSeen;
 	MapLocation dropLocation;
+	ArrayList<MapLocation> waterLocations = new ArrayList<MapLocation>();
 	int searchID = 0;
 	int enemyHQc;
 
@@ -59,6 +60,10 @@ public class DeliveryDrone extends Unit {
 			goTo(locHQ);
 		}
 	}
+	void searchWater(){
+		// write search for water
+	}
+
 	MapLocation closestSafe(MapLocation loc) throws GameActionException {
 		ArrayList<MapLocation>  nearby = getLocationsInRadius(rc.getCurrentSensorRadiusSquared());
 		MapLocation best = null;
@@ -78,6 +83,25 @@ public class DeliveryDrone extends Unit {
 			}
 		}
 		return best;
+	}
+	void dropWater(){
+		if(waterLocations.size() == 0){
+			searchWater();
+		}
+		else{
+			MapLocation best = null;
+			int closest = Integer.MAX_VALUE;
+			for(MapLocation x: waterLocations){
+				if(x.distanceSquaredTo(rc.getLocation())<closest){
+					best = x;
+					closest = x.distanceSquaredTo(rc.getLocation());
+				}
+			}
+			dropLocation = best;
+		}
+	}
+	void patrolEnemy(){
+
 	}
 	void dropOff() throws GameActionException {
 		if(rc.canSenseLocation(dropLocation)) {
