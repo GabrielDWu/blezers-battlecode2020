@@ -22,6 +22,7 @@ public class HQ extends Building {
 	}
 
 	public void run() throws GameActionException {
+		super.run();
 		if(!hq_sentLoc){
 			writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
 			addMessageToQueue();
@@ -29,8 +30,8 @@ public class HQ extends Building {
 		}
 
 		//Shoot enemy drones
-		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
-			if(enemy.type == RobotType.DELIVERY_DRONE){
+		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.A)?Team.A:Team.B)){
+			if(enemy.type == robot_types[7]){
 				if(rc.canShootUnit(enemy.ID)){
 					rc.shootUnit(enemy.ID);
 					break;

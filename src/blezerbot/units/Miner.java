@@ -29,7 +29,8 @@ public class Miner extends Unit {
 	}
 
 	public void run() throws GameActionException {
-
+		super.run();
+		System.out.println(status+" "+facing);
 		if (Math.random() < 0.01) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, dir)) {

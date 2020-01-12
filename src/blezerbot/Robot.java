@@ -71,7 +71,7 @@ public abstract class Robot {
 		}
 	}
 
-	public abstract void run() throws GameActionException;
+	public void run() throws GameActionException {}
 
 	public void init() throws GameActionException {}
 

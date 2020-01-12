@@ -11,6 +11,7 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		super.run();
 		if (locHQ != null && distHQ() > 5) {
 			for (Direction dir : directions) {
 				if (rc.canDigDirt(dir)) rc.digDirt(dir);

@@ -15,6 +15,7 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		super.run();
 		if (enemyHQs == null) {
 			findingEnemyHQ = true;
 			enemyHQs = new MapLocation[3];
