@@ -14,7 +14,8 @@ public class HQ extends Building {
 		super(rc);
 	}
 
-	public void init() {
+	public void startLife() throws GameActionException{
+		super.startLife();
 		units = new ArrayList<ArrayList<InternalUnit> >(10);
 		for(int i=0; i<10; i++){
 			units.add(i,new ArrayList<InternalUnit>());
@@ -30,8 +31,8 @@ public class HQ extends Building {
 		}
 
 		//Shoot enemy drones
-		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.A)?Team.A:Team.B)){
-			if(enemy.type == robot_types[7]){
+		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
+			if(enemy.type == RobotType.DELIVERY_DRONE){
 				if(rc.canShootUnit(enemy.ID)){
 					rc.shootUnit(enemy.ID);
 					break;
@@ -47,6 +48,13 @@ public class HQ extends Building {
 			}
 		}
 
+		//Broadcast important info every 9 rounds
+		if(rc.getRoundNum() %9 == 0){
+			if(enemyHQ != null){
+				writeMessage(2, new int[]{enemyHQ.x, enemyHQ.y});
+				addMessageToQueue();
+			}
+		}
 
 	}
 

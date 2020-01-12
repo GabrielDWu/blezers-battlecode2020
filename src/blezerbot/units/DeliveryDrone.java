@@ -39,8 +39,14 @@ public class DeliveryDrone extends Unit {
 		}
 		if (locHQ == null) return;
 		if (status == DeliveryDroneStatus.FIND_ENEMY_HQ) {
-			MapLocation enemyHQ = findEnemyHQ();
-			if (enemyHQ != null) System.out.println("FOUND "+enemyHQ);
+			MapLocation loc = findEnemyHQ();
+			if (loc != null){
+				enemyHQ = loc;
+				System.out.println("FOUND "+enemyHQ);
+				writeMessage(2, new int[]{enemyHQ.x, enemyHQ.y});
+				addMessageToQueue();
+			}
+
 		}
 		else if (status == DeliveryDroneStatus.PICK_UP && rc.isCurrentlyHoldingUnit() == false){
 			pickUpID();

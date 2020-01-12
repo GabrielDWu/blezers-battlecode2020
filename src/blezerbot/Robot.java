@@ -15,6 +15,7 @@ public abstract class Robot {
 	public LinkedList<Transaction> messageQueue = new LinkedList<Transaction>();
 	public int messagePtr;  //What index in currMessage is my "cursor" at?
 	public MapLocation locHQ;   //Where is my HQ?
+	public MapLocation enemyHQ;   //Where is enemy HQ?
 	public boolean sentInfo;    //Sent info upon spawn
 	public int type;    //Integer from 0 to 8, index of robot_types
 	public int base_wager = 2;
@@ -73,8 +74,6 @@ public abstract class Robot {
 
 	public void run() throws GameActionException {}
 
-	public void init() throws GameActionException {}
-
 	public void startLife() throws GameActionException{
 		if(rc.getTeam() == Team.A) PADS[0] += 1;
 	    System.out.println("Got created.");
@@ -90,8 +89,6 @@ public abstract class Robot {
 	        case DELIVERY_DRONE:     type=7;    break;
 	        case NET_GUN:            type=8;    break;
 	    }
-
-	    init();
 
 	    //process all messages from beginning of game until you find hq location
 	    int checkRound = 1;
@@ -121,7 +118,8 @@ public abstract class Robot {
 	            processMessage(t);
 	        }
 	        if(enemy_msg_cnt > 0){
-	            base_wager = ((enemy_msg_sum/enemy_msg_cnt + 1) + base_wager)/2;
+	            base_wager = (2*(enemy_msg_sum/(enemy_msg_cnt + 7-rc.getBlock(rc.getRoundNum() - 1).length)
+						+ 1) + base_wager)/3 + 1;
 	        }else{
 	            base_wager *= .8;
 	        }
@@ -206,7 +204,6 @@ public abstract class Robot {
 	    int res = (((m[0] >>> 4) ^ (m[0] << 24) ^ (m[1] >>> 8) ^ (m[1] << 20) ^ (m[2] >>> 12) ^ (m[2] << 16) ^
 	        (m[3] >>> 16) ^ (m[3] << 12) ^ (m[4] >>> 20) ^ (m[4] << 8) ^ (m[5] >>> 24) ^ (m[5] << 4) ^
 	        (m[6] >>> 28) ^ (m[6]))<<4)>>>4;
-
 	    if (res != 0) { //Checksum failed, message made for the enemy
 	        enemy_msg_cnt++;
 	        enemy_msg_sum += t.getCost();
@@ -219,20 +216,25 @@ public abstract class Robot {
 	        int id = getInt(m, ptr, 4);
 	        ptr += 4;
 	        int messageStart = ptr;
-	        if(id==0){ //0000 Set our HQ
-	            if(ptr >= 184){ //Requires 2 6-bit integers
-	                System.out.println("Message did not exit properly");
-	                return;
-	            }
-	            ptr += 12;
-	        }else if(id==1){
+			if(id==0){ //0000 Set our HQ
+				if(ptr >= 184){ //Requires 2 6-bit integers
+					System.out.println("Message did not exit properly");
+					return;
+				}
+				ptr += 12;
+			}else if(id==1){
 	            if(ptr >= 177){
 	                System.out.println("Message did not exit properly");
 	                return;
 	            }
 	            ptr += 19;
-	        }
-	        else if(id==15){    //1111 Message terminate
+	        }else if(id==2){ //0010 Set enemy HQ
+				if(ptr >= 184){ //Requires 2 6-bit integers
+					System.out.println("Message did not exit properly");
+					return;
+				}
+				ptr += 12;
+			}else if(id==15){    //1111 Message terminate
 	            return;
 	        }
             executeMessage(id, m, messageStart);
@@ -245,17 +247,30 @@ public abstract class Robot {
 	    /*Returns true if message applies to me*/
 
 		//Messages applicable to all robots
-	    if(id==0){
-            int x = getInt(m, ptr, 6);
-            if(x==0)x=64;
-            ptr += 6;
-            int y = getInt(m, ptr, 6);
-            if(y==0)x=64;
+		if(id==0){
+			int x = getInt(m, ptr, 6);
+			if(x==0)x=64;
+			ptr += 6;
+			int y = getInt(m, ptr, 6);
+			if(y==0)x=64;
 
-            locHQ = new MapLocation(x,y);
-            System.out.println("Now I know that my HQ is at" + locHQ);
-            return true;
-        }
+			locHQ = new MapLocation(x,y);
+			System.out.println("Now I know that my HQ is at" + locHQ);
+			return true;
+		}else if(id==2){
+			if(enemyHQ != null){
+				return true;
+			}
+			int x = getInt(m, ptr, 6);
+			if(x==0)x=64;
+			ptr += 6;
+			int y = getInt(m, ptr, 6);
+			if(y==0)x=64;
+
+			enemyHQ = new MapLocation(x,y);
+			System.out.println("Now I know that the opposing HQ is at" + enemyHQ);
+			return true;
+		}
 	    return false;
     }
 
@@ -287,7 +302,7 @@ public abstract class Robot {
 	public void resetMessage(){
 	    //Resets currMessage to all 0's, and messagePtr to 0.
 	    messagePtr = 0;
-	    currMessage = new int[7];;
+	    currMessage = new int[7];
 	    return;
 	}
 
@@ -302,14 +317,21 @@ public abstract class Robot {
 	        writeInt(id, 4);
 	        writeInt(params[0], 6);
 	        writeInt(params[1], 6);
-	    }if(id==1){ //0000 Set our HQ
-	        if(messagePtr >= 169){ //Requires id + 4-bit int + 15-bit int
-	            addMessageToQueue(base_wager);
-	        }
-	        writeInt(id, 4);
-	        writeInt(params[0], 4);
-	        writeInt(params[1], 15);
-	    }
+	    }if(id==1){ //0001 Announce birth
+			if(messagePtr >= 169){ //Requires id + 4-bit int + 15-bit int
+				addMessageToQueue(base_wager);
+			}
+			writeInt(id, 4);
+			writeInt(params[0], 4);
+			writeInt(params[1], 15);
+		}if(id==2){ //0010 Set enemy HQ
+			if(messagePtr >= 176){ //Requires id + 2 6-bit integers
+				addMessageToQueue(base_wager);
+			}
+			writeInt(id, 4);
+			writeInt(params[0], 6);
+			writeInt(params[1], 6);
+		}
 	    return;
 	}
 

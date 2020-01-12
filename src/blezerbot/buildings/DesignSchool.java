@@ -14,7 +14,7 @@ public class DesignSchool extends Building {
 
 	public void run() throws GameActionException {
 		super.run();
-		if (builtLandscapers < 4) {
+		if (builtLandscapers < 2) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
 					rc.buildRobot(RobotType.LANDSCAPER, dir);
