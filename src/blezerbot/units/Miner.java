@@ -24,100 +24,97 @@ public class Miner extends Unit {
 		super(rc);
 	}
 
-	public void startLife() throws GameActionException {
-		super.startLife();
-		if (soupTries == null) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
-	}
-
 	public void run() throws GameActionException {
 		super.run();
-
-		if (Math.random() < 0.002) {
-			for (Direction dir : directions) {
-				if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, dir)) {
-					rc.buildRobot(RobotType.FULFILLMENT_CENTER, dir);
-				}
-			}
-		}
-		if (Math.random() < 0.001) {
-			for (Direction dir : directions) {
-				if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
-					rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
-				}
-			}
-		}
-		if (status == MinerStatus.NOTHING) return;
-		if (status == null) status = MinerStatus.SEARCHING;
-		setVisitedAndSeen();
-		MapLocation nloc = null;
-		MapLocation mloc = rc.getLocation();
-		int h = rc.getMapHeight();
-		int w = rc.getMapWidth();
-		switch (status) {
-			case SEARCHING:
-				for (int x = -5; x <= 5; x++) {
-					if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
-					for (int y = -5; y <= 5; y++) {
-						nloc = mloc.translate(x, y);
-						if (!(rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0)) continue;
-						if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
-							continue;
-						}
-						status = MinerStatus.MINING;
-						soupLoc = nloc;
-						break;
+		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
+		if (sentInfo) {
+			if (Math.random() < 0.002) {
+				for (Direction dir : directions) {
+					if (rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, dir)) {
+						rc.buildRobot(RobotType.FULFILLMENT_CENTER, dir);
 					}
-					if (status != MinerStatus.SEARCHING) break;
 				}
-				if (status == MinerStatus.SEARCHING) findSoup();
-				break;
-			case MINING:
-				if (!mloc.isAdjacentTo(soupLoc)) {
-					for (Direction dir : directions) {
-						if (tryMine(dir)) { 
-							soupLoc = mloc.add(dir);
-							soupTries[soupLoc.x][soupLoc.y] = 0;
+			}
+			if (Math.random() < 0.001) {
+				for (Direction dir : directions) {
+					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
+						rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
+					}
+				}
+			}
+			if (status == MinerStatus.NOTHING) return;
+			if (status == null) status = MinerStatus.SEARCHING;
+			setVisitedAndSeen();
+			MapLocation nloc = null;
+			MapLocation mloc = rc.getLocation();
+			int h = rc.getMapHeight();
+			int w = rc.getMapWidth();
+			switch (status) {
+				case SEARCHING:
+					for (int x = -5; x <= 5; x++) {
+						if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
+						for (int y = -5; y <= 5; y++) {
+							nloc = mloc.translate(x, y);
+							if (!(rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0)) continue;
+							if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
+								continue;
+							}
+							status = MinerStatus.MINING;
+							soupLoc = nloc;
 							break;
 						}
+						if (status != MinerStatus.SEARCHING) break;
 					}
-					if (soupTries[soupLoc.x][soupLoc.y] <= 6) {
-						goTo(soupLoc);
-						if(rc.getLocation().distanceSquaredTo(soupLoc) <= 35) soupTries[soupLoc.x][soupLoc.y]++;
+					if (status == MinerStatus.SEARCHING) findSoup();
+					break;
+				case MINING:
+					if (!mloc.isAdjacentTo(soupLoc)) {
+						for (Direction dir : directions) {
+							if (tryMine(dir)) { 
+								soupLoc = mloc.add(dir);
+								soupTries[soupLoc.x][soupLoc.y] = 0;
+								break;
+							}
+						}
+						if (soupTries[soupLoc.x][soupLoc.y] <= 6) {
+							goTo(soupLoc);
+							if(rc.getLocation().distanceSquaredTo(soupLoc) <= 35) soupTries[soupLoc.x][soupLoc.y]++;
+						}
+						else {
+							soupLoc = null;
+							status = MinerStatus.SEARCHING;
+						}
 					}
 					else {
-						soupLoc = null;
-						status = MinerStatus.SEARCHING;
+						boolean mined = tryMine(mloc.directionTo(soupLoc));
+						if (rc.senseSoup(soupLoc) == 0) {
+							status = MinerStatus.SEARCHING;
+							soupLoc = null;
+						}
+						if (rc.getSoupCarrying() >= 100) {
+							status = MinerStatus.RETURNING;
+						}
+						else if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
+							soupLoc = null;
+							if (status != MinerStatus.RETURNING) status = MinerStatus.SEARCHING;
+						}
 					}
-				}
-				else {
-					boolean mined = tryMine(mloc.directionTo(soupLoc));
-					if (rc.senseSoup(soupLoc) == 0) {
-						status = MinerStatus.SEARCHING;
-						soupLoc = null;
+					break;
+				case RETURNING:
+					goTo(locHQ);
+					if (distHQ() < 3) {
+						status = MinerStatus.DEPOSITING;
 					}
-					if (rc.getSoupCarrying() >= 100) {
-						status = MinerStatus.RETURNING;
+					break;
+				case DEPOSITING:
+					if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
+					if (rc.getSoupCarrying() == 0) {
+						if (soupLoc !=  null) {
+							status = MinerStatus.MINING;
+						} else status = MinerStatus.SEARCHING;
 					}
-					else if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
-						soupLoc = null;
-						if (status != MinerStatus.RETURNING) status = MinerStatus.SEARCHING;
-					}
-				}
-				break;
-			case RETURNING:
-				goTo(locHQ);
-				if (distHQ() < 3) {
-					status = MinerStatus.DEPOSITING;
-				}
-				break;
-			case DEPOSITING:
-				if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
-				if (rc.getSoupCarrying() == 0) {
-					if (soupLoc !=  null) {
-						status = MinerStatus.MINING;
-					} else status = MinerStatus.SEARCHING;
-				}
-				break;
+					break;
+			}
 		}
 	}
 

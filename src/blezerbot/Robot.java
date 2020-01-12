@@ -17,12 +17,11 @@ public abstract class Robot {
 	public MapLocation locHQ;   //Where is my HQ?
 	public MapLocation enemyHQ;   //Where is enemy HQ?
 	public boolean sentInfo;    //Sent info upon spawn
+	public boolean queuedInfo;
 	public int type;    //Integer from 0 to 8, index of robot_types
 	public int base_wager = 2;
 	public int enemy_msg_cnt;   //How many enemy messages went through last round?
 	public int enemy_msg_sum;   //Total wagers of enemy messages last round.
-	public boolean[][] seen;
-	public int[][] visited;
 	public Random r;
 	public Direction facing;
 	//public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
@@ -53,8 +52,6 @@ public abstract class Robot {
 		return directions[(val+7)%8];
 	}
 	public Robot(RobotController rc) throws GameActionException {
-		if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
-		if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (r == null) r = new Random(rc.getID());
 
 		this.rc = rc;
@@ -126,10 +123,10 @@ public abstract class Robot {
 	        base_wager = Math.max(base_wager, 1);
 	    }
 
-	    if(!sentInfo){
+	    if(!sentInfo && !queuedInfo){
 	        writeMessage(1, new int[]{type, rc.getLocation().x, rc.getLocation().y, rc.getID()});
 	        addMessageToQueue();
-	        sentInfo = true;
+	        queuedInfo = true;
 	    }
 	}
 
@@ -139,6 +136,10 @@ public abstract class Robot {
 	        rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
 	        messageQueue.remove(0);
 	    }
+	    if (queuedInfo && messageQueue.size() == 0){
+	    	queuedInfo = false;
+	    	sentInfo = true;	
+	    } 
 	}
 
 	public boolean onMap(MapLocation l) {
