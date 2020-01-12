@@ -30,6 +30,7 @@ public class Miner extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		super.run();
 
 		if (Math.random() < 0.002) {
 			for (Direction dir : directions) {

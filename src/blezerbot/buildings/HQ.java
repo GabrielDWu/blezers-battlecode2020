@@ -23,6 +23,7 @@ public class HQ extends Building {
 	}
 
 	public void run() throws GameActionException {
+		super.run();
 		if(!hq_sentLoc){
 			writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
 			addMessageToQueue();

@@ -22,7 +22,7 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
-
+		super.run();
 		if(status==LandscaperStatus.ATTACKING){
 			Direction attackDir = rc.getLocation().directionTo(enemyHQ);
 			if(rc.getDirtCarrying() < 1){

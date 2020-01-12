@@ -8,10 +8,20 @@ public abstract class Unit extends Robot {
 	MapLocation dest;
 	boolean hugging = false;
 	int lastDist = -1;
+	long[][] unitVisited;
+	int unitVisitedIndex;
 
 	public Unit(RobotController rc) throws GameActionException {
 		super(rc);
 	};
+
+	public void run() throws GameActionException {
+		super.run();
+		if (unitVisited == null) {
+			unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
+			unitVisitedIndex = -1;
+		}
+	}
 
 	public int distHQ() {
 
@@ -20,14 +30,36 @@ public abstract class Unit extends Robot {
 
 	}
 
+	public int getUnitVisited(MapLocation loc) {
+		return (int)((unitVisited[loc.x][loc.y]>>(unitVisitedIndex*4))&0xf);
+	}
+
+	public void incUnitVisited(MapLocation loc) {
+		unitVisited[loc.x][loc.y] = (Math.min(((unitVisited[loc.x][loc.y]>>(unitVisitedIndex*4))&0xf)+1,0xf)<<(unitVisitedIndex*4))|((unitVisited[loc.x][loc.y]&(~(long)(0xf<<(unitVisitedIndex*4))))>>unitVisitedIndex*4);
+	}
+
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady()) return;
 		if (loc != dest) {
 			dest = loc;
 			lastDist = 0;
 			hugging = false;
+			unitVisitedIndex++;
+			if (unitVisitedIndex > 15) {
+				unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
+				unitVisitedIndex = 0;
+			}
 		}
 		MapLocation mloc = rc.getLocation();
+		incUnitVisited(mloc);
+		if (getUnitVisited(mloc) > 4) {
+			Direction sdir = directions[r.nextInt(directions.length)];
+			int dcount = 0;
+			while (dcount++ < directions.length && !tryMove(sdir)) {
+				sdir = sdir.rotateRight();
+			}
+			return;
+		}
 
 		//Check if still should be hugging (if nothing around you, hugging=false)
 		if(hugging){
@@ -68,10 +100,17 @@ public abstract class Unit extends Robot {
 		dir = dir.rotateRight();
 
 		//Left forward diagonal turn
-		if(tryMove(dir)){
-			facing = dir.rotateLeft();
-
-			return;
+		if (canMove(dir)) {
+			Direction fdir = dir.rotateRight();
+			if (canMove(fdir)) {
+				//forward if it gets us closer
+				int fdist = mloc.add(fdir).distanceSquaredTo(loc);	
+				if (fdist < lastDist && fdist < mloc.add(dir).distanceSquaredTo(loc) && tryMove(fdir)) return;
+			}
+			if(tryMove(dir)){
+				facing = dir.rotateLeft();
+				return;
+			}
 		}
 		dir = dir.rotateRight();
 
@@ -80,6 +119,20 @@ public abstract class Unit extends Robot {
 		dir = dir.rotateRight();
 
 		//Right forward diagonal turn
+		if (canMove(dir)) {
+			Direction fdir = dir.rotateRight();
+			if (canMove(fdir)) {
+				//right if it gets us closer
+				int fdist = mloc.add(fdir).distanceSquaredTo(loc);	
+				if (fdist < lastDist && fdist < mloc.add(dir).distanceSquaredTo(loc) && tryMove(fdir)) {
+					facing = fdir;
+					return;
+				};
+			}
+			if(tryMove(dir)){
+				return;
+			}
+		}
 		if(tryMove(dir))return;
 		dir = dir.rotateRight();
 

@@ -11,6 +11,7 @@ public class NetGun extends Building {
 	}
 
 	public void run() throws GameActionException {
+		super.run();
 		//Shoot enemy drones
 		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
 			if(enemy.type == RobotType.DELIVERY_DRONE){

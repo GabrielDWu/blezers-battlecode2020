@@ -72,7 +72,7 @@ public abstract class Robot {
 		}
 	}
 
-	public abstract void run() throws GameActionException;
+	public void run() throws GameActionException {}
 
 	public void startLife() throws GameActionException{
 		if(rc.getTeam() == Team.A) PADS[0] += 1;
