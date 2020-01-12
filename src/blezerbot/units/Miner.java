@@ -31,6 +31,7 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
+		System.out.println(status+" "+Clock.getBytecodesLeft());
 
 		if (Math.random() < 0.002) {
 			for (Direction dir : directions) {
@@ -76,6 +77,7 @@ public class Miner extends Unit {
 					for (Direction dir : directions) {
 						if (tryMine(dir)) { 
 							soupLoc = mloc.add(dir);
+							soupTries[soupLoc.x][soupLoc.y] = 0;
 							break;
 						}
 					}
@@ -118,6 +120,7 @@ public class Miner extends Unit {
 				}
 				break;
 		}
+		System.out.println("END "+status+" "+Clock.getBytecodesLeft());
 	}
 
 	public void setVisitedAndSeen() throws GameActionException {
@@ -155,6 +158,7 @@ public class Miner extends Unit {
 	void findSoup() throws GameActionException {
 	    int[] newSeenList = new int[directions.length];
 	    Direction[] newSeenDirs = new Direction[directions.length];
+	    int numDir = 0;
 	    MapLocation l = rc.getLocation();
 	    MapLocation ln;
 	    int di = 0;
@@ -163,9 +167,9 @@ public class Miner extends Unit {
 	        if (onMap(ln)) {
 	            newSeenList[di] = visited[ln.x][ln.y] > 0 ? -visited[ln.x][ln.y] : newVisibleMiner(l, dir);
 	            newSeenDirs[di++] = dir;
+	            numDir++;
 	        }
 	    }
-	    int numDir = newSeenList.length;
 	    Direction maxl = null;
 	    while (maxl == null || !tryMove(maxl)) {
 	        int max = Integer.MIN_VALUE;
