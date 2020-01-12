@@ -59,14 +59,13 @@ public class Miner extends Unit {
 					if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
 					for (int y = -5; y <= 5; y++) {
 						nloc = mloc.translate(x, y);
+						if (!(rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0)) continue;
 						if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
 							continue;
 						}
-						if (rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0) {
-							status = MinerStatus.MINING;
-							soupLoc = nloc;
-							break;
-						}
+						status = MinerStatus.MINING;
+						soupLoc = nloc;
+						break;
 					}
 					if (status != MinerStatus.SEARCHING) break;
 				}
@@ -154,18 +153,19 @@ public class Miner extends Unit {
 	}
 
 	void findSoup() throws GameActionException {
-	    ArrayList<Integer> newSeenList = new ArrayList<Integer>();
-	    ArrayList<Direction> newSeenDirs = new ArrayList<Direction>();
+	    int[] newSeenList = new int[directions.length];
+	    Direction[] newSeenDirs = new Direction[directions.length];
 	    MapLocation l = rc.getLocation();
 	    MapLocation ln;
+	    int di = 0;
 	    for (Direction dir : directions) {
 	        ln = l.add(dir);
 	        if (onMap(ln)) {
-	            newSeenList.add(visited[ln.x][ln.y] > 0 ? -visited[ln.x][ln.y] : newVisibleMiner(l, dir));
-	            newSeenDirs.add(dir);
+	            newSeenList[di] = visited[ln.x][ln.y] > 0 ? -visited[ln.x][ln.y] : newVisibleMiner(l, dir);
+	            newSeenDirs[di++] = dir;
 	        }
 	    }
-	    int numDir = newSeenList.size();
+	    int numDir = newSeenList.length;
 	    Direction maxl = null;
 	    while (maxl == null || !tryMove(maxl)) {
 	        int max = Integer.MIN_VALUE;
@@ -173,8 +173,8 @@ public class Miner extends Unit {
 	        //I'm pretty sure this is random enough and preserves the bytecode
 			int ri = r.nextInt(numDir);
 	        for(int i=0; i<numDir; i++) {
-	            int newv = newSeenList.get((i+ri)%numDir);
-	            Direction newl = newSeenDirs.get((i+ri)%numDir);
+	            int newv = newSeenList[(i+ri)%numDir];
+	            Direction newl = newSeenDirs[(i+ri)%numDir];
 	            if (newv > max && rc.canMove(newl) && !rc.senseFlooding(rc.adjacentLocation(newl))) {
 	                maxl = newl;
 	                max = newv;
