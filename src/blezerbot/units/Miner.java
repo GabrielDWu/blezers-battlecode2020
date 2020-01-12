@@ -28,6 +28,7 @@ public class Miner extends Unit {
 	}
 
 	public void run() throws GameActionException {
+
 		if (Math.random() < 0.02) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {

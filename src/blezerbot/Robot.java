@@ -37,7 +37,6 @@ public abstract class Robot {
 	        RobotType.DELIVERY_DRONE, //7
 	        RobotType.NET_GUN //8
 	};
-	public ArrayList<ArrayList<InternalUnit>> units;
 	public int getDirectionValue(Direction dir){
 		for(int i = 0; i<8; i++){
 			if(directions[i] == dir) return i;
@@ -219,58 +218,48 @@ public abstract class Robot {
 	    while(ptr <= 191){   //195-4
 	        int id = getInt(m, ptr, 4);
 	        ptr += 4;
+	        int messageStart = ptr;
 	        if(id==0){ //0000 Set our HQ
 	            if(ptr >= 184){ //Requires 2 6-bit integers
 	                System.out.println("Message did not exit properly");
 	                return;
 	            }
-	            int x = getInt(m, ptr, 6);
-	            if(x==0)x=64;
-	            ptr += 6;
-	            int y = getInt(m, ptr, 6);
-	            if(y==0)x=64;
-	            ptr += 6;
-	            locHQ = new MapLocation(x,y);
-	            System.out.println("Now I know that my HQ is at" + locHQ);
+	            ptr += 12;
 	        }else if(id==1){
 	            if(ptr >= 177){
 	                System.out.println("Message did not exit properly");
 	                return;
 	            }
-	            if(type == 0){//Only HQ keeps track of other units
-	                int unit_type = getInt(m, ptr, 4);
-	                ptr += 4;
-	                int unit_id = getInt(m, ptr, 15);
-	                ptr += 15;
-	                units.get(unit_type).add(new InternalUnit(unit_type, unit_id));
-	                System.out.println("Added unit" + new InternalUnit(unit_type,unit_id));
-	            }else{
-	                ptr += 19;
-	            }
+	            ptr += 19;
 	        }
 	        else if(id==15){    //1111 Message terminate
 	            return;
 	        }
+            executeMessage(id, m, messageStart);
 	    }
 	    System.out.println("Message did not exit properly");  //Should've seen 1111.
 	    return;
 	}
 
-	public class InternalUnit{
-		/*HQ uses this class to keep track of all of our units.*/
-		public int type;
-		public int id;
-		public MapLocation lastSent;
+	public boolean executeMessage(int id, int[] m, int ptr){
+	    /*Returns true if message applies to me*/
 
-		public InternalUnit(int t, int id){
-			this.type = t;
-			this.id = id;
-		}
+		//Messages applicable to all robots
+	    if(id==0){
+            int x = getInt(m, ptr, 6);
+            if(x==0)x=64;
+            ptr += 6;
+            int y = getInt(m, ptr, 6);
+            if(y==0)x=64;
 
-		public String toString(){
-			return robot_types[type] + " (" + id + ")";
-		}
-	}
+            locHQ = new MapLocation(x,y);
+            System.out.println("Now I know that my HQ is at" + locHQ);
+            return true;
+        }
+	    return false;
+    }
+
+
 
 	public int getInt(int[] m, int ptr, int size){
 	    /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
