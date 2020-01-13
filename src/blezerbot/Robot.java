@@ -245,6 +245,18 @@ public abstract class Robot {
 				ptr += 4+15;
 			}else if(id==15){    //1111 Message terminate
 	            return;
+	        } else if (id == 4) {
+	        	if (ptr >= 196 - 15 - 15 - 12 - 12) {
+	        		System.out.println("Message did not exit properly");
+	        		return;
+	        	}
+	        	ptr += 15+15+12+12;
+	        } else if (id == 5) {
+	        	if (ptr >= 196 - 15) {
+	        		System.out.println("Message did not exit properly");
+	        		return;
+	        	}
+	        	ptr += 15;
 	        }
             executeMessage(id, m, messageStart);
 	    }
@@ -346,6 +358,23 @@ public abstract class Robot {
 			writeInt(id, 4);
 			writeInt(params[0], 4);
 			writeInt(params[1], 15);
+		} else if (id == 4) { // 0100 pick up and drop off (given coordinates and ids)
+			if (messagePtr >= 192 - 4 - 15 - 15 - 12 - 12) {
+				addMessageToQueue(base_wager);
+			}
+			writeInt(id, 4);
+			writeInt(params[0], 15);
+			writeInt(params[1], 15);
+			writeInt(params[2], 6);
+			writeInt(params[3], 6);
+			writeInt(params[4], 6);
+			writeInt(params[5], 6);
+		} else if (id == 5) { // do nothing
+			if (messagePtr >= 192 - 4 - 15) {
+				addMessageToQueue(base_wager);
+			}
+			writeInt(id, 4);
+			writeInt(params[0], 15);
 		}
 	    return;
 	}

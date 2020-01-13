@@ -29,7 +29,7 @@ public class DeliveryDrone extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		if (enemyHQs == null) {
+		if (enemyHQs == null && enemyHQ == null && turnCount > 9) {
 			status = DeliveryDroneStatus.FIND_ENEMY_HQ;
 			enemyHQs = new MapLocation[3];
 			enemyHQc = -1;
@@ -174,7 +174,7 @@ public class DeliveryDrone extends Unit {
 			}
 			enemyHQc = 0;
 		}
-		goTo(enemyHQs[enemyHQc]);
+		if (rc.getCurrentSensorRadiusSquared() > GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED /*|| rc.getLocation().distanceSquaredTo(enemyHQs[enemyHQc]) > 20*/) goTo(enemyHQs[enemyHQc]);
 		MapLocation r = detectEnemyHQ();
 		if (r != null) {
 			findingEnemyHQ = false;
@@ -188,6 +188,25 @@ public class DeliveryDrone extends Unit {
 		return null;
 	}
 
+	public boolean executeMessage(int id, int[] m, int ptr){
+		/*Returns true if message applies to me*/
+		if(super.executeMessage(id, m, ptr)){
+			return true;
+		}
+		if(id == 4){
+			if (getInt(m, ptr, 15) != rc.getID()) return false;
+			ptr += 15;
+			searchID = getInt(m, ptr, 15);
+			ptr += 15;
+			lastSeen = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
+			ptr += 6;
+			dropLocation = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
+			status = DeliveryDroneStatus.PICK_UP;
+			return true;
+		}
+		return false;
+	}
+
 	public MapLocation detectEnemyHQ() {
 		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), (rc.getTeam() == Team.A ? Team.B : Team.A));
 		for(RobotInfo x: near){
@@ -196,6 +215,19 @@ public class DeliveryDrone extends Unit {
 			}
 		}
 		return null;
+	}
+
+	public boolean netGunRadius(MapLocation loc) throws GameActionException{
+		if(rc.canSenseLocation(loc) == false) return false;
+		RobotInfo [] robots = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), (rc.getTeam() == Team.A ? Team.B : Team.A));
+		for(RobotInfo r: robots){
+			if(r.getType() == RobotType.NET_GUN || r.getType() == RobotType.HQ){
+				if(loc.distanceSquaredTo(r.getLocation()) <= GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public boolean tryMove(Direction dir) throws GameActionException {
