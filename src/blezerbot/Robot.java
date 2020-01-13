@@ -18,7 +18,7 @@ public abstract class Robot {
 	public MapLocation enemyHQ;   //Where is enemy HQ?
 	public boolean sentInfo;    //Sent info upon spawn
 	public boolean queuedInfo;
-	public int type;    //Integer from 0 to 8, index of robot_types
+	public RobotType type;    //Integer from 0 to 8, index of robot_types
 	public int base_wager = 2;
 	public int enemy_msg_cnt;   //How many enemy messages went through last round?
 	public int enemy_msg_sum;   //Total wagers of enemy messages last round.
@@ -27,6 +27,8 @@ public abstract class Robot {
 	//public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
 	public Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	public int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+	public HashSet<Integer> nonces_seen;
+
 	public RobotType[] robot_types = {RobotType.HQ, //0
 	        RobotType.MINER, //1
 	        RobotType.REFINERY, //2
@@ -35,7 +37,8 @@ public abstract class Robot {
 	        RobotType.FULFILLMENT_CENTER, //5
 	        RobotType.LANDSCAPER, //6
 	        RobotType.DELIVERY_DRONE, //7
-	        RobotType.NET_GUN //8
+	        RobotType.NET_GUN, //8
+			RobotType.COW
 	};
 	public int getDirectionValue(Direction dir){
 		for(int i = 0; i<8; i++){
@@ -63,26 +66,12 @@ public abstract class Robot {
 		        endTurn();
 		        Clock.yield();
 		    } catch (Exception e) {
-		        System.out.println(robot_types[type] + " Exception");
+		        System.out.println(type + " Exception");
 		        e.printStackTrace();
 		    }
 		}
 	}
 
-	public int getRobotType(RobotType r) {
-		switch (r) {
-		    case HQ:                 return 0;
-		    case MINER:              return 1;
-		    case REFINERY:           return 2;
-		    case VAPORATOR:          return 3;
-		    case DESIGN_SCHOOL:      return 4;
-		    case FULFILLMENT_CENTER: return 5;
-		    case LANDSCAPER:         return 6;
-		    case DELIVERY_DRONE:     return 7;
-		    case NET_GUN:            return 8;
-		}
-		return -1;
-	}
 
 	public void run() throws GameActionException {}
 
@@ -90,21 +79,10 @@ public abstract class Robot {
 		if(rc.getTeam() == Team.A) PADS[0] += 1;
 	    System.out.println("Got created.");
 
-	    type = getRobotType(rc.getType());
+	    type = rc.getType();
 
-	    //process all messages from beginning of game until you find hq location
-	    int checkRound = 1;
-	    while (checkRound < rc.getRoundNum()-1 && locHQ == null) {
-	    	System.out.println("checking round " + checkRound);
-	        for (Transaction t : rc.getBlock(checkRound)){
-	            processMessage(t);
-	            if(locHQ != null){
-	                break;
-	            }
-	        }
-	        checkRound++;
-	    }
 	    birthRound = rc.getRoundNum();
+	    nonces_seen = new HashSet<Integer>();
 	    resetMessage();
 	}
 
@@ -129,7 +107,7 @@ public abstract class Robot {
 	    }
 
 	    if(!sentInfo && !queuedInfo){
-	        writeMessage(1, new int[]{type, rc.getLocation().x, rc.getLocation().y, rc.getID()});
+	        writeMessage(1, new int[]{type.ordinal(), rc.getLocation().x, rc.getLocation().y, rc.getID()});
 	        addMessageToQueue();
 	        queuedInfo = true;
 	    }
@@ -224,14 +202,16 @@ public abstract class Robot {
 	    int res = (((m[0] >>> 4) ^ (m[0] << 24) ^ (m[1] >>> 8) ^ (m[1] << 20) ^ (m[2] >>> 12) ^ (m[2] << 16) ^
 	        (m[3] >>> 16) ^ (m[3] << 12) ^ (m[4] >>> 20) ^ (m[4] << 8) ^ (m[5] >>> 24) ^ (m[5] << 4) ^
 	        (m[6] >>> 28) ^ (m[6]))<<4)>>>4;
-	    if (res != 0) { //Checksum failed, message made for the enemy
+	    if (res != 0 || nonces_seen.contains(m[0]) || ((m[0]>>>18) < birthRound && (m[0]>>>18) > 10)) { //Checksum or nonce failed, message made for the enemy
 	        enemy_msg_cnt++;
 	        enemy_msg_sum += t.getCost();
 	        //May want to store enemy messages here to find patterns to spread misinformation... ;)
 	        return;
-	    }
+	    }else{
+	    	nonces_seen.add(m[0]);
+		}
 
-	    int ptr = 0;
+	    int ptr = 32;
 	    while(ptr <= 191){   //195-4
 	        int id = getInt(m, ptr, 4);
 	        ptr += 4;
@@ -254,14 +234,14 @@ public abstract class Robot {
 					return;
 				}
 				ptr += 12;
+			}else if (id == 3) {
+				if (ptr >= 196 - 4 - 15) {
+					System.out.println("Message did not exit properly");
+					return;
+				}
+				ptr += 4+15;
 			}else if(id==15){    //1111 Message terminate
 	            return;
-	        } else if (id == 3) {
-	        	if (ptr >= 196 - 4 - 15) {
-	        		System.out.println("Message did not exit properly");
-	        		return;
-	        	}
-	        	ptr += 4+15;
 	        }
             executeMessage(id, m, messageStart);
 	    }
@@ -323,8 +303,8 @@ public abstract class Robot {
 	}
 
 	public void resetMessage(){
-	    //Resets currMessage to all 0's, and messagePtr to 0.
-	    messagePtr = 0;
+	    //Resets currMessage to all 0's, and messagePtr to 32.
+	    messagePtr = 32;
 	    currMessage = new int[7];
 	    return;
 	}
@@ -374,6 +354,7 @@ public abstract class Robot {
 	public void addMessageToQueue(int wager){
 	    /*Does the following
 	    Writes the 1111 message end
+	    Adds nonce to currMessage[0]
 	    Sets the last 28 bits to meet the checksum
 	    Applies the pad
 	    Adds transaction to messageQueue
@@ -381,6 +362,9 @@ public abstract class Robot {
 	    Returns true if successful
 	 */
 	    writeInt(15, 4);
+
+		//Add nonce
+		currMessage[0] += (rc.getRoundNum() << 18) + r.nextInt(1<<18);
 
 	    int res = (((currMessage[0] >>> 4) ^ (currMessage[0] << 24) ^ (currMessage[1] >>> 8) ^ (currMessage[1] << 20) ^
 	        (currMessage[2] >>> 12) ^ (currMessage[2] << 16) ^ (currMessage[3] >>> 16) ^ (currMessage[3] << 12) ^

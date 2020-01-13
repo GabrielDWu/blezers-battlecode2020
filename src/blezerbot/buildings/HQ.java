@@ -10,7 +10,7 @@ public class HQ extends Building {
 	int buildingFulfillment;
 	int buildingDesignSchool;
 	boolean hq_sentLoc;
-	public ArrayList<ArrayList<InternalUnit>> units;
+	public ArrayList<InternalUnit>[] units;
 
 	public HQ(RobotController rc)throws GameActionException {
 		super(rc);
@@ -19,9 +19,9 @@ public class HQ extends Building {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		buildingFulfillment = Integer.MAX_VALUE;
-		units = new ArrayList<ArrayList<InternalUnit> >(10);
+		units = new ArrayList[10];
 		for(int i=0; i<10; i++){
-			units.add(i,new ArrayList<InternalUnit>());
+			units[i] = new ArrayList<InternalUnit>();
 		}
 	}
 
@@ -35,16 +35,16 @@ public class HQ extends Building {
 			hq_sentLoc = true;
 		}
 
-		if (units.get(5 /*fulfillment center*/).size() == 0 && units.get(1).size() > 0 /*miner*/ && Math.abs(buildingFulfillment) > 4 && rc.getTeamSoup() > 150) {
+		if (units[5 /*fulfillment center*/].size() == 0 && units[1].size() > 0 /*miner*/ && Math.abs(buildingFulfillment) > 4 && rc.getTeamSoup() > 150) {
 			buildingFulfillment = 1;
-			ArrayList<InternalUnit> miners = units.get(1);
+			ArrayList<InternalUnit> miners = units[1];
 			writeMessage(3, new int[]{5, miners.get(r.nextInt(miners.size())).id});
 			addMessageToQueue();
 		}
 
-		if (units.get(4 /*design school*/).size() == 0 && units.get(1).size() > 0 /*miner*/ && Math.abs(buildingDesignSchool) > 4 && rc.getTeamSoup() > 150) {
+		if (units[4 /*design school*/].size() == 0 && units[1].size() > 0 /*miner*/ && Math.abs(buildingDesignSchool) > 4 && rc.getTeamSoup() > 150) {
 			buildingDesignSchool = 1;
-			ArrayList<InternalUnit> miners = units.get(1);
+			ArrayList<InternalUnit> miners = units[1];
 			writeMessage(3, new int[]{4, miners.get(r.nextInt(miners.size())).id});
 			addMessageToQueue();
 		}
@@ -71,8 +71,9 @@ public class HQ extends Building {
 		if(rc.getRoundNum() %9 == 0){
 			if(enemyHQ != null){
 				writeMessage(2, new int[]{enemyHQ.x, enemyHQ.y});
-				addMessageToQueue();
 			}
+			writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
+			addMessageToQueue();
 		}
 
 	}
@@ -84,12 +85,12 @@ public class HQ extends Building {
 		}
 		//HQ specific methods:
 		if(id==1){
-			int unit_type = getInt(m, ptr, 4);
+			RobotType unit_type = robot_types[getInt(m, ptr, 4)];
 			ptr += 4;
 			MapLocation loc = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
 			ptr += 12;
 			int unit_id = getInt(m, ptr, 15);
-			units.get(unit_type).add(new InternalUnit(unit_type, unit_id, loc));
+			units[unit_type.ordinal()].add(new InternalUnit(unit_type, unit_id, loc));
 			System.out.println("Added unit " + new InternalUnit(unit_type,unit_id, loc));
 			return true;
 		}
@@ -98,18 +99,18 @@ public class HQ extends Building {
 
 	public class InternalUnit{
 		/*HQ uses this class to keep track of all of our units.*/
-		public int type;
+		public RobotType type;
 		public int id;
 		public MapLocation lastSent;
 
-		public InternalUnit(int t, int id, MapLocation loc){
+		public InternalUnit(RobotType t, int id, MapLocation loc){
 			this.type = t;
 			this.id = id;
 			lastSent = loc;
 		}
 
 		public String toString(){
-			return robot_types[type] + " (" + id + ") "+lastSent;
+			return type + " (" + id + ") "+lastSent;
 		}
 	}
 
