@@ -202,7 +202,10 @@ public abstract class Robot {
 	    int res = (((m[0] >>> 4) ^ (m[0] << 24) ^ (m[1] >>> 8) ^ (m[1] << 20) ^ (m[2] >>> 12) ^ (m[2] << 16) ^
 	        (m[3] >>> 16) ^ (m[3] << 12) ^ (m[4] >>> 20) ^ (m[4] << 8) ^ (m[5] >>> 24) ^ (m[5] << 4) ^
 	        (m[6] >>> 28) ^ (m[6]))<<4)>>>4;
-	    if (res != 0 || nonces_seen.contains(m[0]) || ((m[0]>>>18) < birthRound && (m[0]>>>18) > 10)) { //Checksum or nonce failed, message made for the enemy
+	    if(nonces_seen.contains(m[0]) || ((m[0]>>>18) < birthRound)){
+	    	System.out.println("REPLAY ATTACK DETECTED");
+		}
+	    if (res != 0 || nonces_seen.contains(m[0]) || ((m[0]>>>18) < birthRound)) { //Checksum or nonce failed, message made for the enemy
 	        enemy_msg_cnt++;
 	        enemy_msg_sum += t.getCost();
 	        //May want to store enemy messages here to find patterns to spread misinformation... ;)
