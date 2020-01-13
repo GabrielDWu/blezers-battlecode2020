@@ -8,7 +8,8 @@ public class Landscaper extends Unit {
 
 	enum LandscaperStatus {
 		ATTACKING,
-		DEFENDING
+		DEFENDING,
+		NOTHING
 	}
 	LandscaperStatus status = null;
 
@@ -63,6 +64,19 @@ public class Landscaper extends Unit {
 				goTo(locHQ);
 			}
 		}
+	}
+
+	public boolean executeMessage(int id, int[] m, int ptr){
+		/*Returns true if message applies to me*/
+		if(super.executeMessage(id, m, ptr)){
+			return true;
+		}
+		if(id == 5){
+			if (getInt(m, ptr, 15) != rc.getID()) return false;
+			status = LandscaperStatus.NOTHING;
+			return true;
+		}
+		return false;
 	}
 
 }

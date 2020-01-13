@@ -74,18 +74,7 @@ public abstract class Unit extends Robot {
 	public void incUnitVisited(MapLocation loc) {
 		unitVisited[loc.x][loc.y] = (Math.min(((unitVisited[loc.x][loc.y]>>(unitVisitedIndex*4))&0xf)+1,0xf)<<(unitVisitedIndex*4))|((unitVisited[loc.x][loc.y]&(~(long)(0xf<<(unitVisitedIndex*4))))>>unitVisitedIndex*4);
 	}
-	public boolean netGunRadius(MapLocation loc) throws GameActionException{
-		if(rc.canSenseLocation(loc) == false) return false;
-		RobotInfo [] robots = rc.senseNearbyRobots();
-		for(RobotInfo r: robots){
-			if(r.getType() == RobotType.NET_GUN){
-				if(loc.distanceSquaredTo(r.getLocation()) <= GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED){
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady()) return;
 		if (unitVisited == null) return;
