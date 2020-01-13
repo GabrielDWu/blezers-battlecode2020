@@ -62,7 +62,7 @@ public abstract class Robot {
 		while (true) {
 		    try {
 				startTurn();
-				run();
+				if(rc.isReady()){run();}
 		        endTurn();
 		        Clock.yield();
 		    } catch (Exception e) {
@@ -73,7 +73,8 @@ public abstract class Robot {
 	}
 
 
-	public void run() throws GameActionException {}
+	public void run() throws GameActionException {
+	}
 
 	public void startLife() throws GameActionException{
 		if(rc.getTeam() == Team.A) PADS[0] += 1;
@@ -202,7 +203,7 @@ public abstract class Robot {
 	    int res = (((m[0] >>> 4) ^ (m[0] << 24) ^ (m[1] >>> 8) ^ (m[1] << 20) ^ (m[2] >>> 12) ^ (m[2] << 16) ^
 	        (m[3] >>> 16) ^ (m[3] << 12) ^ (m[4] >>> 20) ^ (m[4] << 8) ^ (m[5] >>> 24) ^ (m[5] << 4) ^
 	        (m[6] >>> 28) ^ (m[6]))<<4)>>>4;
-	    if(nonces_seen.contains(m[0]) || ((m[0]>>>18) < birthRound)){
+	    if(nonces_seen.contains(m[0]) || ((m[0]>>>18)+1 < birthRound)){
 	    	System.out.println("REPLAY ATTACK DETECTED");
 		}
 	    if (res != 0 || nonces_seen.contains(m[0]) || ((m[0]>>>18) < birthRound)) { //Checksum or nonce failed, message made for the enemy
@@ -225,7 +226,7 @@ public abstract class Robot {
 					return;
 				}
 				ptr += 12;
-			}else if(id==1){
+			}else if(id==1){	//General birth info
 	            if(ptr >= 165){
 	                System.out.println("Message did not exit properly");
 	                return;
@@ -237,12 +238,12 @@ public abstract class Robot {
 					return;
 				}
 				ptr += 12;
-			}else if (id == 3) {
+			}else if (id == 3) {//Tell miners to build stuff
 				if (ptr >= 196 - 4 - 15) {
 					System.out.println("Message did not exit properly");
 					return;
 				}
-				ptr += 4+15;
+				ptr += 4 + 15;
 			}else if(id==15){    //1111 Message terminate
 	            return;
 	        }

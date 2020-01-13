@@ -7,10 +7,9 @@ import blezerbot.*;
 public class HQ extends Building {
 
 	int builtMiners;
-	int buildingFulfillment;
-	int buildingDesignSchool;
 	boolean hq_sentLoc;
 	public ArrayList<InternalUnit>[] units;
+	int waitingForBuilding;
 
 	public HQ(RobotController rc)throws GameActionException {
 		super(rc);
@@ -18,7 +17,7 @@ public class HQ extends Building {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
-		buildingFulfillment = Integer.MAX_VALUE;
+		waitingForBuilding = Integer.MAX_VALUE;
 		units = new ArrayList[10];
 		for(int i=0; i<10; i++){
 			units[i] = new ArrayList<InternalUnit>();
@@ -27,27 +26,38 @@ public class HQ extends Building {
 
 	public void run() throws GameActionException {
 		super.run();
-		if (buildingFulfillment < Integer.MAX_VALUE) buildingFulfillment++;
-		if (buildingDesignSchool < Integer.MAX_VALUE) buildingDesignSchool++;
+		if (waitingForBuilding < Integer.MAX_VALUE) waitingForBuilding++;
 		if(!hq_sentLoc){
 			writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
 			addMessageToQueue();
 			hq_sentLoc = true;
 		}
 
-		if (units[5 /*fulfillment center*/].size() == 0 && units[1].size() > 0 /*miner*/ && Math.abs(buildingFulfillment) > 4 && rc.getTeamSoup() > 150) {
-			buildingFulfillment = 1;
+		if (units[2 /*refinery*/].size() == 0 && units[1].size() > 0 /*miner*/ &&
+				waitingForBuilding > 4 && rc.getTeamSoup() > 150) {
+			waitingForBuilding = 1;
+			ArrayList<InternalUnit> miners = units[1];
+			writeMessage(3, new int[]{2, miners.get(r.nextInt(miners.size())).id});
+			addMessageToQueue();
+			System.out.println("SENT");
+		}
+
+		if (units[4 /*design school*/].size() == 0 &&  units[1].size() > 0 /*miner*/ &&
+				waitingForBuilding > 4 && rc.getTeamSoup() > 150) {
+			waitingForBuilding = 1;
+			ArrayList<InternalUnit> miners = units[1];
+			writeMessage(3, new int[]{4, miners.get(r.nextInt(miners.size())).id});
+			addMessageToQueue();
+		}
+
+		if (units[5 /*fulfillment center*/].size() == 0 && units[1].size() > 0 /*miner*/ &&
+				waitingForBuilding > 4 && rc.getTeamSoup() > 150) {
+			waitingForBuilding = 1;
 			ArrayList<InternalUnit> miners = units[1];
 			writeMessage(3, new int[]{5, miners.get(r.nextInt(miners.size())).id});
 			addMessageToQueue();
 		}
 
-		if (units[4 /*design school*/].size() == 0 && units[1].size() > 0 /*miner*/ && Math.abs(buildingDesignSchool) > 4 && rc.getTeamSoup() > 150) {
-			buildingDesignSchool = 1;
-			ArrayList<InternalUnit> miners = units[1];
-			writeMessage(3, new int[]{4, miners.get(r.nextInt(miners.size())).id});
-			addMessageToQueue();
-		}
 
 		//Shoot enemy drones
 		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){

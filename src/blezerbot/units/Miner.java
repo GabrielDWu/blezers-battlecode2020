@@ -23,9 +23,16 @@ public class Miner extends Unit {
 
 	RobotType buildingType = null;
 	int buildingTries = 0;
+	public ArrayList<MapLocation> locREFINERY;
+	MapLocation chosenRefinery;
 
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
+	}
+
+	public void startLife() throws GameActionException{
+		super.startLife();
+		locREFINERY = new ArrayList<MapLocation>();
 	}
 
 	public void run() throws GameActionException {
@@ -43,10 +50,10 @@ public class Miner extends Unit {
 				case BUILDING:
 					if (buildingTries++ > 3) status = MinerStatus.MINING;
 					if (mloc.distanceSquaredTo(locHQ) < 4) {
-						goTo(mloc.translate(4, 4));
+						tryMove(rc.getLocation().directionTo(locHQ).opposite());
 					} else {
 						if (tryBuild(buildingType)) status = MinerStatus.MINING;
-						else goTo(mloc.translate(4, 4));
+						else tryMove(rc.getLocation().directionTo(locHQ).opposite());
 					}
 					break;
 				case SEARCHING:
@@ -101,14 +108,29 @@ public class Miner extends Unit {
 					}
 					break;
 				case RETURNING:
-					goTo(locHQ);
-					if (distHQ() < 3) {
+					if(chosenRefinery == null){
+						chosenRefinery = locHQ;
+						if(locREFINERY.size()>1){
+							chosenRefinery = locREFINERY.get(0);
+						}
+						//later can add this
+						/*
+						int best = rc.getLocation().distanceSquaredTo(locHQ);
+						for(MapLocation loc: locREFINERY){
+							if(rc.getLocation().distanceSquaredTo(loc) < best){
+								chosenRefinery = loc;
+							}
+						}*/
+					}
+					goTo(chosenRefinery);
+					if (chosenRefinery.distanceSquaredTo() < 3) {
 						status = MinerStatus.DEPOSITING;
 					}
 					break;
 				case DEPOSITING:
-					if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
+					if (rc.canDepositSoup(mloc.directionTo(chosenRefinery))) rc.depositSoup(mloc.directionTo(chosenRefinery), rc.getSoupCarrying());
 					if (rc.getSoupCarrying() == 0) {
+						chosenRefinery = null;
 						if (soupLoc !=  null) {
 							status = MinerStatus.MINING;
 						} else status = MinerStatus.SEARCHING;
@@ -284,7 +306,16 @@ public class Miner extends Unit {
 		if(super.executeMessage(id, m, ptr)){
 			return true;
 		}
-		if(id == 3){
+		//Miners want to store refinery locations
+		if(id==1){
+			RobotType unit_type = robot_types[getInt(m, ptr, 4)];
+			if(unit_type != RobotType.REFINERY){
+				return true;
+			}
+			ptr += 4;
+			locREFINERY.add(new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6)));
+			return true;
+		}if(id == 3){
 			RobotType type = robot_types[getInt(m, ptr, 4)];
 			ptr += 4;
 			if (getInt(m, ptr, 15) != rc.getID()) return false;
