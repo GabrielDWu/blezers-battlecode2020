@@ -1,4 +1,4 @@
-package buildawall_2;
+package buildawall2;
 import battlecode.common.*;
 import java.util.HashMap;
 
