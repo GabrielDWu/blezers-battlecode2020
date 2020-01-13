@@ -18,7 +18,7 @@ public class Landscaper extends Unit {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
-		status = LandscaperStatus.ATTACKING;
+		status = LandscaperStatus.DEFENDING;
 	}
 
 	public void run() throws GameActionException {
@@ -42,16 +42,25 @@ public class Landscaper extends Unit {
 					}
 				}
 			}
-		}else if(status==LandscaperStatus.DEFENDING){
-			if (locHQ != null && distHQ() > 5) {
-				for (Direction dir : directions) {
-					if (rc.canDigDirt(dir)) rc.digDirt(dir);
+		}else if(status==LandscaperStatus.DEFENDING) {
+			if (locHQ == null) {
+				return;
+			}
+			if (rc.getLocation().isAdjacentTo(locHQ)) {
+				Direction dir = rc.getLocation().directionTo(locHQ);
+				if (rc.getDirtCarrying() < 1) {
+					if (rc.canDigDirt(dir)) {
+						rc.digDirt(dir);    //Heal the HQ
+					} else {
+						if (rc.canDigDirt(dir.opposite())) rc.digDirt(dir.opposite());
+					}
+				} else {
+					if (rc.canDepositDirt(Direction.CENTER)) {
+						rc.depositDirt(Direction.CENTER);
+					}
 				}
-				goTo(locHQ);
 			} else {
-				for (Direction dir : directions) {
-					if (rc.canDepositDirt(dir)) rc.depositDirt(dir);
-				}
+				goTo(locHQ);
 			}
 		}
 	}
