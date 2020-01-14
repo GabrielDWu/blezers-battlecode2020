@@ -54,6 +54,8 @@ public class Landscaper extends Unit {
 						rc.digDirt(dir);    //Heal the HQ
 					} else {
 						if (rc.canDigDirt(dir.opposite())) rc.digDirt(dir.opposite());
+						else if (rc.canDigDirt(dir.opposite().rotateLeft())) rc.digDirt(dir.opposite().rotateLeft());
+                        else if (rc.canDigDirt(dir.opposite().rotateRight())) rc.digDirt(dir.opposite().rotateRight());
 					}
 				} else {
 					if (rc.canDepositDirt(Direction.CENTER)) {

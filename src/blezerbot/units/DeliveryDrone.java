@@ -21,6 +21,7 @@ public class DeliveryDrone extends Unit {
 	ArrayList<MapLocation> waterLocations = new ArrayList<MapLocation>();
 	int searchID = 0;
 	int enemyHQc;
+	boolean sentFound = false;
 
 	public DeliveryDrone(RobotController rc) throws GameActionException {
 		super(rc);
@@ -44,11 +45,11 @@ public class DeliveryDrone extends Unit {
 		if (locHQ == null) return;
 		if (status == DeliveryDroneStatus.FIND_ENEMY_HQ) {
 			MapLocation loc = findEnemyHQ();
-			if (loc != null){
+			if (loc != null && !sentFound){
 				enemyHQ = loc;
-				System.out.println("FOUND "+enemyHQ);
 				writeMessage(2, new int[]{enemyHQ.x, enemyHQ.y});
 				addMessageToQueue();
+				sentFound = true;
 			}
 
 		}

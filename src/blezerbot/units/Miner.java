@@ -110,7 +110,7 @@ public class Miner extends Unit {
 				case RETURNING:
 					if(chosenRefinery == null){
 						chosenRefinery = locHQ;
-						if(locREFINERY.size()>1){
+						if(locREFINERY.size() > 0){
 							chosenRefinery = locREFINERY.get(0);
 						}
 						//later can add this
@@ -123,7 +123,7 @@ public class Miner extends Unit {
 						}*/
 					}
 					goTo(chosenRefinery);
-					if (chosenRefinery.distanceSquaredTo() < 3) {
+					if (mloc.distanceSquaredTo(chosenRefinery) < 3) {
 						status = MinerStatus.DEPOSITING;
 					}
 					break;

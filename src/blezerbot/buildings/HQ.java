@@ -39,7 +39,6 @@ public class HQ extends Building {
 			ArrayList<InternalUnit> miners = units[1];
 			writeMessage(3, new int[]{2, miners.get(r.nextInt(miners.size())).id});
 			addMessageToQueue();
-			System.out.println("SENT");
 		}
 
 		if (units[4 /*design school*/].size() == 0 &&  units[1].size() > 0 /*miner*/ &&
@@ -101,7 +100,7 @@ public class HQ extends Building {
 			ptr += 12;
 			int unit_id = getInt(m, ptr, 15);
 			units[unit_type.ordinal()].add(new InternalUnit(unit_type, unit_id, loc));
-			System.out.println("Added unit " + new InternalUnit(unit_type,unit_id, loc));
+			debug("Added unit " + new InternalUnit(unit_type,unit_id, loc));
 			return true;
 		}
 		return false;

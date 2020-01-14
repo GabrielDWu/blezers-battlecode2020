@@ -8,6 +8,7 @@ import blezerbot.buildings.*;
 
 public abstract class Robot {
 
+	public boolean debugging = false;	//Show debug messages?
 	public RobotController rc;
 	public int turnCount;
 	public int birthRound;  //What round was I born on?
@@ -40,6 +41,10 @@ public abstract class Robot {
 	        RobotType.NET_GUN, //8
 			RobotType.COW
 	};
+
+	public void debug(String s){
+		if(debugging) System.out.println(s);
+	}
 	public int getDirectionValue(Direction dir){
 		for(int i = 0; i<8; i++){
 			if(directions[i] == dir) return i;
@@ -78,7 +83,7 @@ public abstract class Robot {
 
 	public void startLife() throws GameActionException{
 		if(rc.getTeam() == Team.A) PADS[0] += 1;
-	    System.out.println("Got created.");
+	    debug("Got created.");
 
 	    type = rc.getType();
 
@@ -222,25 +227,25 @@ public abstract class Robot {
 	        int messageStart = ptr;
 			if(id==0){ //0000 Set our HQ
 				if(ptr >= 184){ //Requires 2 6-bit integers
-					System.out.println("Message did not exit properly");
+					debug("Message did not exit properly");
 					return;
 				}
 				ptr += 12;
 			}else if(id==1){	//General birth info
 	            if(ptr >= 165){
-	                System.out.println("Message did not exit properly");
+	                debug("Message did not exit properly");
 	                return;
 	            }
 	            ptr += 19+12;
 	        }else if(id==2){ //0010 Set enemy HQ
 				if(ptr >= 184){ //Requires 2 6-bit integers
-					System.out.println("Message did not exit properly");
+					debug("Message did not exit properly");
 					return;
 				}
 				ptr += 12;
 			}else if (id == 3) {//Tell miners to build stuff
 				if (ptr >= 196 - 4 - 15) {
-					System.out.println("Message did not exit properly");
+					debug("Message did not exit properly");
 					return;
 				}
 				ptr += 4 + 15;
@@ -248,20 +253,20 @@ public abstract class Robot {
 	            return;
 	        } else if (id == 4) {
 	        	if (ptr >= 196 - 15 - 15 - 12 - 12) {
-	        		System.out.println("Message did not exit properly");
+	        		debug("Message did not exit properly");
 	        		return;
 	        	}
 	        	ptr += 15+15+12+12;
 	        } else if (id == 5) {
 	        	if (ptr >= 196 - 15) {
-	        		System.out.println("Message did not exit properly");
+	        		debug("Message did not exit properly");
 	        		return;
 	        	}
 	        	ptr += 15;
 	        }
             executeMessage(id, m, messageStart);
 	    }
-	    System.out.println("Message did not exit properly");  //Should've seen 1111.
+	    debug("Message did not exit properly");  //Should've seen 1111.
 	    return;
 	}
 
@@ -275,7 +280,6 @@ public abstract class Robot {
 			int y = getInt(m, ptr, 6);
 
 			locHQ = new MapLocation(x,y);
-			System.out.println("Now I know that my HQ is at" + locHQ);
 			return true;
 		}else if(id==2){
 			if(enemyHQ != null){
@@ -286,12 +290,10 @@ public abstract class Robot {
 			int y = getInt(m, ptr, 6);
 
 			enemyHQ = new MapLocation(x,y);
-			System.out.println("Now I know that the opposing HQ is at" + enemyHQ);
 			return true;
 		}
 	    return false;
     }
-
 
 
 	public int getInt(int[] m, int ptr, int size){

@@ -25,6 +25,7 @@ public class DesignSchool extends Building {
 		}
 
 		// drone carry to enemy HQ
+		/*
 		if (enemyHQ != null) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
@@ -37,7 +38,7 @@ public class DesignSchool extends Building {
 					break;
 				}
 			}
-		}
+		}*/
 	}
 
 }
