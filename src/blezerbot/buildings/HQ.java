@@ -41,21 +41,25 @@ public class HQ extends Building {
 			addMessageToQueue();
 		}
 
-		if (units[4 /*design school*/].size() == 0 &&  units[1].size() > 0 /*miner*/ &&
-				waitingForBuilding > 4 && rc.getTeamSoup() > 150) {
+		if (units[5 /*fulfillment center*/].size() == 0 && units[1].size() > 0 /*miner*/ &&
+				waitingForBuilding > 51 && rc.getTeamSoup() > 150) {
 			waitingForBuilding = 1;
 			ArrayList<InternalUnit> miners = units[1];
-			writeMessage(3, new int[]{4, miners.get(r.nextInt(miners.size())).id});
+			//Currently assumes HQ is not on edge/corner
+			writeMessage(6, new int[]{5, miners.get(r.nextInt(miners.size())).id, locHQ.x+1, locHQ.y+1});
 			addMessageToQueue();
 		}
 
-		if (units[5 /*fulfillment center*/].size() == 0 && units[1].size() > 0 /*miner*/ &&
-				waitingForBuilding > 4 && rc.getTeamSoup() > 150) {
+		if (units[4 /*design school*/].size() == 0 &&  units[1].size() > 0 /*miner*/ &&
+				waitingForBuilding > 51 && rc.getTeamSoup() > 150) {
 			waitingForBuilding = 1;
 			ArrayList<InternalUnit> miners = units[1];
-			writeMessage(3, new int[]{5, miners.get(r.nextInt(miners.size())).id});
+			//Currently assumes HQ is not on edge/corner
+			writeMessage(6, new int[]{4, miners.get(r.nextInt(miners.size())).id, locHQ.x -1, locHQ.y-1});
 			addMessageToQueue();
 		}
+
+
 
 
 		//Shoot enemy drones
