@@ -47,23 +47,26 @@ public class Landscaper extends Unit {
 			if (locHQ == null) {
 				return;
 			}
-			if (rc.getLocation().isAdjacentTo(locHQ)) {
+			int shell_dist = Math.max(Math.abs((rc.getLocation().x-locHQ.x)), Math.abs((rc.getLocation()).y-locHQ.y));
+			if (shell_dist == 2) {
 				Direction dir = rc.getLocation().directionTo(locHQ);
 				if (rc.getDirtCarrying() < 1) {
-					if (rc.canDigDirt(dir)) {
-						rc.digDirt(dir);    //Heal the HQ
-					} else {
-						if (rc.canDigDirt(dir.opposite())) rc.digDirt(dir.opposite());
-						else if (rc.canDigDirt(dir.opposite().rotateLeft())) rc.digDirt(dir.opposite().rotateLeft());
-                        else if (rc.canDigDirt(dir.opposite().rotateRight())) rc.digDirt(dir.opposite().rotateRight());
-					}
+					if (rc.canDigDirt(dir.opposite())) rc.digDirt(dir.opposite());
+					else if (rc.canDigDirt(dir.opposite().rotateLeft())) rc.digDirt(dir.opposite().rotateLeft());
+                    else if (rc.canDigDirt(dir.opposite().rotateRight())) rc.digDirt(dir.opposite().rotateRight());
 				} else {
 					if (rc.canDepositDirt(Direction.CENTER)) {
 						rc.depositDirt(Direction.CENTER);
 					}
 				}
-			} else {
+			} else if(shell_dist > 2){
 				goTo(locHQ);
+			} else{
+				//Just make random moves to try to break out
+				int ri = r.nextInt(8);
+				for(int i=0; i<8; i++) {
+					tryMove(directions[ri+i]);
+				}
 			}
 		}
 	}

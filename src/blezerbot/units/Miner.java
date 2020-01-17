@@ -25,6 +25,7 @@ public class Miner extends Unit {
 	int buildingTries = 0;
 	public ArrayList<MapLocation> locREFINERY;
 	MapLocation chosenRefinery;
+	MapLocation buildLocation = null;
 
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
@@ -49,13 +50,44 @@ public class Miner extends Unit {
 			int w = rc.getMapWidth();
 			switch (status) {
 				case BUILDING:
-					if (buildingTries++ > 3) status = MinerStatus.MINING;
-					if (mloc.distanceSquaredTo(locHQ) < 4) {
-						tryMove(rc.getLocation().directionTo(locHQ).opposite());
-					} else {
-						if (tryBuild(buildingType)) status = MinerStatus.MINING;
-						else tryMove(rc.getLocation().directionTo(locHQ).opposite());
+					if(buildLocation == null){	// can build anywhere far from hq
+						if (buildingTries++ > 3){
+							status = MinerStatus.MINING;
+						}
+						for (Direction dir : directions) {
+							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 18 &&
+									rc.canBuildRobot(buildingType, dir)) {
+								rc.buildRobot(buildingType, dir);
+								status = MinerStatus.MINING;
+							}
+						}
+						if(status != MinerStatus.MINING){	//Still trying to build... move away from HQ
+							tryMove(rc.getLocation().directionTo(locHQ).opposite());
+							tryMove(rc.getLocation().directionTo(locHQ).opposite().rotateLeft());
+							tryMove(rc.getLocation().directionTo(locHQ).opposite().rotateRight());
+						}
+					}else{	//Specific place i want to build
+						if (buildingTries++ > 50){
+							status = MinerStatus.MINING;
+						}
+						if(rc.getLocation().equals(buildLocation)){
+							//Move in a random direction
+							int ri = r.nextInt(8);
+							for(int i=0; i<8; i++) {
+								tryMove(directions[(ri+i)%8]);
+							}
+						}else if(rc.getLocation().isAdjacentTo(buildLocation)){
+							if(rc.canBuildRobot(buildingType, rc.getLocation().directionTo(buildLocation))){
+								rc.buildRobot(buildingType, rc.getLocation().directionTo(buildLocation));
+								status = MinerStatus.MINING;
+							}
+						}else{
+							goTo(buildLocation);
+						}
+
 					}
+
+
 					break;
 				case SEARCHING:
 					for (int x = -5; x <= 5; x++) {
@@ -323,8 +355,20 @@ public class Miner extends Unit {
 			buildingType = type;
 			buildingTries = 0;
 			status = MinerStatus.BUILDING;
+			buildLocation = null;
+			return true;
+		}if(id == 6){
+			RobotType type = robot_types[getInt(m, ptr, 4)];
+			ptr += 4;
+			if (getInt(m, ptr, 15) != rc.getID()) return false;
+			ptr += 15;
+			buildingType = type;
+			buildingTries = 0;
+			status = MinerStatus.BUILDING;
+			buildLocation = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
 			return true;
 		}
+
 		return false;
 	}
 

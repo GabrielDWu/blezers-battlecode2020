@@ -8,7 +8,7 @@ import blezerbot.buildings.*;
 
 public abstract class Robot {
 
-	public boolean debugging = false;	//Show debug messages?
+	public boolean debugging = true;	//Show debug messages?
 	public RobotController rc;
 	public int turnCount;
 	public int birthRound;  //What round was I born on?
@@ -249,9 +249,7 @@ public abstract class Robot {
 					return;
 				}
 				ptr += 4 + 15;
-			}else if(id==15){    //1111 Message terminate
-	            return;
-	        } else if (id == 4) {
+			} else if (id == 4) {
 	        	if (ptr >= 196 - 15 - 15 - 12 - 12) {
 	        		debug("Message did not exit properly");
 	        		return;
@@ -263,7 +261,15 @@ public abstract class Robot {
 	        		return;
 	        	}
 	        	ptr += 15;
-	        }
+	        } else if(id == 6){
+                if (ptr >= 196 - 4 - 15 - 12) {
+                    debug("Message did not exit properly");
+                    return;
+                }
+                ptr += 4+15+12;
+            } else if(id==15){    //1111 Message terminate
+                return;
+            }
             executeMessage(id, m, messageStart);
 	    }
 	    debug("Message did not exit properly");  //Should've seen 1111.
@@ -378,6 +384,15 @@ public abstract class Robot {
 			}
 			writeInt(id, 4);
 			writeInt(params[0], 15);
+		}else if (id == 6) { // build location in a certain location
+			if (messagePtr >= 192 - 4 - 4 - 15 - 12) {
+				addMessageToQueue(base_wager);
+			}
+			writeInt(id, 4);
+			writeInt(params[0], 4);
+			writeInt(params[1], 15);
+			writeInt(params[2], 6);
+			writeInt(params[3], 6);
 		}
 	    return;
 	}
