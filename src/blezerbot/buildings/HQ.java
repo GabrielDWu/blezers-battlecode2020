@@ -4,6 +4,8 @@ import battlecode.common.*;
 import java.util.*;
 import blezerbot.*;
 
+import static blezerbot.Message.MessageType;
+
 public class HQ extends Building {
 
 	int builtMiners;
@@ -28,7 +30,7 @@ public class HQ extends Building {
 		super.run();
 		if (waitingForBuilding < Integer.MAX_VALUE) waitingForBuilding++;
 		if(!hq_sentLoc){
-			writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
+			writeMessage(Message.hqLocation(rc.getLocation()));
 			addMessageToQueue();
 			hq_sentLoc = true;
 		}
@@ -37,7 +39,7 @@ public class HQ extends Building {
 				waitingForBuilding > 4 && rc.getTeamSoup() > 150) {
 			waitingForBuilding = 1;
 			ArrayList<InternalUnit> miners = units[1];
-			writeMessage(3, new int[]{2, miners.get(r.nextInt(miners.size())).id});
+			writeMessage(Message.build(RobotType.REFINERY, miners.get(r.nextInt(miners.size())).id));
 			addMessageToQueue();
 		}
 
@@ -46,7 +48,7 @@ public class HQ extends Building {
 			waitingForBuilding = 1;
 			ArrayList<InternalUnit> miners = units[1];
 			//Currently assumes HQ is not on edge/corner
-			writeMessage(6, new int[]{5, miners.get(r.nextInt(miners.size())).id, locHQ.x+1, locHQ.y+1});
+			writeMessage(Message.build(RobotType.FULFILLMENT_CENTER, miners.get(r.nextInt(miners.size())).id, rc.getLocation().translate(1, 1)));
 			addMessageToQueue();
 		}
 
@@ -55,12 +57,9 @@ public class HQ extends Building {
 			waitingForBuilding = 1;
 			ArrayList<InternalUnit> miners = units[1];
 			//Currently assumes HQ is not on edge/corner
-			writeMessage(6, new int[]{4, miners.get(r.nextInt(miners.size())).id, locHQ.x -1, locHQ.y-1});
+			writeMessage(Message.build(RobotType.DESIGN_SCHOOL, miners.get(r.nextInt(miners.size())).id, rc.getLocation().translate(-1, -1)));
 			addMessageToQueue();
 		}
-
-
-
 
 		//Shoot enemy drones
 		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
@@ -83,29 +82,26 @@ public class HQ extends Building {
 		//Broadcast important info every 9 rounds
 		if(rc.getRoundNum() %9 == 0){
 			if(enemyHQ != null){
-				writeMessage(2, new int[]{enemyHQ.x, enemyHQ.y});
+				writeMessage(Message.enemyHqLocation(enemyHQ));
 			}
-			writeMessage(0, new int[]{rc.getLocation().x, rc.getLocation().y});
+			writeMessage(Message.hqLocation(rc.getLocation()));
 			addMessageToQueue();
 		}
 
 	}
 
-	public boolean executeMessage(int id, int[] m, int ptr){
+	public boolean executeMessage(Message message){
 		/*Returns true if message applies to me*/
-		if(super.executeMessage(id, m, ptr)){
+		if(super.executeMessage(message)){
 			return true;
 		}
 		//HQ specific methods:
-		if(id==1){
-			RobotType unit_type = robot_types[getInt(m, ptr, 4)];
-			ptr += 4;
-			MapLocation loc = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
-			ptr += 12;
-			int unit_id = getInt(m, ptr, 15);
-			units[unit_type.ordinal()].add(new InternalUnit(unit_type, unit_id, loc));
-			debug("Added unit " + new InternalUnit(unit_type,unit_id, loc));
-			return true;
+		switch (message.type) {
+			case BIRTH_INFO:
+				RobotType unitType = robot_types[message.data[0]];
+				units[unitType.ordinal()].add(new InternalUnit(unitType, message.data[1], new MapLocation(message.data[2], message.data[3])));
+				debug("Added unit " + units[unitType.ordinal()].get(units[unitType.ordinal()].size()-1));
+				return true;
 		}
 		return false;
 	}

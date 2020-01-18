@@ -47,7 +47,7 @@ public class DeliveryDrone extends Unit {
 			MapLocation loc = findEnemyHQ();
 			if (loc != null && !sentFound){
 				enemyHQ = loc;
-				writeMessage(2, new int[]{enemyHQ.x, enemyHQ.y});
+				writeMessage(Message.enemyHqLocation(enemyHQ));
 				addMessageToQueue();
 				sentFound = true;
 			}
@@ -189,21 +189,19 @@ public class DeliveryDrone extends Unit {
 		return null;
 	}
 
-	public boolean executeMessage(int id, int[] m, int ptr){
+	public boolean executeMessage(Message message){
 		/*Returns true if message applies to me*/
-		if(super.executeMessage(id, m, ptr)){
+		if(super.executeMessage(message)){
 			return true;
 		}
-		if(id == 4){
-			if (getInt(m, ptr, 15) != rc.getID()) return false;
-			ptr += 15;
-			searchID = getInt(m, ptr, 15);
-			ptr += 15;
-			lastSeen = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
-			ptr += 6;
-			dropLocation = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
-			status = DeliveryDroneStatus.PICK_UP;
-			return true;
+		switch (message.type) {
+			case TRANSPORT:
+				if (message.data[0] != rc.getID()) return false;
+				searchID = message.data[1];
+				lastSeen = new MapLocation(message.data[2], message.data[3]);
+				dropLocation = new MapLocation(message.data[4], message.data[5]);
+				status = DeliveryDroneStatus.PICK_UP;
+				return true;
 		}
 		return false;
 	}

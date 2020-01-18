@@ -71,15 +71,16 @@ public class Landscaper extends Unit {
 		}
 	}
 
-	public boolean executeMessage(int id, int[] m, int ptr){
+	public boolean executeMessage(Message message){
 		/*Returns true if message applies to me*/
-		if(super.executeMessage(id, m, ptr)){
+		if(super.executeMessage(message)){
 			return true;
 		}
-		if(id == 5){
-			if (getInt(m, ptr, 15) != rc.getID()) return false;
-			status = LandscaperStatus.NOTHING;
-			return true;
+		switch (message.type) {
+			case WAIT:
+				if (message.data[0] != rc.getID()) return false;
+				status = LandscaperStatus.NOTHING;
+				return true;
 		}
 		return false;
 	}

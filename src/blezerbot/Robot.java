@@ -6,6 +6,8 @@ import java.lang.Math;
 import blezerbot.units.*;
 import blezerbot.buildings.*;
 
+import static blezerbot.Message.MessageType;
+
 public abstract class Robot {
 
 	public boolean debugging = true;	//Show debug messages?
@@ -113,7 +115,7 @@ public abstract class Robot {
 	    }
 
 	    if(!sentInfo && !queuedInfo){
-	        writeMessage(1, new int[]{type.ordinal(), rc.getLocation().x, rc.getLocation().y, rc.getID()});
+	    	writeMessage(Message.birthInfo(type, rc.getID(), rc.getLocation()));
 	        addMessageToQueue();
 	        queuedInfo = true;
 	    }
@@ -194,15 +196,15 @@ public abstract class Robot {
 	    //Check if the message was made by my team
 	    //The way it works: xor all of them with PAD
 	    //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
-	    int[] message = t.getMessage();
+	    int[] tmessage = t.getMessage();
 
-	    if(message.length != 7){
+	    if(tmessage.length != 7){
 	    	return;
 		}
 
 	    int[] m = new int[7];
 	    for(int i=0; i<7; i++){
-	        m[i] = message[i]^PADS[i];
+	        m[i] = tmessage[i]^PADS[i];
 	    }
 
 	    int res = (((m[0] >>> 4) ^ (m[0] << 24) ^ (m[1] >>> 8) ^ (m[1] << 20) ^ (m[2] >>> 12) ^ (m[2] << 16) ^
@@ -222,96 +224,30 @@ public abstract class Robot {
 
 	    int ptr = 32;
 	    while(ptr <= 191){   //195-4
-	        int id = getInt(m, ptr, 4);
-	        ptr += 4;
-	        int messageStart = ptr;
-			if(id==0){ //0000 Set our HQ
-				if(ptr >= 184){ //Requires 2 6-bit integers
-					debug("Message did not exit properly");
-					return;
-				}
-				ptr += 12;
-			}else if(id==1){	//General birth info
-	            if(ptr >= 165){
-	                debug("Message did not exit properly");
-	                return;
-	            }
-	            ptr += 19+12;
-	        }else if(id==2){ //0010 Set enemy HQ
-				if(ptr >= 184){ //Requires 2 6-bit integers
-					debug("Message did not exit properly");
-					return;
-				}
-				ptr += 12;
-			}else if (id == 3) {//Tell miners to build stuff
-				if (ptr >= 196 - 4 - 15) {
-					debug("Message did not exit properly");
-					return;
-				}
-				ptr += 4 + 15;
-			} else if (id == 4) {
-	        	if (ptr >= 196 - 15 - 15 - 12 - 12) {
-	        		debug("Message did not exit properly");
-	        		return;
-	        	}
-	        	ptr += 15+15+12+12;
-	        } else if (id == 5) {
-	        	if (ptr >= 196 - 15) {
-	        		debug("Message did not exit properly");
-	        		return;
-	        	}
-	        	ptr += 15;
-	        } else if(id == 6){
-                if (ptr >= 196 - 4 - 15 - 12) {
-                    debug("Message did not exit properly");
-                    return;
-                }
-                ptr += 4+15+12;
-            } else if(id==15){    //1111 Message terminate
-                return;
-            }
-            executeMessage(id, m, messageStart);
+	    	Message message = new Message(m, ptr);
+	    	if (message.type == MessageType.TERMINATE) return;
+            executeMessage(message);
+            ptr = message.ptr;
 	    }
 	    debug("Message did not exit properly");  //Should've seen 1111.
 	    return;
 	}
 
-	public boolean executeMessage(int id, int[] m, int ptr){
+	public boolean executeMessage(Message message){
 	    /*Returns true if message applies to me*/
 
 		//Messages applicable to all robots
-		if(id==0){
-			int x = getInt(m, ptr, 6);
-			ptr += 6;
-			int y = getInt(m, ptr, 6);
-
-			locHQ = new MapLocation(x,y);
-			return true;
-		}else if(id==2){
-			if(enemyHQ != null){
+		switch (message.type) {
+			case HQ_LOC:
+				locHQ = new MapLocation(message.data[0], message.data[1]);
 				return true;
-			}
-			int x = getInt(m, ptr, 6);
-			ptr += 6;
-			int y = getInt(m, ptr, 6);
-
-			enemyHQ = new MapLocation(x,y);
-			return true;
+			case ENEMY_HQ_LOC:
+				if (enemyHQ != null) return true;
+				enemyHQ = new MapLocation(message.data[0], message.data[1]);
+				return true;
 		}
 	    return false;
     }
-
-
-	public int getInt(int[] m, int ptr, int size){
-	    /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
-	    assert(size <= 32);
-	    if(32-(ptr%32) < size){
-	        int result = ((m[ptr/32]<<(size-(32-(ptr%32)))) + (m[ptr/32+1]>>>(64-size-(ptr%32))))%(1<<size);
-	        return (result < 0) ? result + (1<<size) : result;
-	    }else{
-	        return (m[ptr/32]>>>(32-(ptr%32)-size))%(1<<size);
-	    }
-	}
 
 	public void writeInt(int x, int size){
 	    /*Writes the next <size> bits of currMessage with an integer 0 to 2**size-1. Modifies messagePtr.*/
@@ -333,68 +269,17 @@ public abstract class Robot {
 	    return;
 	}
 
-	public void writeMessage(int id, int[] params){
+	public void writeMessage(Message message){
 	/*Writes a command into currMessage. Will not do anything if it does not leave 4 bits for message end
 	  and the 28 bit checksum. This means it can only write up to (but not including) bit 192 (index 191).
 	 */
-	    if(id==0){ //0000 Set our HQ
-	        if(messagePtr >= 176){ //Requires id + 2 6-bit integers
-	            addMessageToQueue(base_wager);
-	        }
-	        writeInt(id, 4);
-	        writeInt(params[0], 6);
-	        writeInt(params[1], 6);
-	    }else if(id==1){ //0001 Announce birth
-			if(messagePtr >= 157){ //Requires id + 4-bit int 2 6-bit ints + 15-bit int
-				addMessageToQueue(base_wager);
-			}
-			writeInt(id, 4);
-			writeInt(params[0], 4);
-			writeInt(params[1], 6);
-			writeInt(params[2], 6);
-			writeInt(params[3], 15);
-		}else if(id==2){ //0010 Set enemy HQ
-			if(messagePtr >= 176){ //Requires id + 2 6-bit integers
-				addMessageToQueue(base_wager);
-			}
-			writeInt(id, 4);
-			writeInt(params[0], 6);
-			writeInt(params[1], 6);
-		} else if (id == 3) { //0011 build a unit (arbitrary location, specific builder)
-			if (messagePtr >= 192 - 4*2 /*id, type*/ - 15 /*target id*/ ) {
-				addMessageToQueue(base_wager);
-			}
-			writeInt(id, 4);
-			writeInt(params[0], 4);
-			writeInt(params[1], 15);
-		} else if (id == 4) { // 0100 pick up and drop off (given coordinates and ids)
-			if (messagePtr >= 192 - 4 - 15 - 15 - 12 - 12) {
-				addMessageToQueue(base_wager);
-			}
-			writeInt(id, 4);
-			writeInt(params[0], 15);
-			writeInt(params[1], 15);
-			writeInt(params[2], 6);
-			writeInt(params[3], 6);
-			writeInt(params[4], 6);
-			writeInt(params[5], 6);
-		} else if (id == 5) { // do nothing
-			if (messagePtr >= 192 - 4 - 15) {
-				addMessageToQueue(base_wager);
-			}
-			writeInt(id, 4);
-			writeInt(params[0], 15);
-		}else if (id == 6) { // build location in a certain location
-			if (messagePtr >= 192 - 4 - 4 - 15 - 12) {
-				addMessageToQueue(base_wager);
-			}
-			writeInt(id, 4);
-			writeInt(params[0], 4);
-			writeInt(params[1], 15);
-			writeInt(params[2], 6);
-			writeInt(params[3], 6);
-		}
-	    return;
+	  	int totalSize = 0;
+	  	for (int i = 0; i < message.sizes.length; i++) totalSize += message.sizes[i];
+	  	if (messagePtr >= 192 - totalSize) addMessageToQueue(base_wager);
+	  	writeInt(message.type.ordinal(), 4);
+	  	for (int i = 0; i < message.data.length; i++) {
+	  		writeInt(message.data[i], message.sizes[i]);
+	  	}
 	}
 
 	public void addMessageToQueue(){
@@ -411,7 +296,7 @@ public abstract class Robot {
 	    resetMessage();
 	    Returns true if successful
 	 */
-	    writeInt(15, 4);
+	    writeInt(MessageType.TERMINATE.ordinal(), 4);
 
 		//Add nonce
 		currMessage[0] += (rc.getRoundNum() << 18) + r.nextInt(1<<18);

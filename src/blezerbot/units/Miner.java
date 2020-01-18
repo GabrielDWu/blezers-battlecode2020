@@ -38,7 +38,7 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(status+" "+locHQ);
+		System.out.println(status+" "+chosenRefinery);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
 			if (status == MinerStatus.NOTHING) return;
@@ -334,41 +334,35 @@ public class Miner extends Unit {
 	    return visible;
 	}
 
-	public boolean executeMessage(int id, int[] m, int ptr){
+	public boolean executeMessage(Message message){
 		/*Returns true if message applies to me*/
-		if(super.executeMessage(id, m, ptr)){
+		if(super.executeMessage(message)){
 			return true;
 		}
-		//Miners want to store refinery locations
-		if(id==1){
-			RobotType unit_type = robot_types[getInt(m, ptr, 4)];
-			if(unit_type != RobotType.REFINERY){
+		switch (message.type) {
+			case BIRTH_INFO:
+				//Miners want to store refinery locations
+				RobotType unit_type = robot_types[message.data[0]];
+				if(unit_type != RobotType.REFINERY){
+					return true;
+				}
+				locREFINERY.add(new MapLocation(message.data[2], message.data[3]));
 				return true;
-			}
-			ptr += 4;
-			locREFINERY.add(new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6)));
-			return true;
-		}if(id == 3){
-			RobotType type = robot_types[getInt(m, ptr, 4)];
-			ptr += 4;
-			if (getInt(m, ptr, 15) != rc.getID()) return false;
-			buildingType = type;
-			buildingTries = 0;
-			status = MinerStatus.BUILDING;
-			buildLocation = null;
-			return true;
-		}if(id == 6){
-			RobotType type = robot_types[getInt(m, ptr, 4)];
-			ptr += 4;
-			if (getInt(m, ptr, 15) != rc.getID()) return false;
-			ptr += 15;
-			buildingType = type;
-			buildingTries = 0;
-			status = MinerStatus.BUILDING;
-			buildLocation = new MapLocation(getInt(m, ptr, 6), getInt(m, ptr+6, 6));
-			return true;
+			case BUILD_SPECUNIT_ANYLOC:
+				if (message.data[1] != rc.getID()) return false;
+				buildingType = robot_types[message.data[0]];
+				buildingTries = 0;
+				status = MinerStatus.BUILDING;
+				buildLocation = null;
+				return true;
+			case BUILD_SPECUNIT_LOC:
+				if (message.data[1] != rc.getID()) return false;
+				buildingType = robot_types[message.data[0]];
+				buildingTries = 0;
+				status = MinerStatus.BUILDING;
+				buildLocation = new MapLocation(message.data[2], message.data[3]);
+				return true;
 		}
-
 		return false;
 	}
 
