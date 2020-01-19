@@ -31,6 +31,8 @@ public class Miner extends Unit {
 	MapLocation locDS;
 	MapLocation locOpposite;
 
+	int buildableTiles;
+
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
 	}
@@ -38,6 +40,7 @@ public class Miner extends Unit {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		locREFINERY = new ArrayList<MapLocation>();
+		buildableTiles = -1;
 	}
 
 	public void run() throws GameActionException {
@@ -57,9 +60,17 @@ public class Miner extends Unit {
 					}
 				}
 				if (locHQ != null && mloc.isAdjacentTo(locHQ)) {
+					if (buildableTiles == -1) {
+						buildableTiles = 0;
+						for (Direction dir : directions) {
+							if (rc.canSenseLocation(locHQ.add(dir))) {
+								if (Math.abs(rc.senseElevation(locHQ.add(dir)) - rc.senseElevation(locHQ)) <= 3) buildableTiles++;
+							}
+						}
+					}
 					if (locDS != null) {
 						RobotInfo[] r = rc.senseNearbyRobots(locHQ, 2, rc.getTeam());
-						if (r.length == 8 && rc.getTeamSoup() > 150) {
+						if (r.length >= buildableTiles && rc.getTeamSoup() > 150) {
 							for (Direction dir : directions) {
 								tryMove(dir);
 								status = MinerStatus.MINING;
@@ -84,7 +95,7 @@ public class Miner extends Unit {
 			setVisitedAndSeen();
 			MapLocation nloc = null;
 			MapLocation mloc = rc.getLocation();
-			if (status != MinerStatus.DEPOSITING && prevStatus != MinerStatus.NOTHING && locHQ != null && mloc.isAdjacentTo(locHQ)) {
+			if (!(status == MinerStatus.DEPOSITING && chosenRefinery != null && chosenRefinery.equals(locHQ)) && prevStatus != MinerStatus.NOTHING && locHQ != null && mloc.isAdjacentTo(locHQ)) {
 				goTo(mloc.add(mloc.directionTo(locHQ).opposite()));
 			}
 			int h = rc.getMapHeight();
@@ -430,7 +441,7 @@ public class Miner extends Unit {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return super.canMove(dir) && (locHQ == null || !rc.getLocation().add(dir).isAdjacentTo(locHQ) || (chosenRefinery != null && chosenRefinery.equals(locHQ) && status == MinerStatus.DEPOSITING));
+		return super.canMove(dir) && (locHQ == null || !rc.getLocation().add(dir).isAdjacentTo(locHQ) || status == MinerStatus.NOTHING || ((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && chosenRefinery != null && chosenRefinery.equals(locHQ)));
 	}
 
 }

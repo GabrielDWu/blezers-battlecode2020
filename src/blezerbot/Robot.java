@@ -160,7 +160,7 @@ public abstract class Robot {
 	}
 
 	public boolean tryMove(Direction dir) throws GameActionException {
-	    if (rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
+	    if (rc.isReady() && canMove(dir)) {
 	        rc.move(dir);
 	        return true;
 	    } else return false;

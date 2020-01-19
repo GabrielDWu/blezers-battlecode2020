@@ -64,20 +64,22 @@ public class Landscaper extends Unit {
 					}
 				}
 				Direction moveDir = orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight();
-				int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
-				System.out.println(diff);
-				if (diff > 3) {
-					rc.digDirt(moveDir);
-				} else if (diff < -3) {
-					if (rc.getDirtCarrying() < 1) {
-						Direction d = rc.getLocation().directionTo(locHQ);
-						if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
-						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
-	                    else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
+				if (rc.canSenseLocation(mloc.add(moveDir))) {
+					int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
+					if (diff > 3) {
+						if (rc.canDigDirt(moveDir)) rc.digDirt(moveDir);
+						else {
+							for (Direction dir : directions) {
+								if (rc.canDepositDirt(dir) && !mloc.add(dir).equals(locHQ) && !mloc.add(dir).equals(locDS) && !mloc.add(dir).isAdjacentTo(locHQ)) {
+									rc.depositDirt(dir);
+								}
+							}
+						}
+					} else if (diff < -3) {
+						if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
 					}
-					rc.depositDirt(moveDir);
+					if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
 				}
-				if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
 				break;
 			case BUILDING:
 				Direction d = rc.getLocation().directionTo(locHQ);
@@ -97,7 +99,7 @@ public class Landscaper extends Unit {
 							}
 						}
 					}
-					if (mdir != null) rc.depositDirt(mdir);
+					if (mdir != null && rc.canDepositDirt(mdir)) rc.depositDirt(mdir);
 				}
 				break;
 		}
