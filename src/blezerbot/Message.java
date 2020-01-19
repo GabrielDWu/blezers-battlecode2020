@@ -13,7 +13,9 @@ public class Message {
 		TRANSPORT,
 		WAIT,
 		BUILD_SPECUNIT_LOC,
-		TERMINATE
+		TERMINATE,
+		UNWAIT,
+		BUILD_WALL
 	}
 
 	static int[][] typeData = new int[][]{
@@ -25,6 +27,8 @@ public class Message {
 		{15 /*id*/}, // do nothing (wait)
 		{4 /*type*/, 15 /*builder id*/, 6 /*x*/, 6 /*y*/}, // tell specific unit to build type at specific location
 		{}, // terminate message
+		{15 /*id*/}, // do something (unwait)
+		{6, 6 /*x, y*/}, // build wall at location
 	};
 
 	static MessageType[] messageTypes;
@@ -82,6 +86,14 @@ public class Message {
 
 	public static Message doNothing(int robotID) {
 		return new Message(MessageType.WAIT, typeData[5], new int[]{robotID});
+	}
+
+	public static Message doSomething(int robotID) {
+		return new Message(MessageType.UNWAIT, typeData[8], new int[]{robotID});
+	}
+
+	public static Message buildWall(MapLocation loc) {
+		return new Message(MessageType.BUILD_WALL, typeData[9], new int[]{loc.x, loc.y});
 	}
 
 	public int getInt(int size){

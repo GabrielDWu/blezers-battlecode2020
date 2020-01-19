@@ -9,9 +9,12 @@ public class Landscaper extends Unit {
 	enum LandscaperStatus {
 		ATTACKING,
 		DEFENDING,
-		NOTHING
+		NOTHING,
+		BUILDING
 	}
 	LandscaperStatus status = null;
+	MapLocation locDS = null;
+	MapLocation locOpposite;
 
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
@@ -24,50 +27,68 @@ public class Landscaper extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		if(status==LandscaperStatus.ATTACKING){
-			Direction attackDir = rc.getLocation().directionTo(enemyHQ);
-			if(rc.getDirtCarrying() < 1){
-				Direction dir = randomDirection();
-				while(dir==attackDir){
-					dir = randomDirection();
+		MapLocation mloc = rc.getLocation();
+		switch (status) {
+			case ATTACKING:
+				Direction attackDir = rc.getLocation().directionTo(enemyHQ);
+				if(rc.getDirtCarrying() < 1){
+					Direction dir = randomDirection();
+					while(dir==attackDir){
+						dir = randomDirection();
+					}
+					if(rc.canDigDirt(dir)) rc.digDirt(dir);
 				}
-				if(rc.canDigDirt(dir)) rc.digDirt(dir);
-			}
-			if(enemyHQ != null){
-				if(!rc.getLocation().isAdjacentTo(enemyHQ)){
-					goTo(enemyHQ);
-				}
-				else{
-					if(rc.canDepositDirt(attackDir)){
-						rc.depositDirt(attackDir);
+				if(enemyHQ != null){
+					if(!rc.getLocation().isAdjacentTo(enemyHQ)){
+						goTo(enemyHQ);
+					}
+					else{
+						if(rc.canDepositDirt(attackDir)){
+							rc.depositDirt(attackDir);
+						}
 					}
 				}
-			}
-		}else if(status==LandscaperStatus.DEFENDING) {
-			if (locHQ == null) {
-				return;
-			}
-			int shell_dist = Math.max(Math.abs((rc.getLocation().x-locHQ.x)), Math.abs((rc.getLocation()).y-locHQ.y));
-			if (shell_dist == 2) {
-				Direction dir = rc.getLocation().directionTo(locHQ);
+				break;
+			case DEFENDING:
+				if (locHQ == null) {
+					return;
+				}
+				if (locDS == null) {
+					RobotInfo[] r = rc.senseNearbyRobots(locHQ, 4, rc.getTeam());
+					for (int i = 0; i < r.length; i++) {
+						if(r[i].getType() == RobotType.DESIGN_SCHOOL) {
+							locDS = r[i].getLocation();
+							locOpposite = locHQ.add(locHQ.directionTo(locDS).opposite());
+							break;
+						}
+					}
+				}
+				for (Direction dir : directions) {
+					MapLocation nloc = mloc.add(dir);
+					if (!nloc.equals(locHQ) && nloc.isAdjacentTo(locHQ) && nloc.distanceSquaredTo(locOpposite) < mloc.distanceSquaredTo(locOpposite) && nloc.distanceSquaredTo(locDS) != 1) {
+						if (tryMove(dir)) break;
+					}
+				}
+				break;
+			case BUILDING:
+				Direction d = rc.getLocation().directionTo(locHQ);
 				if (rc.getDirtCarrying() < 1) {
-					if (rc.canDigDirt(dir.opposite())) rc.digDirt(dir.opposite());
-					else if (rc.canDigDirt(dir.opposite().rotateLeft())) rc.digDirt(dir.opposite().rotateLeft());
-                    else if (rc.canDigDirt(dir.opposite().rotateRight())) rc.digDirt(dir.opposite().rotateRight());
+					if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
+					else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
+                    else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
 				} else {
-					if (rc.canDepositDirt(Direction.CENTER)) {
-						rc.depositDirt(Direction.CENTER);
+					Direction mdir = null;
+					int mdirt = Integer.MAX_VALUE;
+					for (Direction dir : directions) {
+						int ndirt = rc.senseElevation(mloc.add(dir));
+						if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
+							mdir = dir;
+							mdirt = ndirt;
+						}
 					}
+					if (mdir != null) rc.depositDirt(mdir);
 				}
-			} else if(shell_dist > 2){
-				goTo(locHQ);
-			} else{
-				//Just make random moves to try to break out
-				int ri = r.nextInt(8);
-				for(int i=0; i<8; i++) {
-					tryMove(directions[ri+i]);
-				}
-			}
+				break;
 		}
 	}
 
@@ -81,6 +102,13 @@ public class Landscaper extends Unit {
 				if (message.data[0] != rc.getID()) return false;
 				status = LandscaperStatus.NOTHING;
 				return true;
+			case BUILD_WALL:
+				MapLocation loc = new MapLocation(message.data[0], message.data[1]);
+				if (loc.isAdjacentTo(rc.getLocation())) {
+					status = LandscaperStatus.BUILDING;
+					return true;
+				}
+				return false;
 		}
 		return false;
 	}

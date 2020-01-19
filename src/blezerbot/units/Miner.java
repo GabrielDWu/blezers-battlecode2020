@@ -17,6 +17,7 @@ public class Miner extends Unit {
 	}
 
 	MinerStatus status = null;
+	MinerStatus prevStatus = null;
 
 	MapLocation soupLoc = null;
 	int[][] soupTries;
@@ -26,6 +27,9 @@ public class Miner extends Unit {
 	public ArrayList<MapLocation> locREFINERY;
 	MapLocation chosenRefinery;
 	MapLocation buildLocation = null;
+
+	MapLocation locDS;
+	MapLocation locOpposite;
 
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
@@ -38,38 +42,73 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(status+" "+chosenRefinery);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
-			if (status == MinerStatus.NOTHING) return;
+			if (status == MinerStatus.NOTHING) {
+				MapLocation mloc = rc.getLocation();
+				if (locDS == null) {
+					RobotInfo[] r = rc.senseNearbyRobots(locHQ, 4, rc.getTeam());
+					for (int i = 0; i < r.length; i++) {
+						if(r[i].getType() == RobotType.DESIGN_SCHOOL) {
+							locDS = r[i].getLocation();
+							locOpposite = locHQ.add(locHQ.directionTo(locDS).opposite());
+							break;
+						}
+					}
+				}
+				if (locHQ != null && mloc.isAdjacentTo(locHQ)) {
+					if (locDS != null) {
+						for (Direction dir : directions) {
+							MapLocation nloc = mloc.add(dir);
+							if (!nloc.equals(locHQ) && nloc.isAdjacentTo(locHQ) && nloc.distanceSquaredTo(locOpposite) < mloc.distanceSquaredTo(locOpposite) && nloc.distanceSquaredTo(locDS) != 1) {
+								if (tryMove(dir)) break;
+							}
+						}
+					}
+					for (Direction dir : directions) {
+						if (tryMine(dir)) { 
+							soupLoc = mloc.add(dir);
+							soupTries[soupLoc.x][soupLoc.y] = 0;
+							break;
+						}
+					}
+					if (rc.canDepositSoup(mloc.directionTo(locHQ))) rc.depositSoup(mloc.directionTo(locHQ), rc.getSoupCarrying());
+				}
+				return;
+			}
 			if (status == null) status = MinerStatus.SEARCHING;
 			setVisitedAndSeen();
 			MapLocation nloc = null;
 			MapLocation mloc = rc.getLocation();
+			if (status != MinerStatus.DEPOSITING && prevStatus != MinerStatus.NOTHING && locHQ != null && mloc.isAdjacentTo(locHQ)) {
+				goTo(mloc.add(mloc.directionTo(locHQ).opposite()));
+			}
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
 			switch (status) {
 				case BUILDING:
 					if(buildLocation == null){	// can build anywhere far from hq
 						if (buildingTries++ > 3){
-							status = MinerStatus.MINING;
+							status = prevStatus == null ? MinerStatus.MINING : prevStatus;
 						}
 						for (Direction dir : directions) {
-							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 18 &&
+							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 &&
 									rc.canBuildRobot(buildingType, dir)) {
 								rc.buildRobot(buildingType, dir);
-								status = MinerStatus.MINING;
+								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
 							}
 						}
-						if(status != MinerStatus.MINING){	//Still trying to build... move away from HQ
+						if(status != (prevStatus == null ? MinerStatus.MINING : prevStatus)){	//Still trying to build... move away from HQ
 							tryMove(rc.getLocation().directionTo(locHQ).opposite());
 							tryMove(rc.getLocation().directionTo(locHQ).opposite().rotateLeft());
 							tryMove(rc.getLocation().directionTo(locHQ).opposite().rotateRight());
 						}
-					}else{	//Specific place i want to build
-						if (buildingTries++ > 50){
+					}else{	//Specific place I want to build
+						/*if (buildingTries++ > 50){
 							status = MinerStatus.MINING;
-						}
+						}*/
+						// we will verify it can be done before giving the message, so infinite tries
+						// (for e.g. waiting for accumulation of soup)
 						if(rc.getLocation().equals(buildLocation)){
 							//Move in a random direction
 							int ri = r.nextInt(8);
@@ -79,15 +118,13 @@ public class Miner extends Unit {
 						}else if(rc.getLocation().isAdjacentTo(buildLocation)){
 							if(rc.canBuildRobot(buildingType, rc.getLocation().directionTo(buildLocation))){
 								rc.buildRobot(buildingType, rc.getLocation().directionTo(buildLocation));
-								status = MinerStatus.MINING;
+								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
 							}
 						}else{
 							goTo(buildLocation);
 						}
 
 					}
-
-
 					break;
 				case SEARCHING:
 					for (int x = -5; x <= 5; x++) {
@@ -154,6 +191,9 @@ public class Miner extends Unit {
 								chosenRefinery = loc;
 							}
 						}*/
+					}
+					if (chosenRefinery.equals(locHQ) && locREFINERY.size() > 0) {
+						chosenRefinery = locREFINERY.get(0);
 					}
 					goTo(chosenRefinery);
 					if (rc.getLocation().isAdjacentTo(chosenRefinery)) {
@@ -352,6 +392,7 @@ public class Miner extends Unit {
 				if (message.data[1] != rc.getID()) return false;
 				buildingType = robot_types[message.data[0]];
 				buildingTries = 0;
+				prevStatus = status == MinerStatus.BUILDING ? prevStatus : status;
 				status = MinerStatus.BUILDING;
 				buildLocation = null;
 				return true;
@@ -359,8 +400,19 @@ public class Miner extends Unit {
 				if (message.data[1] != rc.getID()) return false;
 				buildingType = robot_types[message.data[0]];
 				buildingTries = 0;
+				prevStatus = status == MinerStatus.BUILDING ? prevStatus : status;
 				status = MinerStatus.BUILDING;
 				buildLocation = new MapLocation(message.data[2], message.data[3]);
+				return true;
+			case WAIT:
+				if (message.data[0] != rc.getID()) return false;
+				prevStatus = status;
+				status = MinerStatus.NOTHING;
+				return true;
+			case UNWAIT:
+				if (message.data[0] != rc.getID()) return false;
+				prevStatus = null;
+				status = MinerStatus.MINING;
 				return true;
 		}
 		return false;
@@ -371,6 +423,10 @@ public class Miner extends Unit {
 	        rc.mineSoup(dir);
 	        return true;
 	    } else return false;
+	}
+
+	public boolean canMove(Direction dir) throws GameActionException {
+		return super.canMove(dir) && (locHQ == null || !rc.getLocation().add(dir).isAdjacentTo(locHQ) || (chosenRefinery != null && chosenRefinery.equals(locHQ) && status == MinerStatus.DEPOSITING));
 	}
 
 }

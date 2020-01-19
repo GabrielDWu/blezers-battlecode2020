@@ -237,6 +237,13 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
+		switch (dir) {
+			case NORTHEAST:
+			case NORTHWEST:
+			case SOUTHEAST:
+			case SOUTHWEST:
+				return false;
+		}
 		return rc.canMove(dir)&&(!netGunRadius(rc.getLocation().add(dir)));
 	}
 
