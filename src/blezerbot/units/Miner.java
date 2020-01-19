@@ -46,7 +46,7 @@ public class Miner extends Unit {
 		if (sentInfo) {
 			if (status == MinerStatus.NOTHING) {
 				MapLocation mloc = rc.getLocation();
-				if (locDS == null) {
+				if (locDS == null && locHQ != null) {
 					RobotInfo[] r = rc.senseNearbyRobots(locHQ, 4, rc.getTeam());
 					for (int i = 0; i < r.length; i++) {
 						if(r[i].getType() == RobotType.DESIGN_SCHOOL) {
@@ -58,11 +58,14 @@ public class Miner extends Unit {
 				}
 				if (locHQ != null && mloc.isAdjacentTo(locHQ)) {
 					if (locDS != null) {
-						for (Direction dir : directions) {
-							MapLocation nloc = mloc.add(dir);
-							if (!nloc.equals(locHQ) && nloc.isAdjacentTo(locHQ) && nloc.distanceSquaredTo(locOpposite) < mloc.distanceSquaredTo(locOpposite) && nloc.distanceSquaredTo(locDS) != 1) {
-								if (tryMove(dir)) break;
+						RobotInfo[] r = rc.senseNearbyRobots(locHQ, 2, rc.getTeam());
+						if (r.length == 8 && rc.getTeamSoup() > 150) {
+							for (Direction dir : directions) {
+								tryMove(dir);
+								status = MinerStatus.MINING;
 							}
+						} else {
+							tryMove(orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight());
 						}
 					}
 					for (Direction dir : directions) {

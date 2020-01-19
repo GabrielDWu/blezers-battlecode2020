@@ -16,12 +16,9 @@ public class DesignSchool extends Building {
 	public void run() throws GameActionException {
 		super.run();
 		if (locHQ == null) return;
-		for (Direction dir : directions) {
-			if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
-				if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-					rc.buildRobot(RobotType.LANDSCAPER, dir);
-				}
-			}
+		Direction dir = rc.getLocation().directionTo(locHQ);
+		if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+			rc.buildRobot(RobotType.LANDSCAPER, dir);
 		}
 		/*if (builtLandscapers < 16) {
 			for (Direction dir : directions) {

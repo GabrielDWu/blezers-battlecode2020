@@ -71,20 +71,6 @@ public class HQ extends Building {
 			}
 		}
 		MapLocation mloc = rc.getLocation();
-		if (builtDesignSchool && units[RobotType.DESIGN_SCHOOL.ordinal()].size() > 0 && !landscaperWalled && rc.isLocationOccupied(mloc.add(turtleDesignSchoolDir.rotateLeft())) && rc.isLocationOccupied(mloc.add(turtleDesignSchoolDir)) && rc.isLocationOccupied(mloc.add(turtleDesignSchoolDir.rotateRight()))) {
-			if (rc.getTeamSoup() > 150) {
-				MapLocation[] unwaitLocs = new MapLocation[]{mloc.add(turtleDesignSchoolDir.opposite().rotateRight()), mloc.add(turtleDesignSchoolDir.opposite().rotateLeft()), mloc.add(turtleDesignSchoolDir.opposite())};
-				RobotInfo unwaitMiner;
-				for (int i = 0; i < unwaitLocs.length; i++) {
-					unwaitMiner = rc.senseRobotAtLocation(unwaitLocs[i]);
-					if (unwaitMiner == null || unwaitMiner.getType() != RobotType.MINER) continue;
-					writeMessage(Message.doSomething(unwaitMiner.getID()));
-					addMessageToQueue();
-					units[unwaitMiner.getType().ordinal()].add(new InternalUnit(unwaitMiner.getType(), unwaitMiner.getID(), unwaitMiner.getLocation()));
-					break;
-				}
-			}
-		}
 		if (waitingForBuilding < Integer.MAX_VALUE) waitingForBuilding++;
 		if(!hq_sentLoc){
 			writeMessage(Message.hqLocation(rc.getLocation()));

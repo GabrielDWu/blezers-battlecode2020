@@ -63,12 +63,21 @@ public class Landscaper extends Unit {
 						}
 					}
 				}
-				for (Direction dir : directions) {
-					MapLocation nloc = mloc.add(dir);
-					if (!nloc.equals(locHQ) && nloc.isAdjacentTo(locHQ) && nloc.distanceSquaredTo(locOpposite) < mloc.distanceSquaredTo(locOpposite) && nloc.distanceSquaredTo(locDS) != 1) {
-						if (tryMove(dir)) break;
+				Direction moveDir = orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight();
+				int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
+				System.out.println(diff);
+				if (diff > 3) {
+					rc.digDirt(moveDir);
+				} else if (diff < -3) {
+					if (rc.getDirtCarrying() < 1) {
+						Direction d = rc.getLocation().directionTo(locHQ);
+						if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
+						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
+	                    else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
 					}
+					rc.depositDirt(moveDir);
 				}
+				tryMove(moveDir);
 				break;
 			case BUILDING:
 				Direction d = rc.getLocation().directionTo(locHQ);
@@ -80,10 +89,12 @@ public class Landscaper extends Unit {
 					Direction mdir = null;
 					int mdirt = Integer.MAX_VALUE;
 					for (Direction dir : directions) {
-						int ndirt = rc.senseElevation(mloc.add(dir));
-						if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
-							mdir = dir;
-							mdirt = ndirt;
+						if (rc.canSenseLocation(mloc.add(dir))) {
+							int ndirt = rc.senseElevation(mloc.add(dir));
+							if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
+								mdir = dir;
+								mdirt = ndirt;
+							}
 						}
 					}
 					if (mdir != null) rc.depositDirt(mdir);
