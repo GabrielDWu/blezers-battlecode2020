@@ -43,7 +43,7 @@ public class HQ extends Building {
 			if (buildingDesignSchool > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
-		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 8) {
+		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 8 && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
 			addMessageToQueue();
