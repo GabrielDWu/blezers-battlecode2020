@@ -70,15 +70,15 @@ public class Miner extends Unit {
 					}
 					if (locDS != null) {
 						RobotInfo[] r = rc.senseNearbyRobots(locHQ, 2, rc.getTeam());
-						if (r.length >= buildableTiles && rc.getTeamSoup() > 150) {
+						//if (r.length >= buildableTiles && rc.getTeamSoup() > 150) {
 							for (Direction dir : directions) {
 								tryMove(dir);
 								status = MinerStatus.MINING;
 							}
-						} else {
-							Direction moveDir = orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight();
-							if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
-						}
+						//} else {
+						//	Direction moveDir = orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight();
+						//	if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
+						//}
 					}
 					for (Direction dir : directions) {
 						if (tryMine(dir)) { 
@@ -441,7 +441,7 @@ public class Miner extends Unit {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return super.canMove(dir) && (locHQ == null || !rc.getLocation().add(dir).isAdjacentTo(locHQ) || status == MinerStatus.NOTHING || ((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && chosenRefinery != null && chosenRefinery.equals(locHQ)));
+		return super.canMove(dir);
 	}
 
 }

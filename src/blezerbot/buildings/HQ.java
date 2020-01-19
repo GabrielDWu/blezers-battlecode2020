@@ -116,7 +116,7 @@ public class HQ extends Building {
 				waitDir = null;
 			}
 
-			if (builtMiners < 5) {
+			if (builtMiners < 2) {
 				for (Direction dir : directions) {
 					if (builtMiners < 8 && rc.canBuildRobot(RobotType.MINER, dir)) {
 						rc.buildRobot(RobotType.MINER, dir);
@@ -125,7 +125,7 @@ public class HQ extends Building {
 				}
 			} else if (rc.getTeamSoup() >= 270 && !minerWalled) {
 				minerWalled = true;
-				for (Direction dir : directions) {
+				for (Direction dir : orthogonalDirections) {
 					MapLocation nloc = mloc.add(dir);
 					if (rc.canSenseLocation(nloc) && !rc.isLocationOccupied(nloc) && Math.abs(rc.senseElevation(mloc)-rc.senseElevation(nloc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(nloc)) {
 						minerWalled = false;
