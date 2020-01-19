@@ -65,7 +65,8 @@ public class Miner extends Unit {
 								status = MinerStatus.MINING;
 							}
 						} else {
-							tryMove(orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight());
+							Direction moveDir = orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight();
+							if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
 						}
 					}
 					for (Direction dir : directions) {

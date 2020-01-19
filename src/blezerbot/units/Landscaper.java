@@ -77,7 +77,7 @@ public class Landscaper extends Unit {
 					}
 					rc.depositDirt(moveDir);
 				}
-				tryMove(moveDir);
+				if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
 				break;
 			case BUILDING:
 				Direction d = rc.getLocation().directionTo(locHQ);
