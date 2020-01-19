@@ -81,6 +81,7 @@ public class HQ extends Building {
 					writeMessage(Message.doSomething(unwaitMiner.getID()));
 					addMessageToQueue();
 					units[unwaitMiner.getType().ordinal()].add(new InternalUnit(unwaitMiner.getType(), unwaitMiner.getID(), unwaitMiner.getLocation()));
+					break;
 				}
 			}
 		}
