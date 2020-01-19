@@ -175,7 +175,7 @@ public class DeliveryDrone extends Unit {
 			}
 			enemyHQc = 0;
 		}
-		if (rc.getCurrentSensorRadiusSquared() > GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED /*|| rc.getLocation().distanceSquaredTo(enemyHQs[enemyHQc]) > 20*/) goTo(enemyHQs[enemyHQc]);
+		goTo(enemyHQs[enemyHQc]);
 		MapLocation r = detectEnemyHQ();
 		if (r != null) {
 			findingEnemyHQ = false;
@@ -218,7 +218,7 @@ public class DeliveryDrone extends Unit {
 
 	public boolean netGunRadius(MapLocation loc) throws GameActionException{
 		if(rc.canSenseLocation(loc) == false) return false;
-		RobotInfo [] robots = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), (rc.getTeam() == Team.A ? Team.B : Team.A));
+		RobotInfo [] robots = rc.senseNearbyRobots(-1, (rc.getTeam() == Team.A ? Team.B : Team.A));
 		for(RobotInfo r: robots){
 			if(r.getType() == RobotType.NET_GUN || r.getType() == RobotType.HQ){
 				if(loc.distanceSquaredTo(r.getLocation()) <= GameConstants.NET_GUN_SHOOT_RADIUS_SQUARED){
@@ -229,13 +229,6 @@ public class DeliveryDrone extends Unit {
 		return false;
 	}
 
-	public boolean tryMove(Direction dir) throws GameActionException {
-	    if (rc.isReady() && canMove(dir)) {
-	        rc.move(dir);
-	        return true;
-	    } else return false;
-	}
-
 	public boolean canMove(Direction dir) throws GameActionException {
 		switch (dir) {
 			case NORTHEAST:
@@ -244,7 +237,7 @@ public class DeliveryDrone extends Unit {
 			case SOUTHWEST:
 				return false;
 		}
-		return rc.canMove(dir)&&(!netGunRadius(rc.getLocation().add(dir)));
+		return rc.canMove(dir)&&(!netGunRadius(rc.getLocation().add(dir)))&&((enemyHQ != null && rc.getLocation().add(dir).distanceSquaredTo(enemyHQ) > 15) || (enemyHQ == null && rc.getLocation().add(dir).distanceSquaredTo(enemyHQs[enemyHQc]) > 15));
 	}
 
 }
