@@ -22,6 +22,7 @@ public class HQ extends Building {
 	Direction turtleDesignSchoolDir;
 	boolean landscaperWalled;
 	int buildingDesignSchool;
+	int attackTimer;
 
 	/* post turtle stuff */
 
@@ -31,6 +32,7 @@ public class HQ extends Building {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
+		attackTimer = Integer.MAX_VALUE;
 		waitingForBuilding = Integer.MAX_VALUE;
 		minerIdToRemove = -1;
 		units = new ArrayList[10];
@@ -138,6 +140,18 @@ public class HQ extends Building {
 				}
 			}
 		}
+
+		attackTimer--;
+		if(attackTimer > 200 && units[7 /*drone*/].size() >= 7){
+			attackTimer = 200;
+		}
+		if(attackTimer <= 0){
+			attackTimer = 200;
+			writeMessage(Message.droneAttack());
+			addMessageToQueue();
+			System.out.println("Called attack");
+		}
+
 
 		//Broadcast important info every 9 rounds
 		if(rc.getRoundNum() %9 == 0){

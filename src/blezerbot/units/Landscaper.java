@@ -69,7 +69,6 @@ public class Landscaper extends Unit {
 						if(r[i].getLocation().isAdjacentTo(locHQ)){
 							//filled[0] is Northeast, then proceeds on clockwise
 							filled[(locHQ.directionTo(r[i].getLocation()).ordinal()+7)%8] = true;
-							System.out.println("filled "+(locHQ.directionTo(r[i].getLocation()).ordinal()+7)%8);
 						}
 					}
 				}

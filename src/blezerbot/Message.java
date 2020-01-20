@@ -15,7 +15,8 @@ public class Message {
 		BUILD_SPECUNIT_LOC,
 		TERMINATE,
 		UNWAIT,
-		BUILD_WALL
+		BUILD_WALL,
+		DRONE_ATTACK
 	}
 
 	static int[][] typeData = new int[][]{
@@ -29,6 +30,7 @@ public class Message {
 		{}, // terminate message
 		{15 /*id*/}, // do something (unwait)
 		{6, 6 /*x, y*/}, // build wall at location
+		{},	//	drone attack
 	};
 
 	static MessageType[] messageTypes;
@@ -94,6 +96,10 @@ public class Message {
 
 	public static Message buildWall(MapLocation loc) {
 		return new Message(MessageType.BUILD_WALL, typeData[9], new int[]{loc.x, loc.y});
+	}
+
+	public static Message droneAttack(){
+		return new Message(MessageType.DRONE_ATTACK, typeData[10], new int[]{});
 	}
 
 	public int getInt(int size){

@@ -76,9 +76,9 @@ public abstract class Unit extends Robot {
 	}
 
 	public void goTo(MapLocation loc) throws GameActionException {
-		if(!rc.isReady()) return;
+		if(!rc.isReady() || rc.getLocation().equals(loc)) return;
 		if (unitVisited == null) return;
-		if (loc != dest) {
+		if (!loc.equals(dest)) {
 			dest = loc;
 			lastDist = 0;
 			hugging = false;
