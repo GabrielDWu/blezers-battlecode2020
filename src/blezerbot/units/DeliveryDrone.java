@@ -26,6 +26,7 @@ public class DeliveryDrone extends Unit {
 	ArrayList<MapLocation> waterLocations = new ArrayList<MapLocation>();
 	int searchID = 0;
 	int enemyHQc;
+	Direction spiral = Direction.SOUTH;
 	boolean sentFound = false;
 
 	public DeliveryDrone(RobotController rc) throws GameActionException {
@@ -36,7 +37,7 @@ public class DeliveryDrone extends Unit {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		status = DeliveryDroneStatus.FIND_ENEMY_HQ;
-		status = DeliveryDroneStatus.SEARCH_WATER;
+		//status = DeliveryDroneStatus.SEARCH_WATER;
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
@@ -45,7 +46,8 @@ public class DeliveryDrone extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		updateWater();
+	//	updateWater();
+		visited[rc.getLocation().x][rc.getLocation().y] = 1;
 		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DROP_OFF){
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
@@ -145,44 +147,25 @@ public class DeliveryDrone extends Unit {
 		}
 	}
 
-	public void updateWater() throws GameActionException {
-		System.out.println(waterLocations.size() + " size");
-		MapLocation myloc = rc.getLocation();
-		flooded[myloc.x][myloc.y] = 1;
-		ArrayList<MapLocation> a = getLocationsInRadius(myloc, rc.getCurrentSensorRadiusSquared());
-		int w = rc.getMapWidth();
-		int h = rc.getMapHeight();
-		for(MapLocation loc: a){
-			if(rc.canSenseLocation(loc) && rc.senseFlooding(loc)){
-				if(flooded[loc.x][loc.y] != 2){
-					waterLocations.add(loc);
-				}
-				flooded[loc.x][loc.y] = 2;
-			}
-		}
-	}
-
 	void findWater() throws GameActionException {
-		if(waterLocations.isEmpty() == false) return;
-		Direction best = Direction.NORTH;
-		int unseen = 0;
-		for(Direction dir: directions){
-			MapLocation nxt = rc.getLocation().add(dir);
-			int cnt = 0;
-			for(Direction dir1: directions){
-				MapLocation nloc = nxt.add(dir1);
-				if(onMap(nloc) && flooded[nloc.x][nloc.y] == 0) cnt++;
-			}
-			if(cnt>=unseen && rc.canMove(dir)){
-				best = dir;
-				unseen = cnt;
+		if(waterLocations.size()>0) return;
+		MapLocation myloc = rc.getLocation();
+	/*	visited[myloc.x][myloc.y] = 2;
+		if(!rc.canSenseLocation(new MapLocation(0, 0))){
+			goTo(new MapLocation(0, 0));
+		}
+		MapLocation cur = rc.getLocation();
+		cur = cur.add(spiral);
+		while(rc.canSenseLocation(cur)){
+			if(visited[cur.x][cur.y] == 2) {
+				spiral = directionCounterClockwise(spiral);
+				spiral = directionCounterClockwise(spiral);
 			}
 		}
-		if(rc.canMove(best)){
-			rc.move(best);
-		}
+		if(canMove(spiral)){
+			rc.move(spiral);
+		}*/
 	}
-
 
 	MapLocation closestSafe(MapLocation loc) throws GameActionException {
 		ArrayList<MapLocation>  nearby = getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared());
