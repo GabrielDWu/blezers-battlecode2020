@@ -46,9 +46,8 @@ public class DeliveryDrone extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-	//	updateWater();
-		visited[rc.getLocation().x][rc.getLocation().y] = 1;
-		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DROP_OFF){
+		updateWater();
+		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.ATTACKING)){
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
 					rc.dropUnit(dir);
@@ -139,12 +138,15 @@ public class DeliveryDrone extends Unit {
 				}
 				break;
 			case HARASS:
+				break;
 
 			case SEARCH_WATER:
 				findWater();
-
+				break;
 
 		}
+
+
 	}
 
 	void findWater() throws GameActionException {
