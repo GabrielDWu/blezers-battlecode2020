@@ -8,12 +8,13 @@ public class DeliveryDrone extends Unit {
 	enum DeliveryDroneStatus {
 		PICK_UP,
 		DROP_OFF,
-		SEARCHING,
+		SEARCHWATER,
 		FIND_ENEMY_HQ,
 		RETURNING,
 		CIRCLING,	//Surrouning HQ in preparation for attack
 		ATTACKING,	//Diving in to abduct landscapers from enemy wall
-		NOTHING
+		NOTHING,
+		HARASS
 	}
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
@@ -132,6 +133,11 @@ public class DeliveryDrone extends Unit {
 					}
 				}
 				break;
+			case HARASS:
+
+			case SEARCHWATER:
+
+
 
 		}
 	}
