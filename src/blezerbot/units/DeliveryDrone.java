@@ -46,7 +46,6 @@ public class DeliveryDrone extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		updateWater();
 		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.ATTACKING)){
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
