@@ -14,7 +14,7 @@ public class Landscaper extends Unit {
 	}
 	LandscaperStatus status = null;
 	MapLocation locDS = null;
-	MapLocation locOpposite;
+	int filledOffset;
 
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
@@ -60,15 +60,16 @@ public class Landscaper extends Unit {
 				}
 				boolean[] filled = new boolean[8];
 				int filledUpTo = -1;
+				if (locDS != null) filled[(locHQ.directionTo(rc.getLocation()).ordinal()+filledOffset)%8] = true;
 				RobotInfo[] r = rc.senseNearbyRobots(locHQ, 4, rc.getTeam());
 				for (int i = 0; i < r.length; i++) {
 					if(locDS == null && r[i].getType() == RobotType.DESIGN_SCHOOL) {
 						locDS = r[i].getLocation();
-						locOpposite = locHQ.add(locHQ.directionTo(locDS).opposite());
-					}else if(r[i].getType() == RobotType.LANDSCAPER){
+						filledOffset = ((-locHQ.directionTo(locDS).ordinal()-1)%8+8)%8;
+					}else if(locDS != null && r[i].getType() == RobotType.LANDSCAPER){
 						if(r[i].getLocation().isAdjacentTo(locHQ)){
 							//filled[0] is Northeast, then proceeds on clockwise
-							filled[(locHQ.directionTo(r[i].getLocation()).ordinal()+7)%8] = true;
+							filled[(locHQ.directionTo(r[i].getLocation()).ordinal()+filledOffset)%8] = true;
 						}
 					}
 				}
@@ -79,8 +80,7 @@ public class Landscaper extends Unit {
 						break;
 					}
 				}
-
-				if((locHQ.directionTo(mloc).ordinal()+7)%8-1 <= filledUpTo){
+				if(locDS != null && (locHQ.directionTo(mloc).ordinal()+filledOffset)%8 <= filledUpTo){
 					if (rc.getDirtCarrying() < 1) {
 						if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
 						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
@@ -102,7 +102,12 @@ public class Landscaper extends Unit {
 								}
 							}
 						} else if (diff < -3) {
-							if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
+							if (rc.getDirtCarrying() < 1) {
+								if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
+								else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
+								else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
+							}
+							else if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
 						}
 						if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
 					}
@@ -110,9 +115,18 @@ public class Landscaper extends Unit {
 				break;
 			case BUILDING:
 				if (rc.getDirtCarrying() < 1) {
-					if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
-					else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
-                    else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
+					Direction mdir = null;
+					int mdirt = Integer.MIN_VALUE;
+					for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+						if (rc.canSenseLocation(mloc.add(dir))) {
+							int ndirt = rc.senseElevation(mloc.add(dir));
+							if (ndirt > mdirt && rc.canDigDirt(dir)) {
+								mdir = dir;
+								mdirt = ndirt;
+							}
+						}
+					}
+					if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
 				} else {
 					Direction mdir = null;
 					int mdirt = Integer.MAX_VALUE;
