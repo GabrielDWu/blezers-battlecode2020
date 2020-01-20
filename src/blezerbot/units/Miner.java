@@ -235,21 +235,20 @@ public class Miner extends Unit {
 	        }
 	    }
 	    Direction maxl = null;
-	    while (maxl == null || !tryMove(maxl)) {
-	        int max = Integer.MIN_VALUE;
+        int max = Integer.MIN_VALUE;
 
-	        //I'm pretty sure this is random enough and preserves the bytecode
-			int ri = r.nextInt(numDir);
-	        for(int i=0; i<numDir; i++) {
-	            int newv = newSeenList[(i+ri)%numDir];
-	            Direction newl = newSeenDirs[(i+ri)%numDir];
-	            if (newv > max && rc.canMove(newl) && !rc.senseFlooding(rc.adjacentLocation(newl))) {
-	                maxl = newl;
-	                max = newv;
-	            }
-	        }
-	    }
-	}
+        //I'm pretty sure this is random enough and preserves the bytecode
+		int ri = r.nextInt(numDir);
+        for(int i=0; i<numDir; i++) {
+            int newv = newSeenList[(i+ri)%numDir];
+            Direction newl = newSeenDirs[(i+ri)%numDir];
+            if (newv > max && canMove(newl)) {
+                maxl = newl;
+                max = newv;
+            }
+        }
+        tryMove(maxl);
+}
 
 	static int[][] aNewVisibleMiner = new int[][]{{6,0},{6,1},{6,-1},{6,2},{6,-2},{6,3},{6,-3},{5,4},{5,-4},{4,5},{4,-5}};
 	static int[][] aNewVisibleMinerDiag = new int[][]{{6,-2},{6,-1},{6,0},{6,1},{6,2},{6,3},{6,4},{5,4},{5,5},{4,5},{4,6},{3,6},{2,6},{1,6},{0,6},{-1,6},{-2,6}};
