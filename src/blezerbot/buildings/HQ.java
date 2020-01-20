@@ -13,15 +13,13 @@ public class HQ extends Building {
 	public ArrayList<InternalUnit>[] units;
 
 	/* turtling stuff */
-	Direction waitDir;
 	int waitingForBuilding;
-	int minerIdToRemove;
-	boolean minerWalled;
 	boolean builtDesignSchool;
 	boolean builtRefinery;
 	Direction turtleDesignSchoolDir;
 	boolean landscaperWalled;
 	int buildingDesignSchool;
+	MapLocation buildingMinerLoc;
 
 	/* post turtle stuff */
 
@@ -32,7 +30,6 @@ public class HQ extends Building {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		waitingForBuilding = Integer.MAX_VALUE;
-		minerIdToRemove = -1;
 		units = new ArrayList[10];
 		for(int i=0; i<10; i++){
 			units[i] = new ArrayList<InternalUnit>();
@@ -51,90 +48,58 @@ public class HQ extends Building {
 			}
 		}
 
-		if (landscaperWalled) {
-			// wall is built
-			if (units[RobotType.FULFILLMENT_CENTER.ordinal()].size() == 0) {
-				writeMessage(Message.build(RobotType.FULFILLMENT_CENTER, units[RobotType.MINER.ordinal()].get(r.nextInt(units[RobotType.MINER.ordinal()].size())).id));
-				addMessageToQueue();
-			}
-		} else {
-			// build wall
-			if (!builtDesignSchool) {
-				if (buildingDesignSchool > 11) builtDesignSchool = true;
-				else if (buildingDesignSchool > 0) buildingDesignSchool++;
-			}
-			if (units[RobotType.LANDSCAPER.ordinal()].size() >= 8 && !landscaperWalled) {
-				landscaperWalled = true;
-				writeMessage(Message.buildWall(rc.getLocation()));
-				addMessageToQueue();
-			}
-			if (minerIdToRemove != -1) {
-				for(Iterator<InternalUnit> iterator = units[RobotType.MINER.ordinal()].iterator(); iterator.hasNext(); ) {
-				    if(iterator.next().id == minerIdToRemove) {
-				        iterator.remove();
-				        break;
-				    }
-				}
-				minerIdToRemove = -1;
-			}
-			if (minerWalled && buildingDesignSchool == 0 && builtRefinery) {
-				for (Direction dir : new Direction[]{Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}) {
-					MapLocation minerLoc = rc.getLocation().add(dir);
-					MapLocation buildLoc = minerLoc.add(dir);
-					if (rc.onTheMap(buildLoc) && Math.abs(rc.senseElevation(minerLoc)-rc.senseElevation(buildLoc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(buildLoc)) {
-						writeMessage(Message.build(RobotType.DESIGN_SCHOOL, rc.senseRobotAtLocation(minerLoc).getID(), buildLoc));
-						addMessageToQueue();
-						buildingDesignSchool = 1;
-						turtleDesignSchoolDir = dir;
-						break;
-					}
+		// build wall
+		if (buildingMinerLoc != null) {
+			System.out.println(rc.senseRobotAtLocation(buildingMinerLoc).getID());
+			writeMessage(Message.build(RobotType.DESIGN_SCHOOL, rc.senseRobotAtLocation(buildingMinerLoc).getID(), buildingMinerLoc.add(buildingMinerLoc.directionTo(locHQ).opposite())));
+			addMessageToQueue();
+			buildingDesignSchool = 1;
+			turtleDesignSchoolDir = rc.getLocation().directionTo(buildingMinerLoc);
+			buildingMinerLoc = null;
+		}
+		if (!builtDesignSchool) {
+			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
+			else if (buildingDesignSchool > 0) buildingDesignSchool++;
+		}
+		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 8 && !landscaperWalled) {
+			landscaperWalled = true;
+			writeMessage(Message.buildWall(rc.getLocation()));
+			addMessageToQueue();
+		}
+		if (buildingDesignSchool == 0 && builtRefinery && rc.getTeamSoup() > 70 && rc.isReady()) {
+			for (Direction dir : orthogonalDirections) {
+				MapLocation minerLoc = rc.getLocation().add(dir);
+				MapLocation buildLoc = minerLoc.add(dir);
+				if (rc.onTheMap(buildLoc) && Math.abs(rc.senseElevation(minerLoc)-rc.senseElevation(buildLoc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(buildLoc) && !rc.isLocationOccupied(minerLoc) && !rc.isLocationOccupied(buildLoc)) {
+					buildingMinerLoc = minerLoc;
+					rc.buildRobot(RobotType.MINER, dir);
+					break;
 				}
 			}
+		}
 
-			MapLocation mloc = rc.getLocation();
-			if (waitingForBuilding < Integer.MAX_VALUE) waitingForBuilding++;
-			if(!hq_sentLoc){
-				writeMessage(Message.hqLocation(rc.getLocation()));
-				addMessageToQueue();
-				hq_sentLoc = true;
-			}
+		MapLocation mloc = rc.getLocation();
+		if (waitingForBuilding < Integer.MAX_VALUE) waitingForBuilding++;
+		if(!hq_sentLoc){
+			writeMessage(Message.hqLocation(rc.getLocation()));
+			addMessageToQueue();
+			hq_sentLoc = true;
+		}
 
-			if (minerWalled && units[2 /*refinery*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 4 && rc.getTeamSoup() > 200) {
-				waitingForBuilding = 1;
-				ArrayList<InternalUnit> miners = units[1];
-				InternalUnit miner = miners.get(r.nextInt(miners.size()));
-				writeMessage(Message.build(RobotType.REFINERY, miner.id));
-				addMessageToQueue();
-				builtRefinery = true;
-			}
+		if (units[2 /*refinery*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 4 && rc.getTeamSoup() > 200) {
+			waitingForBuilding = 1;
+			ArrayList<InternalUnit> miners = units[1];
+			InternalUnit miner = miners.get(r.nextInt(miners.size()));
+			writeMessage(Message.build(RobotType.REFINERY, miner.id));
+			addMessageToQueue();
+			builtRefinery = true;
+		}
 
-			if (waitDir != null) {
-				int waitId = rc.senseRobotAtLocation(rc.getLocation().add(waitDir)).getID();
-				minerIdToRemove = waitId;
-				writeMessage(Message.doNothing(waitId));
-				addMessageToQueue();
-				waitDir = null;
-			}
-
-			if (builtMiners < 2) {
-				for (Direction dir : directions) {
-					if (builtMiners < 8 && rc.canBuildRobot(RobotType.MINER, dir)) {
-						rc.buildRobot(RobotType.MINER, dir);
-						builtMiners++;
-					}
-				}
-			} else if (rc.getTeamSoup() >= 270 && !minerWalled) {
-				minerWalled = true;
-				for (Direction dir : orthogonalDirections) {
-					MapLocation nloc = mloc.add(dir);
-					if (rc.canSenseLocation(nloc) && !rc.isLocationOccupied(nloc) && Math.abs(rc.senseElevation(mloc)-rc.senseElevation(nloc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(nloc)) {
-						minerWalled = false;
-						if (rc.canBuildRobot(RobotType.MINER, dir)) {
-							rc.buildRobot(RobotType.MINER, dir);
-							waitDir = dir;
-							break;
-						}
-					}
+		if (builtMiners < 4) {
+			for (Direction dir : directions) {
+				if (builtMiners < 8 && rc.canBuildRobot(RobotType.MINER, dir)) {
+					rc.buildRobot(RobotType.MINER, dir);
+					builtMiners++;
 				}
 			}
 		}
