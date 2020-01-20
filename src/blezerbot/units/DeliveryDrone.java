@@ -19,6 +19,7 @@ public class DeliveryDrone extends Unit {
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
+	int[][] flooded;
 	MapLocation lastSeen;
 	MapLocation dropLocation;
 	MapLocation waitLocation;
@@ -35,6 +36,7 @@ public class DeliveryDrone extends Unit {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		status = DeliveryDroneStatus.FIND_ENEMY_HQ;
+		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
 	}
@@ -42,8 +44,9 @@ public class DeliveryDrone extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-
+		updateWater();
 		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.ATTACKING)){
+
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
 					rc.dropUnit(dir);
@@ -137,14 +140,51 @@ public class DeliveryDrone extends Unit {
 				break;
 
 			case SEARCHWATER:
+				findWater();
 				break;
 
+		}
 
+
+	}
+
+	public void updateWater() throws GameActionException {
+		MapLocation myloc = rc.getLocation();
+		flooded[myloc.x][myloc.y] = 1;
+		ArrayList<MapLocation> a = getLocationsInRadius(myloc, rc.getCurrentSensorRadiusSquared());
+		int w = rc.getMapWidth();
+		int h = rc.getMapHeight();
+		for(MapLocation loc: a){
+			if(rc.canSenseLocation(loc) && rc.senseFlooding(loc)){
+				if(flooded[loc.x][loc.y] != 2){
+					waterLocations.add(loc);
+				}
+				flooded[loc.x][loc.y] = 2;
+			}
 		}
 	}
-	void searchWater(){
-		// write search for water
+
+	void findWater() throws GameActionException {
+		if(waterLocations.isEmpty() == false) return;
+		Direction best = Direction.NORTH;
+		int unseen = 0;
+		for(Direction dir: directions){
+			MapLocation nxt = rc.getLocation().add(dir);
+			int cnt = 0;
+			for(Direction dir1: directions){
+				MapLocation nloc = nxt.add(dir1);
+				if(flooded[nloc.x][nloc.y] == 0) cnt++;
+			}
+			if(cnt>=unseen && rc.canMove(dir)){
+				best = dir;
+				unseen = cnt;
+			}
+		}
+		if(rc.canMove(best)){
+			rc.move(best);
+		}
 	}
+
 
 	MapLocation closestSafe(MapLocation loc) throws GameActionException {
 		ArrayList<MapLocation>  nearby = getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared());
@@ -169,7 +209,7 @@ public class DeliveryDrone extends Unit {
 
 	void dropWater(){
 		if(waterLocations.size() == 0){
-			searchWater();
+
 		}
 		else{
 			MapLocation best = null;
