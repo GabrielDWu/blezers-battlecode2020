@@ -45,6 +45,7 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
+		System.out.println(status);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
 			if (status == MinerStatus.NOTHING) {
@@ -358,7 +359,7 @@ public class Miner extends Unit {
 				//Miners want to store refinery locations
 				RobotType unit_type = robot_types[message.data[0]];
 				if(unit_type != RobotType.REFINERY){
-					return true;
+					return false;
 				}
 				locREFINERY.add(new MapLocation(message.data[2], message.data[3]));
 				return true;
@@ -388,6 +389,9 @@ public class Miner extends Unit {
 				prevStatus = null;
 				status = MinerStatus.MINING;
 				return true;
+			case REFINERY_LOC:
+				if (message.data[2] != rc.getID()) return false;
+				locREFINERY.add(new MapLocation(message.data[0], message.data[1]));
 		}
 		return false;
 	}
