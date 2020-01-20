@@ -8,7 +8,7 @@ public class DeliveryDrone extends Unit {
 	enum DeliveryDroneStatus {
 		PICK_UP,
 		DROP_OFF,
-		SEARCHWATER,
+		SEARCH_WATER,
 		FIND_ENEMY_HQ,
 		RETURNING,
 		CIRCLING,	//Surrouning HQ in preparation for attack
@@ -36,6 +36,7 @@ public class DeliveryDrone extends Unit {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		status = DeliveryDroneStatus.FIND_ENEMY_HQ;
+		status = DeliveryDroneStatus.SEARCH_WATER;
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
@@ -137,7 +138,7 @@ public class DeliveryDrone extends Unit {
 				break;
 			case HARASS:
 
-			case SEARCHWATER:
+			case SEARCH_WATER:
 				findWater();
 
 
@@ -145,6 +146,7 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public void updateWater() throws GameActionException {
+		System.out.println(waterLocations.size() + " size");
 		MapLocation myloc = rc.getLocation();
 		flooded[myloc.x][myloc.y] = 1;
 		ArrayList<MapLocation> a = getLocationsInRadius(myloc, rc.getCurrentSensorRadiusSquared());
@@ -169,7 +171,7 @@ public class DeliveryDrone extends Unit {
 			int cnt = 0;
 			for(Direction dir1: directions){
 				MapLocation nloc = nxt.add(dir1);
-				if(flooded[nloc.x][nloc.y] == 0) cnt++;
+				if(onMap(nloc) && flooded[nloc.x][nloc.y] == 0) cnt++;
 			}
 			if(cnt>=unseen && rc.canMove(dir)){
 				best = dir;

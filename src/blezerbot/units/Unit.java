@@ -32,9 +32,7 @@ public abstract class Unit extends Robot {
 	void getLocationInRadiusHelper(MapLocation center, int dx, int dy){
 		int x = dx + center.x;
 		int y = dy  +center.y;
-		if(x<0 || x>=  rc.getMapWidth()) return;
-		if(y<0 || y>= rc.getMapHeight()) return;
-		returnGetLocationInRadius.add(new MapLocation(x, y));
+		if(onMap(x, y)) returnGetLocationInRadius.add(new MapLocation(x, y));
 	}
 	public ArrayList<MapLocation> getLocationsInRadius(MapLocation center, int radiusSquared){
 		returnGetLocationInRadius.clear();
