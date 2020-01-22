@@ -194,6 +194,10 @@ public abstract class Robot {
 		return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 	}
 
+	public int taxicabDistance(MapLocation a, MapLocation b) {
+		return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+	}
+
 	/* will we dig from this square when terraforming? */
 	public boolean isLattice(MapLocation a) {
 		return (a.x % 2 == locHQ.x % 2) && (a.y % 2 == locHQ.x % 2);

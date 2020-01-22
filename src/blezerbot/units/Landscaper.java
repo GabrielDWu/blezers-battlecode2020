@@ -167,13 +167,13 @@ public class Landscaper extends Unit {
 	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException{
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
-		int currentDist = kingDistance(mloc, locHQ);
+		int currentDist = taxicabDistance(mloc, locHQ);
 
 		do {
 			Direction dir = directions[startIndex];
 			MapLocation nloc = mloc.add(dir);
 
-			if (kingDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
 				if (tryMove(dir)) return true;
 			}
 
@@ -193,7 +193,7 @@ public class Landscaper extends Unit {
 		for (Direction dir: directions) {
 			MapLocation nloc = mloc.add(dir);
 
-			if (!isLattice(nloc)) {
+			if (!isLattice(nloc) && rc.onTheMap(nloc)) {
 				if (tryTerraform(mloc, dir, nearLattice)) return true;
 			}
 		}
