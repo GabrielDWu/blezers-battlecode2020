@@ -13,7 +13,9 @@ public class Miner extends Unit {
 		RETURNING,
 		DEPOSITING,
 		BUILDING,
-		NOTHING
+		NOTHING,
+		FIND_ENEMY_HQ,
+		RUSH_ENEMY_HQ
 	}
 
 	MinerStatus status = null;
@@ -27,7 +29,10 @@ public class Miner extends Unit {
 	public ArrayList<MapLocation> locREFINERY;
 	MapLocation chosenRefinery;
 	MapLocation buildLocation = null;
-
+	boolean findingEnemyHQ;
+	MapLocation[] enemyHQs;
+	boolean sentFound = false;
+	int enemyHQc;
 	MapLocation locDS;
 	MapLocation locOpposite;
 
@@ -60,6 +65,37 @@ public class Miner extends Unit {
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
 			switch (status) {
+				case FIND_ENEMY_HQ:
+					if (enemyHQ != null) {
+						status = MinerStatus.RUSH_ENEMY_HQ;
+						break;
+					}
+					MapLocation loc = findEnemyHQ();
+					if (loc != null && !sentFound) {
+						enemyHQ = loc;
+						writeMessage(Message.enemyHqLocation(enemyHQ));
+						addMessageToQueue();
+						sentFound = true;
+					}
+					break;
+				case RUSH_ENEMY_HQ:
+					if(rc.getLocation().isAdjacentTo(enemyHQ) == true){
+						Direction di = null;
+						int best = Integer.MAX_VALUE;
+						for(Direction d: directions){
+							int dist = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));
+							if(rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d) && rushHQHelper(best, dist)) {
+								best = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));
+								di = d;
+							}
+						}
+						if(di == null){
+							status = MinerStatus.SEARCHING;
+						}
+					}
+					else{
+						goTo(enemyHQ);
+					}
 				case BUILDING:
 					if(buildLocation == null){	// can build anywhere far from hq
 						if (buildingTries++ > 3){
@@ -186,7 +222,56 @@ public class Miner extends Unit {
 			}
 		}
 	}
-
+	public boolean rushHQHelper(int a, int b){
+		if(a == 1) return false;
+		if(a == 2) return false;
+		if(a == 0 && (b==1 || b == 2)) return true;
+		if(b<= a) return true;
+		return false;
+	}
+	public MapLocation findEnemyHQ() throws GameActionException {
+		if (enemyHQc == -1) {
+			findingEnemyHQ = true;
+			MapLocation mloc = rc.getLocation();
+			int h = rc.getMapHeight();
+			int w = rc.getMapWidth();
+			MapLocation horizontal = new MapLocation(((((w-1-locHQ.x)%w)+w)%w), locHQ.y);
+			MapLocation vertical = new MapLocation(locHQ.x, ((((h-1-locHQ.y)%h)+h)%h));
+			MapLocation diagonal = new MapLocation(horizontal.x, vertical.y);
+			// check these two first since they are the closet
+			if (mloc.distanceSquaredTo(horizontal) < mloc.distanceSquaredTo(vertical)) {
+				enemyHQs[0] = horizontal;
+				enemyHQs[1] = diagonal;
+				enemyHQs[2] = vertical;
+			} else {
+				enemyHQs[0] = vertical;
+				enemyHQs[1] = diagonal;
+				enemyHQs[2] = horizontal;
+			}
+			enemyHQc = 0;
+		}
+		goTo(enemyHQs[enemyHQc]);
+		MapLocation r = detectEnemyHQ();
+		if (r != null) {
+			findingEnemyHQ = false;
+			return r;
+		} else if (rc.canSenseLocation(enemyHQs[enemyHQc])) {
+			enemyHQc++;
+			if (enemyHQc >= enemyHQs.length) {
+				findingEnemyHQ = false;
+			}
+		}
+		return null;
+	}
+	public MapLocation detectEnemyHQ() {
+		RobotInfo[] near = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), (rc.getTeam() == Team.A ? Team.B : Team.A));
+		for(RobotInfo x: near){
+			if(x.getType() == RobotType.HQ){
+				return x.location;
+			}
+		}
+		return null;
+	}
 	public void setVisitedAndSeen() throws GameActionException {
 		MapLocation myloc = rc.getLocation();
 		visited[myloc.x][myloc.y]++;
