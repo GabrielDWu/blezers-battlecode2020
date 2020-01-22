@@ -17,8 +17,7 @@ public class Message {
 		UNWAIT,
 		BUILD_WALL,
 		DRONE_ATTACK,
-		REFINERY_LOC,
-        TERRAFORM
+		REFINERY_LOC
 	}
 
 	static int[][] typeData = new int[][]{
@@ -31,7 +30,7 @@ public class Message {
 		{4 /*type*/, 15 /*builder id*/, 6 /*x*/, 6 /*y*/}, // tell specific unit to build type at specific location
 		{}, // terminate message
 		{15 /*id*/, 4 /*instruction*/}, // do something (unwait)
-		{15, /*id*/ 6, 6 /*x, y*/}, // build wall at location
+		{6, 6 /*x, y*/}, // build wall at location
 		{},	//	drone attack
 		{6, 6 /*x, y*/, 15 /*miner id*/}, // tell miner about refinery
 	};
@@ -101,8 +100,8 @@ public class Message {
 		return new Message(MessageType.UNWAIT, typeData[8], new int[]{robotID, instruction});
 	}
 
-	public static Message buildWall(int robotID, MapLocation loc) {
-		return new Message(MessageType.BUILD_WALL, typeData[9], new int[]{robotID, loc.x, loc.y});
+	public static Message buildWall(MapLocation loc) {
+		return new Message(MessageType.BUILD_WALL, typeData[9], new int[]{loc.x, loc.y});
 	}
 
 	public static Message droneAttack(){

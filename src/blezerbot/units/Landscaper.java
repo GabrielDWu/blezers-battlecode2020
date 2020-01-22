@@ -134,7 +134,7 @@ public class Landscaper extends Unit {
 				} else {
 					Direction mdir = null;
 					int mdirt = Integer.MAX_VALUE;
-					for (Direction dir : directions) {
+					for (Direction dir : directionswcenter) {
 						if (rc.canSenseLocation(mloc.add(dir))) {
 							int ndirt = rc.senseElevation(mloc.add(dir));
 							if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
@@ -264,8 +264,7 @@ public class Landscaper extends Unit {
 				status = LandscaperStatus.NOTHING;
 				return true;
 			case BUILD_WALL:
-                if(message.data[0] != rc.getID()) return false;
-				MapLocation loc = new MapLocation(message.data[1], message.data[2]);
+				MapLocation loc = new MapLocation(message.data[0], message.data[1]);
 				if (loc.isAdjacentTo(rc.getLocation())) {
 					status = LandscaperStatus.BUILDING;
 					return true;

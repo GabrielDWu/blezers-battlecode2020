@@ -83,7 +83,7 @@ public class HQ extends Building {
 		if (waitingForBuilding < Integer.MAX_VALUE) waitingForBuilding++;
 		if(!hq_sentLoc){
 			writeMessage(Message.hqLocation(rc.getLocation()));
-			addMessageToQueue();
+			addMessageToQueue(base_wager*3);
 			hq_sentLoc = true;
 		}
 
@@ -144,16 +144,18 @@ public class HQ extends Building {
 		switch (message.type) {
 			case BIRTH_INFO:
 				RobotType unitType = robot_types[message.data[0]];
-				units[unitType.ordinal()].add(new InternalUnit(unitType, message.data[1], new MapLocation(message.data[2], message.data[3])));
+				int unitID = message.data[1];
+				MapLocation location = new MapLocation(message.data[2], message.data[3]);
+				units[unitType.ordinal()].add(new InternalUnit(unitType,unitID, location));
 				debug("Added unit " + units[unitType.ordinal()].get(units[unitType.ordinal()].size()-1));
 
 				switch(unitType){
 					case LANDSCAPER:
 						if(units[RobotType.LANDSCAPER.ordinal()].size() <= 8){
-							writeMessage(Message.doSomething(miner.id, 0));	//Defend
+							writeMessage(Message.doSomething(unitID, 0));	//Defend
 							addMessageToQueue();
 						}else{
-							writeMessage(Message.doSomething(miner.id, 1));	//Terraform
+							writeMessage(Message.doSomething(unitID, 1));	//Terraform
 							addMessageToQueue();
 						}
 						break;
