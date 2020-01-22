@@ -253,6 +253,71 @@ public class Landscaper extends Unit {
 		return null; /* should never happen */
 	}
 
+	public boolean[][] getOccupied() {
+		boolean[][] occupied = new boolean[3][3];
+		MapLocation mloc = rc.getLocation();
+		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 2, rc.getTeam()); /* only robots directly adjacent */
+
+		for (RobotInfo robot: around) {
+			if (robot.type == RobotType.LANDSCAPER) {
+				int curX = 1 + (robot.location.x - mloc.x);
+				int curY = 1 + (robot.location.y - mloc.y);
+
+				occupied[curX][curY] = true;
+			}
+		}
+
+		return occupied;
+	}
+
+	/* clockwise gap between this and another landscaper on the wall */
+	public int getClockwiseGap(boolean[][] occupied) {
+		MapLocation mloc = rc.getLocation();
+
+		int ind;
+		for (ind = 0; ind < directions.length; ind++) {
+			MapLocation loc = locHQ.add(directions[ind]);
+
+			if (loc.equals(mloc)) break;
+		}
+
+		int orig = ind;
+
+		while (true) {
+			ind = (ind + 1) % 8;
+			int curX = 1 + directions[ind].dx;
+			int curY = 1 + directions[ind].dy;
+
+			if (occupied[curX][curY]) break;
+		}
+
+		if (ind < orig) ind += 8;
+
+		return ind - orig;
+	}
+
+	public void moveOnWall() {
+
+	}
+
+	public void correctWall() {
+		boolean[][] occupied = getOccupied();
+		int gap = getClockwiseGap(occupied);
+
+		int count = 0;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				if (occupied[i][j]) ++count;
+			}
+		}
+
+		if (count == 1) {
+			moveOnWall();
+		} else if (count == 2) {
+			
+		}
+	}
+
 	public boolean executeMessage(Message message){
 		/*Returns true if message applies to me*/
 		if(super.executeMessage(message)){
