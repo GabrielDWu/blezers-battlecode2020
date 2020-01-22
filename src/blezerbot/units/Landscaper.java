@@ -19,6 +19,7 @@ public class Landscaper extends Unit {
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
+	final static int terraformTries = 20; /* how many random moves away from hq to try? */
 
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
@@ -150,10 +151,12 @@ public class Landscaper extends Unit {
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
-					moveAwayFromHQ(mloc);
+
+					System.out.println("enemyHQ = " + enemyHQ);
+					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+					else moveAwayFromHQ(mloc);
 				} else {
 					Direction nearLattice = findLattice(mloc);
-					System.out.println(nearLattice);
 					if (nearLattice != null) {
 						if (!tryTerraform(mloc, nearLattice)) moveAwayFromHQ(mloc);
 					}
@@ -163,11 +166,51 @@ public class Landscaper extends Unit {
 		}
 	}
 
+	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException{
+		int startIndex = r.nextInt(directions.length);
+		int stopIndex = startIndex;
+		int currentDist = taxicabDistance(mloc, enemyHQ);
+
+		for (int i = 0; i < terraformTries; i++) {
+			int ind = r.nextInt(directions.length);
+			Direction dir = directions[ind];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+		}
+
+		do {
+			Direction dir = directions[startIndex];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+
+			++startIndex;
+			startIndex %= directions.length;
+		} while (startIndex != stopIndex);
+
+		return false;
+	}
+
 	/* pick a random move taking me not closer to the HQ */
 	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException{
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
 		int currentDist = taxicabDistance(mloc, locHQ);
+
+		for (int i = 0; i < terraformTries; i++) {
+			int ind = r.nextInt(directions.length);
+			Direction dir = directions[ind];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+		}
 
 		do {
 			Direction dir = directions[startIndex];
@@ -296,11 +339,20 @@ public class Landscaper extends Unit {
 		return ind - orig;
 	}
 
-	public void moveOnWall() {
+	public boolean moveOnWall() throws GameActionException {
+		MapLocation mloc = rc.getLocation();
 
+		MapLocation loc = null;
+		for (int i = 0; i < directions.length; i++) {
+			loc = locHQ.add(directions[i]);
+
+			if (loc.equals(mloc)) break;
+		}
+
+		return tryMove(mloc.directionTo(loc));
 	}
 
-	public void correctWall() {
+	public boolean correctWall() throws GameActionException {
 		boolean[][] occupied = getOccupied();
 		int gap = getClockwiseGap(occupied);
 
@@ -312,10 +364,16 @@ public class Landscaper extends Unit {
 		}
 
 		if (count == 1) {
-			moveOnWall();
+			return moveOnWall();
 		} else if (count == 2) {
 			
+		} else if (count == 3) {
+			if (gap > 2) return moveOnWall();
+		} else {
+			if (gap > 1) return moveOnWall();
 		}
+
+		return false;
 	}
 
 	public boolean executeMessage(Message message){
