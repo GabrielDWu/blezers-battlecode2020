@@ -189,6 +189,26 @@ public abstract class Robot {
 				|| dir.equals(directions[6]));
 	}
 
+	/* number of moves required to get from a to b */
+	public int kingDistance(MapLocation a, MapLocation b) {
+		return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+	}
+
+	/* will we dig from this square when terraforming? */
+	public boolean isLattice(MapLocation a) {
+		return (a.x % 2 == locHQ.x % 2) && (a.y % 2 == locHQ.x % 2);
+	}
+
+	/* will we build on this square when terraforming? */
+	public boolean isForBuilding(MapLocation a) {
+		return !(a.x % 2 == locHQ.x % 2) && !(a.y % 2 == locHQ.x % 2);
+	}
+
+	/* will we move on this square when terraforming? */
+	public boolean isForMovement(MapLocation a) {
+		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.x % 2);
+	}
+
 	/***** BLOCKCHAIN ******/
 	/***** BLOCKCHAIN ******/
 	/***** BLOCKCHAIN ******/
