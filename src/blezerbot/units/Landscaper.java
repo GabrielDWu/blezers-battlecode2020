@@ -10,7 +10,8 @@ public class Landscaper extends Unit {
 		ATTACKING,
 		DEFENDING,
 		NOTHING,
-		BUILDING
+		BUILDING,
+        TERRAFORMING
 	}
 	LandscaperStatus status = null;
 	MapLocation locDS = null;
@@ -22,7 +23,7 @@ public class Landscaper extends Unit {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
-		status = LandscaperStatus.DEFENDING;
+		status = LandscaperStatus.NOTHING;
 	}
 
 	public void run() throws GameActionException {
@@ -156,12 +157,24 @@ public class Landscaper extends Unit {
 				status = LandscaperStatus.NOTHING;
 				return true;
 			case BUILD_WALL:
-				MapLocation loc = new MapLocation(message.data[0], message.data[1]);
+                if(message.data[0] != rc.getID()) return false;
+				MapLocation loc = new MapLocation(message.data[1], message.data[2]);
 				if (loc.isAdjacentTo(rc.getLocation())) {
 					status = LandscaperStatus.BUILDING;
 					return true;
 				}
 				return false;
+            case UNWAIT:
+                if(message.data[0] != rc.getID()) return false;
+                switch(message.data[1]) {
+                    case 0:
+                        status = LandscaperStatus.DEFENDING;
+                        return true;
+                    case 1:
+                        status = LandscaperStatus.TERRAFORMING;
+                        return true;
+                }
+                return false;
 		}
 		return false;
 	}

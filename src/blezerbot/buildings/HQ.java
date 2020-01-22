@@ -146,6 +146,18 @@ public class HQ extends Building {
 				RobotType unitType = robot_types[message.data[0]];
 				units[unitType.ordinal()].add(new InternalUnit(unitType, message.data[1], new MapLocation(message.data[2], message.data[3])));
 				debug("Added unit " + units[unitType.ordinal()].get(units[unitType.ordinal()].size()-1));
+
+				switch(unitType){
+					case LANDSCAPER:
+						if(units[RobotType.LANDSCAPER.ordinal()].size() <= 8){
+							writeMessage(Message.doSomething(miner.id, 0));	//Defend
+							addMessageToQueue();
+						}else{
+							writeMessage(Message.doSomething(miner.id, 1));	//Terraform
+							addMessageToQueue();
+						}
+						break;
+				}
 				return true;
 		}
 		return false;

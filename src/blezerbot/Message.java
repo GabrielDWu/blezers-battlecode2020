@@ -17,7 +17,8 @@ public class Message {
 		UNWAIT,
 		BUILD_WALL,
 		DRONE_ATTACK,
-		REFINERY_LOC
+		REFINERY_LOC,
+        TERRAFORM
 	}
 
 	static int[][] typeData = new int[][]{
@@ -29,8 +30,8 @@ public class Message {
 		{15 /*id*/}, // do nothing (wait)
 		{4 /*type*/, 15 /*builder id*/, 6 /*x*/, 6 /*y*/}, // tell specific unit to build type at specific location
 		{}, // terminate message
-		{15 /*id*/}, // do something (unwait)
-		{6, 6 /*x, y*/}, // build wall at location
+		{15 /*id*/, 4 /*instruction*/}, // do something (unwait)
+		{15, /*id*/ 6, 6 /*x, y*/}, // build wall at location
 		{},	//	drone attack
 		{6, 6 /*x, y*/, 15 /*miner id*/}, // tell miner about refinery
 	};
@@ -92,21 +93,25 @@ public class Message {
 		return new Message(MessageType.WAIT, typeData[5], new int[]{robotID});
 	}
 
-	public static Message doSomething(int robotID) {
-		return new Message(MessageType.UNWAIT, typeData[8], new int[]{robotID});
+	public static Message doSomething(int robotID, int instruction) {
+	    /*
+	    0 - DEFENDING (landscaper)
+	    1 - TERRAFORMING (landscaper)
+	     */
+		return new Message(MessageType.UNWAIT, typeData[8], new int[]{robotID, instruction});
 	}
 
-	public static Message buildWall(MapLocation loc) {
-		return new Message(MessageType.BUILD_WALL, typeData[9], new int[]{loc.x, loc.y});
+	public static Message buildWall(int robotID, MapLocation loc) {
+		return new Message(MessageType.BUILD_WALL, typeData[9], new int[]{robotID, loc.x, loc.y});
 	}
 
 	public static Message droneAttack(){
 		return new Message(MessageType.DRONE_ATTACK, typeData[10], new int[]{});
 	}
 
-	public static Message refineryLocation(MapLocation loc, int robotID) {
-		return new Message(MessageType.REFINERY_LOC, typeData[11], new int[]{loc.x, loc.y, robotID});
-	}
+    public static Message refineryLocation(MapLocation loc, int robotID) {
+        return new Message(MessageType.REFINERY_LOC, typeData[11], new int[]{loc.x, loc.y, robotID});
+    }
 
 	public int getInt(int size){
 	    /*Turns the next <size> bits into an integer from 0 to 2**size-1. Does not modify ptr.*/
