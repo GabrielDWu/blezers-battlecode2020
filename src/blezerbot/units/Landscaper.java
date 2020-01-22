@@ -10,11 +10,15 @@ public class Landscaper extends Unit {
 		ATTACKING,
 		DEFENDING,
 		NOTHING,
-		BUILDING
+		BUILDING,
+		TERRAFORMING
 	}
 	LandscaperStatus status = null;
 	MapLocation locDS = null;
 	int filledOffset;
+	final static int terraformHeight = 10; /* how high should I make the land? */
+	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
+	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
 
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
@@ -32,6 +36,8 @@ public class Landscaper extends Unit {
 		if(locHQ != null){
 			d = rc.getLocation().directionTo(locHQ);
 		}
+
+		if (rc.getRoundNum() > 250) status = LandscaperStatus.TERRAFORMING;
 
 		switch (status) {
 			case ATTACKING:
@@ -142,7 +148,111 @@ public class Landscaper extends Unit {
 					if (mdir != null && rc.canDepositDirt(mdir)) rc.depositDirt(mdir);
 				}
 				break;
+			case TERRAFORMING:
+				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+					/* if we're too close to HQ, move */
+					/* also if we're in a lattice square, move */
+					moveAwayFromHQ(mloc);
+				} else {
+					Direction nearLattice = findLattice(mloc);
+					if (nearLattice != null) {
+						tryTerraform(mloc, nearLattice);
+					}
+				}
+
+				break;
 		}
+	}
+
+	/* pick a random move taking me not closer to the HQ */
+	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException{
+		int startIndex = r.nextInt(directions.length);
+		int stopIndex = startIndex;
+		int currentDist = kingDistance(mloc, locHQ);
+
+		do {
+			Direction dir = directions[startIndex];
+			MapLocation nloc = mloc.add(dir);
+
+			if (kingDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+
+			++startIndex;
+			startIndex %= directions.length;
+		} while (startIndex != stopIndex);
+
+		return false;
+	}
+
+	/* look for any square we can terraform
+	look at center first, so we can do stuff 
+	*/
+	public boolean tryTerraform(MapLocation mloc, Direction nearLattice) throws GameActionException {
+		if (tryTerraform(mloc, Direction.CENTER, nearLattice)) return true;
+
+		if (!tryTerraform(mloc, nearLattice)) {
+			for (Direction dir: directions) {
+				MapLocation nloc = mloc.add(dir);
+
+				if (!isLattice(nloc)) {
+					if (tryTerraform(mloc, dir, nearLattice)) return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/* try to terraform a specific square */
+	public boolean tryTerraform(MapLocation mloc, Direction dir, Direction nearLattice) throws GameActionException {
+		MapLocation nloc = mloc.add(dir);
+		int currentElevation = rc.senseElevation(mloc);
+		int newElevation = rc.senseElevation(nloc);
+
+		/* either too high, too low, or already good */
+		if (Math.abs(newElevation - currentElevation) > terraformThreshold) return false;
+		if (newElevation == terraformHeight) return false;
+
+		if (newElevation > terraformHeight) { /* if our target square is higher, dig from it */
+			if (rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit) {
+				if (rc.canDepositDirt(nearLattice)) {
+					rc.depositDirt(nearLattice);
+					return true;
+				}
+			} else {
+				if (rc.canDigDirt(nearLattice)) {
+					rc.digDirt(dir);
+					return true;
+				}
+			}
+		} else { /* otherwise deposit to it */
+			if (rc.getDirtCarrying() < 1) {
+				if (rc.canDigDirt(nearLattice)) {
+					rc.digDirt(nearLattice);
+					return true;
+				}
+			} else {
+				if (rc.canDepositDirt(nearLattice)) {
+					rc.depositDirt(dir);
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/* find any corner-adjacent lattice point */
+	/* as a note, this can probably be made more efficient if bytecode is an issue */
+	public Direction findLattice(MapLocation mloc) {
+		for (Direction dir: directions) {
+			MapLocation nloc = mloc.add(dir);
+
+			if (isLattice(nloc) && kingDistance(nloc, locHQ) < terraformDist) return dir;
+		}
+
+		return null; /* should never happen */
 	}
 
 	public boolean executeMessage(Message message){
@@ -162,6 +272,7 @@ public class Landscaper extends Unit {
 					return true;
 				}
 				return false;
+			/* add case START_TERRAFORMING */
 		}
 		return false;
 	}
