@@ -37,8 +37,6 @@ public class Landscaper extends Unit {
 			d = rc.getLocation().directionTo(locHQ);
 		}
 
-		if (rc.getRoundNum() > 250) status = LandscaperStatus.TERRAFORMING;
-
 		switch (status) {
 			case ATTACKING:
 				Direction attackDir = rc.getLocation().directionTo(enemyHQ);
@@ -155,8 +153,9 @@ public class Landscaper extends Unit {
 					moveAwayFromHQ(mloc);
 				} else {
 					Direction nearLattice = findLattice(mloc);
+					System.out.println(nearLattice);
 					if (nearLattice != null) {
-						tryTerraform(mloc, nearLattice);
+						if (!tryTerraform(mloc, nearLattice)) moveAwayFromHQ(mloc);
 					}
 				}
 
@@ -191,13 +190,11 @@ public class Landscaper extends Unit {
 	public boolean tryTerraform(MapLocation mloc, Direction nearLattice) throws GameActionException {
 		if (tryTerraform(mloc, Direction.CENTER, nearLattice)) return true;
 
-		if (!tryTerraform(mloc, nearLattice)) {
-			for (Direction dir: directions) {
-				MapLocation nloc = mloc.add(dir);
+		for (Direction dir: directions) {
+			MapLocation nloc = mloc.add(dir);
 
-				if (!isLattice(nloc)) {
-					if (tryTerraform(mloc, dir, nearLattice)) return true;
-				}
+			if (!isLattice(nloc)) {
+				if (tryTerraform(mloc, dir, nearLattice)) return true;
 			}
 		}
 
@@ -213,6 +210,7 @@ public class Landscaper extends Unit {
 		/* either too high, too low, or already good */
 		if (Math.abs(newElevation - currentElevation) > terraformThreshold) return false;
 		if (newElevation == terraformHeight) return false;
+		
 
 		if (newElevation > terraformHeight) { /* if our target square is higher, dig from it */
 			if (rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit) {
@@ -249,7 +247,7 @@ public class Landscaper extends Unit {
 		for (Direction dir: directions) {
 			MapLocation nloc = mloc.add(dir);
 
-			if (isLattice(nloc) && kingDistance(nloc, locHQ) < terraformDist) return dir;
+			if (isLattice(nloc) && kingDistance(nloc, locHQ) >= terraformDist) return dir;
 		}
 
 		return null; /* should never happen */
