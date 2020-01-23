@@ -16,6 +16,7 @@ public class Landscaper extends Unit {
 	LandscaperStatus status = null;
 	MapLocation locDS = null;
 	int filledOffset;
+	int idDS;
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
@@ -28,6 +29,7 @@ public class Landscaper extends Unit {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		status = LandscaperStatus.NOTHING;
+		idDS = -1;
 	}
 
 	public void run() throws GameActionException {
@@ -63,6 +65,10 @@ public class Landscaper extends Unit {
 				if (locHQ == null) {
 					return;
 				}
+				if (idDS != -1 && !rc.canSenseRobot(idDS)) {
+					status = LandscaperStatus.BUILDING;
+					break;
+				}
 				boolean[] filled = new boolean[8];
 				int filledUpTo = -1;
 				if (locDS != null) filled[(locHQ.directionTo(rc.getLocation()).ordinal()+filledOffset)%8] = true;
@@ -70,6 +76,7 @@ public class Landscaper extends Unit {
 				for (int i = 0; i < r.length; i++) {
 					if(locDS == null && r[i].getType() == RobotType.DESIGN_SCHOOL) {
 						locDS = r[i].getLocation();
+						idDS = r[i].getID();
 						filledOffset = ((-locHQ.directionTo(locDS).ordinal()-1)%8+8)%8;
 					}else if(locDS != null && r[i].getType() == RobotType.LANDSCAPER){
 						if(r[i].getLocation().isAdjacentTo(locHQ)){

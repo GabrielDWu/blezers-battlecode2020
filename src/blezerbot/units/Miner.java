@@ -490,7 +490,7 @@ public class Miner extends Unit {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return super.canMove(dir) && !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
+		return dir != null && super.canMove(dir) && !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
 	}
 
 }
