@@ -20,11 +20,15 @@ public class DeliveryDrone extends Unit {
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
 	int[][] flooded;
-	MapLocation lastSeen;
+	MapLocation investigate;
+	MapLocation harassCenter;
+	int harassRadius = 10; // Radius of circle about which you circle
 	MapLocation dropLocation;
 	MapLocation waitLocation;
+
 	MapLocation closeWater;
 	int closeWaterDist;	//King distance to closeWater
+
 	MapLocation searchDest;	//Utility variable for findWater
 	DeliveryDroneStatus prevStatus;	//What to do once DROP_WATER is done.
 	int searchDestTries;
@@ -152,7 +156,45 @@ public class DeliveryDrone extends Unit {
 				}
 				break;
 			case HARASS:
-				break;
+				if(harassCenter == null){
+					status = NOTHING;
+					break;
+				}
+
+				//Update investigate
+				if(investigate != null && rc.canSenseLocation(investigate)) {
+					RobotInfo rob = rc.senseRobotAtLocation(investigate);
+					if (rob == null || rob.getTeam() == rc.getTeam() || rob.getType == RobotType.DELIVERY_DRONE) {
+						investigate = null;
+					}
+				}
+				for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
+					if(enemy.type != RobotType.DELIVERY_DRONE){
+						if(investigate == null || rc.getLocation().distanceSquaredTo(enemy.getLocation()) <
+								rc.getLocation().distanceSquaredTo(investigate)) {
+							investigate = enemy.getLocation();
+						}
+					}
+				}
+
+				if(investigate != null) {
+					if (rc.isAdjacentTo(investigate)) {
+						if (rc.canPickUpUnit(rc.getLocation().directionTo(investigate))) {
+							rc.pickUpUnit(rc.getLocation().directionTo(investigate));
+							status = DeliveryDroneStatus.DROP_WATER;
+							prevStatus = DeliveryDroneStatus.HARASS;
+						}
+					} else {
+						goTo(investigate);
+					}
+				}else{
+					if(rc.getLocation().distanceSquaredTo(harassCenter) > harassRadius){
+						goTo(harassCenter);
+					}else{
+						Direction ccw = rc.getLocation().directionTo(harassCenter).rotateRight().rotateRight();
+						randomOrthogalMove();
+					}
+				}
 
             case DROP_WATER:
             	if(closeWater == null){
@@ -355,6 +397,11 @@ public class DeliveryDrone extends Unit {
 				if(status == DeliveryDroneStatus.CIRCLING && rc.getLocation().distanceSquaredTo(enemyHQ)<40){
 					status = DeliveryDroneStatus.ATTACKING;
 				}
+				return true;
+			case HARASS:
+				if (message.data[0] != rc.getID()) return false;
+				status = DeliveryDroneStatus.HARASS;
+				harassCenter = new MapLocation(message.data[1], message.data[2]);
 				return true;
 		}
 		return false;

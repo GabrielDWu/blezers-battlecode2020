@@ -156,6 +156,18 @@ public class HQ extends Building {
 							addMessageToQueue();
 						}
 						break;
+					case DeliveryDrone:
+						if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 2  && (units[RobotType.DELIVERY_DRONE.ordinal()].size() <= 4
+							|| enemyHQ == null)){
+							//Harass own hq location for defense
+							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
+							addMessageToQueue();
+						}else{
+							//Harass opponent's hq to be annoying
+							writeMessage(Message.doSomething(unitID, enemyHQ));
+							addMessageToQueue();
+						}
+						break;
 				}
 				return true;
 		}

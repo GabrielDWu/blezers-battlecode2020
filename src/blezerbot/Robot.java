@@ -167,6 +167,20 @@ public abstract class Robot {
 	    } else return false;
 	}
 
+	public void randomMove() throws GameActionException {
+		int ri = r.nextInt(8);
+		for(int i=0; i<8; i++) {
+			tryMove(directions[(ri+i)%8]);
+		}
+	}
+
+	public void randomOrthogonalMove() throws GameActionException {
+		int ri = r.nextInt(4)*2;
+		for(int i=0; i<8; i+=2) {
+			tryMove(directions[(ri+i)%8]);
+		}
+	}
+
 	public boolean tryBuild (RobotType r) throws GameActionException {
 		for (Direction dir : directions) {
 			if (rc.canBuildRobot(r, dir)) {
