@@ -14,7 +14,8 @@ public class DeliveryDrone extends Unit {
 		CIRCLING,	//Surrouning HQ in preparation for attack
 		ATTACKING,	//Diving in to abduct landscapers from enemy wall
 		NOTHING,
-		HARASS
+		HARASS,
+		DROP_WATER
 	}
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
@@ -23,6 +24,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation lastSeen;
 	MapLocation dropLocation;
 	MapLocation waitLocation;
+	MapLocation closeWater;
 	ArrayList<MapLocation> waterLocations = new ArrayList<MapLocation>();
 	int searchID = 0;
 	int enemyHQc;
@@ -46,6 +48,7 @@ public class DeliveryDrone extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
+
 		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.ATTACKING)){
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
@@ -143,6 +146,8 @@ public class DeliveryDrone extends Unit {
 				findWater();
 				break;
 
+            case DROP_WATER:
+
 		}
 
 
@@ -189,9 +194,20 @@ public class DeliveryDrone extends Unit {
 		return best;
 	}
 
-	void dropWater(){
-		if(waterLocations.size() == 0){
+	void dropWater() throws GameActionException {
+	    if(closeWater == null){
+	        findWater();
+	        return;
+        }
 
+	    if(rc.getLocation().isAdjacentTo(closeWater)){
+	        if(rc.canDropUnit(rc.getLocation().directionTo(closeWater))){
+                rc.dropUnit(rc.getLocation().directionTo(closeWater));
+            }
+        }
+
+		if(waterLocations.size() == 0){
+            findWater();
 		}
 		else{
 			MapLocation best = null;

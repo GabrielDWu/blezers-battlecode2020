@@ -40,14 +40,17 @@ public class HQ extends Building {
 	public void run() throws GameActionException {
 		super.run();
 		//Shoot enemy drones
+		int unitToShoot = -1;
+		int dist = 100;
 		for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
 			if(enemy.type == RobotType.DELIVERY_DRONE){
-				if(rc.canShootUnit(enemy.ID)){
-					rc.shootUnit(enemy.ID);
-					break;
+				if(rc.canShootUnit(enemy.ID) && rc.getLocation().distanceSquaredTo(enemy.getLocation()) < dist){
+					unitToShoot = enemy.ID;
+					dist = rc.getLocation().distanceSquaredTo(enemy.getLocation());
 				}
 			}
 		}
+		if(unitToShoot >= 0) rc.shootUnit(unitToShoot);
 
 		// build wall
 		if (buildingMinerLoc != null) {

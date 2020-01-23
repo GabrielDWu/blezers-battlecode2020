@@ -86,6 +86,7 @@ public class Landscaper extends Unit {
 					}
 				}
 				if(locDS != null && (locHQ.directionTo(mloc).ordinal()+filledOffset)%8 <= filledUpTo){
+					if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
 					if (rc.getDirtCarrying() < 1) {
 						if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
 						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
