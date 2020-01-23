@@ -155,6 +155,9 @@ public class Landscaper extends Unit {
 							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
 							else moveAwayFromHQ(mloc);
 						}
+					} else {
+						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+						else moveAwayFromHQ(mloc);
 					}
 				}
 
@@ -285,7 +288,6 @@ public class Landscaper extends Unit {
 		if (Math.abs(newElevation - currentElevation) > terraformThreshold) return false;
 		if (newElevation == terraformHeight) return false;
 		
-
 		if (newElevation > terraformHeight) { /* if our target square is higher, dig from it */
 			if (rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit) {
 				if (attackEnemyBuilding()) return true;
@@ -434,7 +436,7 @@ public class Landscaper extends Unit {
 		}
 
 		/* 
-		formula to later adapt (?):
+		formula to later adapt (currently not used):
 		move if gap > ceil((number of wall cells - number of landscapers) / number of landscapers)
 		this will not work with 1 landscaper if we're on an edge
 		*/
