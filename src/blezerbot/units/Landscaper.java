@@ -120,7 +120,14 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BUILDING:
-				if (!correctWall()) reinforceWall(mloc, d);
+				if (rc.getRoundNum() % 5 == 0) {
+					if (!correctWall()) {
+						reinforceWall(mloc, d);
+					}
+				} else {
+					reinforceWall(mloc, d);
+				}
+				
 				break;
 			case TERRAFORMING:
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
@@ -132,7 +139,10 @@ public class Landscaper extends Unit {
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					if (nearLattice != null) {
-						if (!tryTerraform(mloc, nearLattice)) moveAwayFromHQ(mloc);
+						if (!tryTerraform(mloc, nearLattice)) {
+							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+							else moveAwayFromHQ(mloc);
+						}
 					}
 				}
 
@@ -170,7 +180,7 @@ public class Landscaper extends Unit {
 		}
 	}
 
-	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException{
+	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException {
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
 		int currentDist = taxicabDistance(mloc, enemyHQ);
@@ -201,7 +211,7 @@ public class Landscaper extends Unit {
 	}
 
 	/* pick a random move taking me not closer to the HQ */
-	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException{
+	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException {
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
 		int currentDist = taxicabDistance(mloc, locHQ);
@@ -302,7 +312,7 @@ public class Landscaper extends Unit {
 
 	public boolean[][] getOccupied() {
 		boolean[][] occupied = new boolean[3][3];
-		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 3, rc.getTeam()); /* only robots directly adjacent */
+		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 2, rc.getTeam()); /* only robots directly adjacent */
 
 		for (RobotInfo robot: around) {
 			if (robot.type == RobotType.LANDSCAPER) {
@@ -314,6 +324,7 @@ public class Landscaper extends Unit {
 			}
 		}
 
+		/* this landscaper isn't included, so include it */
 		MapLocation mloc = rc.getLocation();
 		int curX = 1 + (mloc.x - locHQ.x);
 		int curY = 1 + (mloc.y - locHQ.y);
@@ -350,7 +361,32 @@ public class Landscaper extends Unit {
 		return ind - orig - 1;
 	}
 
-	public boolean moveOnWall() throws GameActionException {
+	public int getCounterclockwiseGap(boolean[][] occupied) {
+		MapLocation mloc = rc.getLocation();
+
+		int ind;
+		for (ind = 0; ind < directions.length; ind++) {
+			MapLocation loc = locHQ.add(directions[ind]);
+
+			if (loc.equals(mloc)) break;
+		}
+
+		int orig = ind;
+
+		while (true) {
+			ind = (ind + 7) % 8;
+			int curX = 1 + directions[ind].dx;
+			int curY = 1 + directions[ind].dy;
+
+			if (occupied[curX][curY]) break;
+		}
+
+		if (ind > orig) orig += 8;
+
+		return orig - ind - 1;
+	}
+
+	public boolean moveOnWall(boolean clockwise) throws GameActionException {
 		MapLocation mloc = rc.getLocation();
 
 		MapLocation loc = null;
@@ -358,7 +394,8 @@ public class Landscaper extends Unit {
 			loc = locHQ.add(directions[i]);
 
 			if (loc.equals(mloc)) {
-				loc = locHQ.add(directions[(i + 1) % 8]);
+				if (clockwise) loc = locHQ.add(directions[(i + 1) % 8]);
+				else loc = locHQ.add(directions[(i + 7) % 8]);
 				break;
 			}
 		}
@@ -369,7 +406,6 @@ public class Landscaper extends Unit {
 	/* this will see if this landscaper needs to move for adaptive wall, and make it move */
 	public boolean correctWall() throws GameActionException {
 		boolean[][] occupied = getOccupied();
-		int gap = getClockwiseGap(occupied);
 
 		int count = 0;
 		for (int i = 0; i < 3; i++) {
@@ -378,17 +414,31 @@ public class Landscaper extends Unit {
 			}
 		}
 
-		//System.out.println("COUNT GAP " + count + " " + gap);
+		/* clockwise */
+		int gap = getClockwiseGap(occupied);
 
 		if (count == 1) {
-			return moveOnWall();
+			if (moveOnWall(true)) return true;
 		} else if (count == 2) {
 			
 		} else if (count == 3) {
-			if (gap > 2) return moveOnWall();
+			if (gap > 2) if (moveOnWall(true)) return true;
 		} else {
-			if (gap > 1) return moveOnWall();
+			if (gap > 1) if (moveOnWall(true)) return true;
 		}
+
+		// /* counterclockwise */
+		// gap = getCounterclockwiseGap(occupied);
+
+		// if (count == 1) {
+		// 	if (moveOnWall(false)) return true;
+		// } else if (count == 2) {
+			
+		// } else if (count == 3) {
+		// 	if (gap > 2) if (moveOnWall(false)) return true;
+		// } else {
+		// 	if (gap > 1) if (moveOnWall(false)) return true;
+		// }
 
 		return false;
 	}
@@ -415,7 +465,7 @@ public class Landscaper extends Unit {
                 if(message.data[0] != rc.getID()) return false;
                 switch(message.data[1]) {
                     case 0:
-                        status = LandscaperStatus.DEFENDING;
+                        if (status != LandscaperStatus.BUILDING) status = LandscaperStatus.DEFENDING;
                         return true;
                     case 1:
                         status = LandscaperStatus.TERRAFORMING;
