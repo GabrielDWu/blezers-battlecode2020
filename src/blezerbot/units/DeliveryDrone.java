@@ -53,7 +53,7 @@ public class DeliveryDrone extends Unit {
 		super.run();
 
 		//Update closest water
-		if(rc.canSenseLocation(loc) && (!rc.senseFlooding(loc) || rc.isLocationOccupied(loc))) closeWater=null;
+		if(rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 		for(MapLocation loc: getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared())){
 			if(rc.senseFlooding(loc) && !rc.isLocationOccupied(loc) && (closeWater == null || kingDistance(rc.getLocation(),loc) <= closeWaterDist)){
 				closeWater = loc;
@@ -180,13 +180,13 @@ public class DeliveryDrone extends Unit {
 
 	void findWater() throws GameActionException {
 		if(closeWater != null) return;
-		MapLocation myloc = rc.getLocation();
+		MapLocation myloc = rc.getLocation(); 
 		if(searchDest == null || searchDestTries <= 0){
-			searchDest = new MapLocation(r.nextInt(rc.getMapWidth(), rc.getMapHeight()));
-			searchTries = kingDistance(myloc, searchDest) * 3 / 2;
+			searchDest = new MapLocation(r.nextInt(rc.getMapWidth()), rc.getMapHeight());
+			searchDestTries = kingDistance(myloc, searchDest) * 3 / 2;
 		}
 		goTo(searchDest);
-		searchTries--;
+		searchDestTries--;
 	/*	visited[myloc.x][myloc.y] = 2;
 		if(!rc.canSenseLocation(new MapLocation(0, 0))){
 			goTo(new MapLocation(0, 0));
