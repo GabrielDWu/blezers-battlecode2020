@@ -91,13 +91,6 @@ public class HQ extends Building {
 			hq_sentLoc = true;
 		}
 
-        if (units[2 /*refinery*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 10 && rc.getTeamSoup() > 200) {
-            waitingForBuilding = 1;
-            ArrayList<InternalUnit> miners = units[RobotType.MINER.ordinal()];
-            InternalUnit miner = miners.get(r.nextInt(miners.size()));
-            writeMessage(Message.build(RobotType.REFINERY, miner.id));
-            addMessageToQueue();
-        }
         if (landscaperWalled && units[5 /*fc*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 10 && rc.getTeamSoup() > 200) {
             waitingForBuilding = 1;
             ArrayList<InternalUnit> miners = units[RobotType.MINER.ordinal()];
