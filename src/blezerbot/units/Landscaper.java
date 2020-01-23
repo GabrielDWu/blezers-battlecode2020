@@ -417,20 +417,39 @@ public class Landscaper extends Unit {
 
 	public boolean moveOnWall(boolean clockwise) throws GameActionException {
 		MapLocation mloc = rc.getLocation();
-
-		MapLocation loc = null;
-		for (int i = 0; i < directions.length; i++) {
-			loc = locHQ.add(directions[i]);
-
-			if (loc.equals(mloc)) {
-				if (clockwise) loc = locHQ.add(directions[(i + 1) % 8]);
-				else loc = locHQ.add(directions[(i + 7) % 8]);
-				break;
+		Direction moveDir = null, toHQ = mloc.directionTo(locHQ);
+		if (toHQ == null) return false;
+		
+		if (!clockwise) {
+			if (orthogonal(toHQ)) {
+				moveDir = toHQ.rotateRight().rotateRight();
+			} else {
+				moveDir = toHQ.rotateRight();
+			}
+		} else {
+			if (orthogonal(toHQ)) {
+				moveDir = toHQ.rotateLeft().rotateLeft();
+			} else {
+				moveDir = toHQ.rotateLeft();
 			}
 		}
 
-		if (loc == null) return false;
-		return tryMove(mloc.directionTo(loc));
+		if (moveDir == null) return false;
+		return tryMove(moveDir);
+
+		// MapLocation loc = null;
+		// for (int i = 0; i < directions.length; i++) {
+		// 	loc = locHQ.add(directions[i]);
+
+		// 	if (loc.equals(mloc)) {
+		// 		if (clockwise) loc = locHQ.add(directions[(i + 1) % 8]);
+		// 		else loc = locHQ.add(directions[(i + 7) % 8]);
+		// 		break;
+		// 	}
+		// }
+
+		// if (loc == null) return false;
+		// return tryMove(mloc.directionTo(loc));
 	}
 
 	/* this will see if this landscaper needs to move for adaptive wall, and make it move */
