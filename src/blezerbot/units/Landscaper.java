@@ -119,14 +119,14 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BUILDING:
-				reinforceWall(mloc, d);
+				
+				if (!correctWall()) reinforceWall(mloc, d);
 				break;
 			case TERRAFORMING:
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
 
-					System.out.println("enemyHQ = " + enemyHQ);
 					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
 					else moveAwayFromHQ(mloc);
 				} else {
@@ -302,16 +302,23 @@ public class Landscaper extends Unit {
 
 	public boolean[][] getOccupied() {
 		boolean[][] occupied = new boolean[3][3];
-		MapLocation mloc = rc.getLocation();
-		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 2, rc.getTeam()); /* only robots directly adjacent */
+		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 3, rc.getTeam()); /* only robots directly adjacent */
 
 		for (RobotInfo robot: around) {
 			if (robot.type == RobotType.LANDSCAPER) {
-				int curX = 1 + (robot.location.x - mloc.x);
-				int curY = 1 + (robot.location.y - mloc.y);
-
-				occupied[curX][curY] = true;
+				int curX = 1 + (robot.location.x - locHQ.x);
+				int curY = 1 + (robot.location.y - locHQ.y);
+				if (0 <= curX && curX <= 2 && 0 <= curY && curY <= 2) {
+					occupied[curX][curY] = true;
+				}
 			}
+		}
+
+		MapLocation mloc = rc.getLocation();
+		int curX = 1 + (mloc.x - locHQ.x);
+		int curY = 1 + (mloc.y - locHQ.y);
+		if (0 <= curX && curX <= 2 && 0 <= curY && curY <= 2) {
+			occupied[curX][curY] = true;
 		}
 
 		return occupied;
@@ -340,7 +347,7 @@ public class Landscaper extends Unit {
 
 		if (ind < orig) ind += 8;
 
-		return ind - orig;
+		return ind - orig - 1;
 	}
 
 	public boolean moveOnWall() throws GameActionException {
@@ -350,12 +357,16 @@ public class Landscaper extends Unit {
 		for (int i = 0; i < directions.length; i++) {
 			loc = locHQ.add(directions[i]);
 
-			if (loc.equals(mloc)) break;
+			if (loc.equals(mloc)) {
+				loc = locHQ.add(directions[(i + 1) % 8]);
+				break;
+			}
 		}
 
 		return tryMove(mloc.directionTo(loc));
 	}
 
+	/* this will see if this landscaper needs to move for adaptive wall, and make it move */
 	public boolean correctWall() throws GameActionException {
 		boolean[][] occupied = getOccupied();
 		int gap = getClockwiseGap(occupied);
@@ -363,9 +374,11 @@ public class Landscaper extends Unit {
 		int count = 0;
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-				if (occupied[i][j]) ++count;
+				if (occupied[i][j] && (i != 1 || j != 1)) ++count;
 			}
 		}
+
+		System.out.println("COUNT GAP " + count + " " + gap);
 
 		if (count == 1) {
 			return moveOnWall();
