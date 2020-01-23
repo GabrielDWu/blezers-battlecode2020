@@ -459,11 +459,13 @@ public class Landscaper extends Unit {
 		RobotInfo[] list = rc.senseNearbyRobots(2, (rc.getTeam() == Team.B) ? Team.A : Team.B);
 
 		for (RobotInfo robot: list) {
-			Direction dir = rc.getLocation().directionTo(robot.location);
+			if (robot.type.isBuilding()) {
+				Direction dir = rc.getLocation().directionTo(robot.location);
 
-			if (rc.canDepositDirt(dir)) {
-				rc.depositDirt(dir);
-				return true;
+				if (rc.canDepositDirt(dir)) {
+					rc.depositDirt(dir);
+					return true;
+				}
 			}
 		}
 
