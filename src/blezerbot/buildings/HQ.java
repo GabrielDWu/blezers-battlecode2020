@@ -65,7 +65,7 @@ public class HQ extends Building {
 			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
-		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 4 && !landscaperWalled) {
+		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 8 && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
 			addMessageToQueue();
@@ -154,7 +154,7 @@ public class HQ extends Building {
 
 				switch(unitType){
 					case LANDSCAPER:
-						if(units[RobotType.LANDSCAPER.ordinal()].size() <= 4){
+						if(units[RobotType.LANDSCAPER.ordinal()].size() <= 8){
 							writeMessage(Message.doSomething(unitID, 0));	//Defend
 							addMessageToQueue();
 						}else{

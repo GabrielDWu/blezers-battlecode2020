@@ -92,6 +92,7 @@ public class Landscaper extends Unit {
 						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
 						else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
 					} else {
+						attackEnemyBuilding();
 						if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
 					}
 				}else {
@@ -101,6 +102,7 @@ public class Landscaper extends Unit {
 						if (diff > 3) {
 							if (rc.canDigDirt(moveDir)) rc.digDirt(moveDir);
 							else {
+								attackEnemyBuilding();
 								for (Direction dir : directionswcenter) {
 									if (rc.canDepositDirt(dir) && !mloc.add(dir).equals(locHQ) && !mloc.add(dir).equals(locDS) && !mloc.add(dir).isAdjacentTo(locHQ)) {
 										rc.depositDirt(dir);
@@ -113,7 +115,10 @@ public class Landscaper extends Unit {
 								else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
 								else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
 							}
-							else if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
+							else {
+								attackEnemyBuilding();
+								if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
+							}
 						}
 						if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
 					}
@@ -152,6 +157,11 @@ public class Landscaper extends Unit {
 
 	public void reinforceWall(MapLocation mloc, Direction d) throws GameActionException {
 		if (rc.getDirtCarrying() < 1) {
+			/* heal HQ */
+			if (rc.canDigDirt(d)) {
+				rc.digDirt(d);
+			}
+
 			Direction mdir = null;
 			int mdirt = Integer.MIN_VALUE;
 			for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
@@ -271,6 +281,7 @@ public class Landscaper extends Unit {
 
 		if (newElevation > terraformHeight) { /* if our target square is higher, dig from it */
 			if (rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit) {
+				if (attackEnemyBuilding()) return true;
 				if (rc.canDepositDirt(nearLattice)) {
 					rc.depositDirt(nearLattice);
 					return true;
@@ -324,7 +335,7 @@ public class Landscaper extends Unit {
 			}
 		}
 
-		/* this landscaper isn't included, so include it */
+		/* THIS landscaper isn't included, so include it */
 		MapLocation mloc = rc.getLocation();
 		int curX = 1 + (mloc.x - locHQ.x);
 		int curY = 1 + (mloc.y - locHQ.y);
@@ -428,17 +439,33 @@ public class Landscaper extends Unit {
 		}
 
 		// /* counterclockwise */
-		// gap = getCounterclockwiseGap(occupied);
+		gap = getCounterclockwiseGap(occupied);
 
-		// if (count == 1) {
-		// 	if (moveOnWall(false)) return true;
-		// } else if (count == 2) {
+		if (count == 1) {
+			if (moveOnWall(false)) return true;
+		} else if (count == 2) {
 			
-		// } else if (count == 3) {
-		// 	if (gap > 2) if (moveOnWall(false)) return true;
-		// } else {
-		// 	if (gap > 1) if (moveOnWall(false)) return true;
-		// }
+		} else if (count == 3) {
+			if (gap > 2) if (moveOnWall(false)) return true;
+		} else {
+			if (gap > 1) if (moveOnWall(false)) return true;
+		}
+
+		return false;
+	}
+
+	public boolean attackEnemyBuilding() throws GameActionException {
+		if (rc.getDirtCarrying() < 1) return false;
+		RobotInfo[] list = rc.senseNearbyRobots(2, (rc.getTeam() == Team.B) ? Team.A : Team.B);
+
+		for (RobotInfo robot: list) {
+			Direction dir = rc.getLocation().directionTo(robot.location);
+
+			if (rc.canDepositDirt(dir)) {
+				rc.depositDirt(dir);
+				return true;
+			}
+		}
 
 		return false;
 	}
