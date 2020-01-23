@@ -19,6 +19,7 @@ public class Landscaper extends Unit {
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
+	final static int terraformTries = 20; /* how many random moves away from hq to try? */
 
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
@@ -119,43 +120,17 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BUILDING:
-				if(rc.canDigDirt(d)) rc.digDirt(d);	//Heal hq
-				if (rc.getDirtCarrying() < 1) {
-					Direction mdir = null;
-					int mdirt = Integer.MIN_VALUE;
-					for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
-						if (rc.canSenseLocation(mloc.add(dir))) {
-							int ndirt = rc.senseElevation(mloc.add(dir));
-							if (ndirt > mdirt && rc.canDigDirt(dir)) {
-								mdir = dir;
-								mdirt = ndirt;
-							}
-						}
-					}
-					if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
-				} else {
-					Direction mdir = null;
-					int mdirt = Integer.MAX_VALUE;
-					for (Direction dir : directionswcenter) {
-						if (rc.canSenseLocation(mloc.add(dir))) {
-							int ndirt = rc.senseElevation(mloc.add(dir));
-							if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
-								mdir = dir;
-								mdirt = ndirt;
-							}
-						}
-					}
-					if (mdir != null && rc.canDepositDirt(mdir)) rc.depositDirt(mdir);
-				}
+				if (!correctWall()) reinforceWall(mloc, d);
 				break;
 			case TERRAFORMING:
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
-					moveAwayFromHQ(mloc);
+
+					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+					else moveAwayFromHQ(mloc);
 				} else {
 					Direction nearLattice = findLattice(mloc);
-					System.out.println(nearLattice);
 					if (nearLattice != null) {
 						if (!tryTerraform(mloc, nearLattice)) moveAwayFromHQ(mloc);
 					}
@@ -165,17 +140,87 @@ public class Landscaper extends Unit {
 		}
 	}
 
-	/* pick a random move taking me not closer to the HQ */
-	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException{
+	public void reinforceWall(MapLocation mloc, Direction d) throws GameActionException {
+		if (rc.getDirtCarrying() < 1) {
+			Direction mdir = null;
+			int mdirt = Integer.MIN_VALUE;
+			for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+				if (rc.canSenseLocation(mloc.add(dir))) {
+					int ndirt = rc.senseElevation(mloc.add(dir));
+					if (ndirt > mdirt && rc.canDigDirt(dir)) {
+						mdir = dir;
+						mdirt = ndirt;
+					}
+				}
+			}
+			if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+		} else {
+			Direction mdir = null;
+			int mdirt = Integer.MAX_VALUE;
+			for (Direction dir : directionswcenter) {
+				if (rc.canSenseLocation(mloc.add(dir))) {
+					int ndirt = rc.senseElevation(mloc.add(dir));
+					if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
+						mdir = dir;
+						mdirt = ndirt;
+					}
+				}
+			}
+			if (mdir != null && rc.canDepositDirt(mdir)) rc.depositDirt(mdir);
+		}
+	}
+
+	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException{
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
-		int currentDist = kingDistance(mloc, locHQ);
+		int currentDist = taxicabDistance(mloc, enemyHQ);
+
+		for (int i = 0; i < terraformTries; i++) {
+			int ind = r.nextInt(directions.length);
+			Direction dir = directions[ind];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+		}
 
 		do {
 			Direction dir = directions[startIndex];
 			MapLocation nloc = mloc.add(dir);
 
-			if (kingDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+
+			++startIndex;
+			startIndex %= directions.length;
+		} while (startIndex != stopIndex);
+
+		return false;
+	}
+
+	/* pick a random move taking me not closer to the HQ */
+	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException{
+		int startIndex = r.nextInt(directions.length);
+		int stopIndex = startIndex;
+		int currentDist = taxicabDistance(mloc, locHQ);
+
+		for (int i = 0; i < terraformTries; i++) {
+			int ind = r.nextInt(directions.length);
+			Direction dir = directions[ind];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+		}
+
+		do {
+			Direction dir = directions[startIndex];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
 				if (tryMove(dir)) return true;
 			}
 
@@ -195,7 +240,7 @@ public class Landscaper extends Unit {
 		for (Direction dir: directions) {
 			MapLocation nloc = mloc.add(dir);
 
-			if (!isLattice(nloc)) {
+			if (!isLattice(nloc) && rc.onTheMap(nloc)) {
 				if (tryTerraform(mloc, dir, nearLattice)) return true;
 			}
 		}
@@ -257,16 +302,23 @@ public class Landscaper extends Unit {
 
 	public boolean[][] getOccupied() {
 		boolean[][] occupied = new boolean[3][3];
-		MapLocation mloc = rc.getLocation();
-		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 2, rc.getTeam()); /* only robots directly adjacent */
+		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 3, rc.getTeam()); /* only robots directly adjacent */
 
 		for (RobotInfo robot: around) {
 			if (robot.type == RobotType.LANDSCAPER) {
-				int curX = 1 + (robot.location.x - mloc.x);
-				int curY = 1 + (robot.location.y - mloc.y);
-
-				occupied[curX][curY] = true;
+				int curX = 1 + (robot.location.x - locHQ.x);
+				int curY = 1 + (robot.location.y - locHQ.y);
+				if (0 <= curX && curX <= 2 && 0 <= curY && curY <= 2) {
+					occupied[curX][curY] = true;
+				}
 			}
+		}
+
+		MapLocation mloc = rc.getLocation();
+		int curX = 1 + (mloc.x - locHQ.x);
+		int curY = 1 + (mloc.y - locHQ.y);
+		if (0 <= curX && curX <= 2 && 0 <= curY && curY <= 2) {
+			occupied[curX][curY] = true;
 		}
 
 		return occupied;
@@ -295,29 +347,50 @@ public class Landscaper extends Unit {
 
 		if (ind < orig) ind += 8;
 
-		return ind - orig;
+		return ind - orig - 1;
 	}
 
-	public void moveOnWall() {
+	public boolean moveOnWall() throws GameActionException {
+		MapLocation mloc = rc.getLocation();
 
+		MapLocation loc = null;
+		for (int i = 0; i < directions.length; i++) {
+			loc = locHQ.add(directions[i]);
+
+			if (loc.equals(mloc)) {
+				loc = locHQ.add(directions[(i + 1) % 8]);
+				break;
+			}
+		}
+
+		return tryMove(mloc.directionTo(loc));
 	}
 
-	public void correctWall() {
+	/* this will see if this landscaper needs to move for adaptive wall, and make it move */
+	public boolean correctWall() throws GameActionException {
 		boolean[][] occupied = getOccupied();
 		int gap = getClockwiseGap(occupied);
 
 		int count = 0;
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-				if (occupied[i][j]) ++count;
+				if (occupied[i][j] && (i != 1 || j != 1)) ++count;
 			}
 		}
 
+		System.out.println("COUNT GAP " + count + " " + gap);
+
 		if (count == 1) {
-			moveOnWall();
+			return moveOnWall();
 		} else if (count == 2) {
 			
+		} else if (count == 3) {
+			if (gap > 2) return moveOnWall();
+		} else {
+			if (gap > 1) return moveOnWall();
 		}
+
+		return false;
 	}
 
 	public boolean executeMessage(Message message){

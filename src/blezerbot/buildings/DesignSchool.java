@@ -8,6 +8,7 @@ public class DesignSchool extends Building {
 	enum DesignSchoolStatus {
 		TURTLE_MAKING,
 		MAKING,
+		RUSH_ENEMY_HQ,
 		NOTHING
 	}
 	int builtLandscapers;
@@ -37,6 +38,21 @@ public class DesignSchool extends Building {
 					}
 				}
 				break;
+			case RUSH_ENEMY_HQ:
+				/// don't want to waste resources
+				if(builtLandscapers>2) break;
+				Direction di = null;
+				int best = Integer.MAX_VALUE;
+				for(Direction d: directions){
+					if(rc.canBuildRobot(RobotType.LANDSCAPER, d) && enemyHQ.distanceSquaredTo(rc.getLocation().add(d)) <= best){
+						best = Integer.MAX_VALUE;
+						di = d;
+					}
+				}
+				if(di != null) {
+					rc.buildRobot(RobotType.LANDSCAPER, di);
+					builtLandscapers++;
+				}
 			case MAKING:
 				if(builtLandscapers > 20) break;
 				for (Direction dir : directions) {
