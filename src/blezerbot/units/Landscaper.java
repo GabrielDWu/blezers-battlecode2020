@@ -119,33 +119,7 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BUILDING:
-				if (rc.getDirtCarrying() < 1) {
-					Direction mdir = null;
-					int mdirt = Integer.MIN_VALUE;
-					for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
-						if (rc.canSenseLocation(mloc.add(dir))) {
-							int ndirt = rc.senseElevation(mloc.add(dir));
-							if (ndirt > mdirt && rc.canDigDirt(dir)) {
-								mdir = dir;
-								mdirt = ndirt;
-							}
-						}
-					}
-					if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
-				} else {
-					Direction mdir = null;
-					int mdirt = Integer.MAX_VALUE;
-					for (Direction dir : directionswcenter) {
-						if (rc.canSenseLocation(mloc.add(dir))) {
-							int ndirt = rc.senseElevation(mloc.add(dir));
-							if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
-								mdir = dir;
-								mdirt = ndirt;
-							}
-						}
-					}
-					if (mdir != null && rc.canDepositDirt(mdir)) rc.depositDirt(mdir);
-				}
+				reinforceWall(mloc, d);
 				break;
 			case TERRAFORMING:
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
@@ -163,6 +137,36 @@ public class Landscaper extends Unit {
 				}
 
 				break;
+		}
+	}
+
+	public void reinforceWall(MapLocation mloc, Direction d) throws GameActionException {
+		if (rc.getDirtCarrying() < 1) {
+			Direction mdir = null;
+			int mdirt = Integer.MIN_VALUE;
+			for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+				if (rc.canSenseLocation(mloc.add(dir))) {
+					int ndirt = rc.senseElevation(mloc.add(dir));
+					if (ndirt > mdirt && rc.canDigDirt(dir)) {
+						mdir = dir;
+						mdirt = ndirt;
+					}
+				}
+			}
+			if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+		} else {
+			Direction mdir = null;
+			int mdirt = Integer.MAX_VALUE;
+			for (Direction dir : directionswcenter) {
+				if (rc.canSenseLocation(mloc.add(dir))) {
+					int ndirt = rc.senseElevation(mloc.add(dir));
+					if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
+						mdir = dir;
+						mdirt = ndirt;
+					}
+				}
+			}
+			if (mdir != null && rc.canDepositDirt(mdir)) rc.depositDirt(mdir);
 		}
 	}
 
