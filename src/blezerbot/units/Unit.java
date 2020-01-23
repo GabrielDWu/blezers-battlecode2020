@@ -48,11 +48,10 @@ public abstract class Unit extends Robot {
 					getLocationInRadiusHelper(center, dx, dy);
 
 				} else {
-					for (int s1 = 0; s1 < 2; s1++) {
-						for (int s2 = 0; s2 < 2; s2++) {
-							getLocationInRadiusHelper(center, dx * (2 * s1 - 1), dy * (2 * s2 - 1));
-						}
-					}
+					getLocationInRadiusHelper(center, dx, -dy);
+					getLocationInRadiusHelper(center, dx, -dy);
+					getLocationInRadiusHelper(center, -dx, dy);
+					getLocationInRadiusHelper(center, dx, dy);
 				}
 			}
 		}

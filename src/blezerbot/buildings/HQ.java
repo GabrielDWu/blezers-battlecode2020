@@ -68,6 +68,7 @@ public class HQ extends Building {
 		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 3 && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
+			System.out.println("tellbuild");
 			addMessageToQueue();
 		}
 		if (buildingDesignSchool == 0 && units[2 /*refinery*/].size() > 0 && rc.getTeamSoup() > 70 && rc.isReady()) {

@@ -378,7 +378,7 @@ public class Landscaper extends Unit {
 			}
 		}
 
-		System.out.println("COUNT GAP " + count + " " + gap);
+		//System.out.println("COUNT GAP " + count + " " + gap);
 
 		if (count == 1) {
 			return moveOnWall();
@@ -402,6 +402,7 @@ public class Landscaper extends Unit {
 			case WAIT:
 				if (message.data[0] != rc.getID()) return false;
 				status = LandscaperStatus.NOTHING;
+
 				return true;
 			case BUILD_WALL:
 				MapLocation loc = new MapLocation(message.data[0], message.data[1]);
