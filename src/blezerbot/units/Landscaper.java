@@ -17,6 +17,7 @@ public class Landscaper extends Unit {
 	MapLocation locDS = null;
 	int filledOffset;
 	int idDS;
+	boolean doneMoving; /* are we in proper wall position */
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
@@ -30,6 +31,7 @@ public class Landscaper extends Unit {
 		super.startLife();
 		status = LandscaperStatus.NOTHING;
 		idDS = -1;
+		doneMoving = false;
 	}
 
 	public void run() throws GameActionException {
@@ -85,24 +87,14 @@ public class Landscaper extends Unit {
 						}
 					}
 				}
-				for(int i=0; i<8; i++){
-					if(filled[i]){
-						filledUpTo = i;
-					}else{
-						break;
-					}
-				}
-				if(locDS != null && (locHQ.directionTo(mloc).ordinal()+filledOffset)%8 <= filledUpTo){
-					if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
-					if (rc.getDirtCarrying() < 1) {
-						if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
-						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
-						else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
-					} else {
-						attackEnemyBuilding();
-						if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
-					}
-				}else {
+				// for(int i=0; i<8; i++){
+				// 	if(filled[i]){
+				// 		filledUpTo = i;
+				// 	}else{
+				// 		break;
+				// 	}
+				// }
+				if (!doneMoving) {
 					Direction moveDir = orthogonal(mloc.directionTo(locHQ)) ? mloc.directionTo(locHQ).rotateRight().rotateRight() : mloc.directionTo(locHQ).rotateRight();
 					if (rc.canSenseLocation(mloc.add(moveDir))) {
 						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
@@ -127,7 +119,20 @@ public class Landscaper extends Unit {
 								if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
 							}
 						}
-						if (!mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) tryMove(moveDir);
+						if (mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) doneMoving = true;
+						else tryMove(moveDir);
+					}
+				}
+
+				if (doneMoving) {
+					if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
+					if (rc.getDirtCarrying() < 1) {
+						if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
+						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
+						else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
+					} else {
+						attackEnemyBuilding();
+						if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
 					}
 				}
 				break;
@@ -415,10 +420,10 @@ public class Landscaper extends Unit {
 		return orig - ind - 1;
 	}
 
-	public boolean moveOnWall(boolean clockwise) throws GameActionException {
+	public Direction getNextWallPosition(boolean clockwise) {
 		MapLocation mloc = rc.getLocation();
 		Direction moveDir = null, toHQ = mloc.directionTo(locHQ);
-		if (toHQ == null) return false;
+		if (toHQ == null) return null;
 		
 		if (!clockwise) {
 			if (orthogonal(toHQ)) {
@@ -433,6 +438,12 @@ public class Landscaper extends Unit {
 				moveDir = toHQ.rotateLeft();
 			}
 		}
+
+		return moveDir;
+	}
+
+	public boolean moveOnWall(boolean clockwise) throws GameActionException {
+		Direction moveDir = getNextWallPosition(clockwise);
 
 		if (moveDir == null) return false;
 		return tryMove(moveDir);

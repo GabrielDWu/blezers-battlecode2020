@@ -42,7 +42,7 @@ public class HQ extends Building {
 		for (Direction dir: directions) {
 			MapLocation nloc = loc.add(dir);
 
-			if (rc.onTheMap(nloc)) ++wallSquares;
+			if (isValidWall(nloc)) ++wallSquares;
 		}
 	}
 

@@ -29,6 +29,13 @@ public class DesignSchool extends Building {
 		if (locHQ == null) return;
 		switch (status){
 			case TURTLE_MAKING:
+				/* try this first */
+				Direction adj = rc.getLocation().directionTo(locHQ);
+				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
+					rc.buildRobot(RobotType.LANDSCAPER, adj);
+					builtLandscapers++;
+				}
+
 				for (Direction dir : directions) {
 					if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
 						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {

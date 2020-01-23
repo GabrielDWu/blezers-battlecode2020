@@ -214,6 +214,13 @@ public abstract class Robot {
 		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.x % 2);
 	}
 
+	/* can we use this spot to build the wall */
+	/* this exists so if we have some wacko 1000 tile right next to HQ, we can 
+	later make it so we don't try to power through it */
+	public boolean isValidWall(MapLocation a) {
+		return rc.onTheMap(a);
+	}
+
 	/***** BLOCKCHAIN ******/
 	/***** BLOCKCHAIN ******/
 	/***** BLOCKCHAIN ******/
