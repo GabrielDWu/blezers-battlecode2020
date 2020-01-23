@@ -14,7 +14,8 @@ public class DeliveryDrone extends Unit {
 		CIRCLING,	//Surrouning HQ in preparation for attack
 		ATTACKING,	//Diving in to abduct landscapers from enemy wall
 		NOTHING,
-		HARASS
+		HARASS,
+		DROP_WATER
 	}
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
@@ -204,7 +205,7 @@ public class DeliveryDrone extends Unit {
                 rc.dropUnit(rc.getLocation().directionTo(closeWater));
             }
         }
-	    
+
 		if(waterLocations.size() == 0){
             findWater();
 		}
