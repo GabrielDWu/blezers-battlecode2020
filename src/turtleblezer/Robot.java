@@ -1,12 +1,12 @@
-package blezerbot;
+package turtleblezer;
 
 import battlecode.common.*;
 import java.util.*;
 import java.lang.Math;
-import blezerbot.units.*;
-import blezerbot.buildings.*;
+import turtleblezer.units.*;
+import turtleblezer.buildings.*;
 
-import static blezerbot.Message.MessageType;
+import static turtleblezer.Message.MessageType;
 
 public abstract class Robot {
 
@@ -187,31 +187,6 @@ public abstract class Robot {
 	public boolean orthogonal(Direction dir){
 		return (dir.equals(directions[0]) || dir.equals(directions[2]) || dir.equals(directions[4])
 				|| dir.equals(directions[6]));
-	}
-
-	/* number of moves required for our units to get from a to b */
-	public int kingDistance(MapLocation a, MapLocation b) {
-		return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
-	}
-
-	/* horizontal dist + vertical dist */
-	public int taxicabDistance(MapLocation a, MapLocation b) {
-		return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-	}
-
-	/* will we dig from this square when terraforming? */
-	public boolean isLattice(MapLocation a) {
-		return (a.x % 2 == locHQ.x % 2) && (a.y % 2 == locHQ.x % 2);
-	}
-
-	/* will we build on this square when terraforming? */
-	public boolean isForBuilding(MapLocation a) {
-		return !(a.x % 2 == locHQ.x % 2) && !(a.y % 2 == locHQ.x % 2);
-	}
-
-	/* will we move on this square when terraforming? */
-	public boolean isForMovement(MapLocation a) {
-		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.x % 2);
 	}
 
 	/***** BLOCKCHAIN ******/

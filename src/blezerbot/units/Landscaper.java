@@ -431,7 +431,10 @@ public class Landscaper extends Unit {
 		if (count == 1) {
 			if (moveOnWall(true)) return true;
 		} else if (count == 2) {
-			
+			if (gap > 3) if (moveOnWall(true)) return true;
+			else if (gap > 0 && taxicabDistance(rc.getLocation(), locHQ) > 1) {
+				if (moveOnWall(true)) return true;
+			}
 		} else if (count == 3) {
 			if (gap > 2) if (moveOnWall(true)) return true;
 		} else {
@@ -444,7 +447,10 @@ public class Landscaper extends Unit {
 		if (count == 1) {
 			if (moveOnWall(false)) return true;
 		} else if (count == 2) {
-			
+			if (gap > 3) if (moveOnWall(false)) return true;
+			else if (gap > 0 && taxicabDistance(rc.getLocation(), locHQ) > 1) {
+				if (moveOnWall(false)) return true;
+			}
 		} else if (count == 3) {
 			if (gap > 2) if (moveOnWall(false)) return true;
 		} else {
