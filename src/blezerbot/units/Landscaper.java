@@ -120,9 +120,14 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BUILDING:
-				if (!correctWall()) {
+				if (rc.getRoundNum() % 5 == 0) {
+					if (!correctWall()) {
+						reinforceWall(mloc, d);
+					}
+				} else {
 					reinforceWall(mloc, d);
 				}
+				
 				break;
 			case TERRAFORMING:
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
@@ -356,7 +361,32 @@ public class Landscaper extends Unit {
 		return ind - orig - 1;
 	}
 
-	public boolean moveOnWall() throws GameActionException {
+	public int getCounterclockwiseGap(boolean[][] occupied) {
+		MapLocation mloc = rc.getLocation();
+
+		int ind;
+		for (ind = 0; ind < directions.length; ind++) {
+			MapLocation loc = locHQ.add(directions[ind]);
+
+			if (loc.equals(mloc)) break;
+		}
+
+		int orig = ind;
+
+		while (true) {
+			ind = (ind + 7) % 8;
+			int curX = 1 + directions[ind].dx;
+			int curY = 1 + directions[ind].dy;
+
+			if (occupied[curX][curY]) break;
+		}
+
+		if (ind > orig) orig += 8;
+
+		return orig - ind - 1;
+	}
+
+	public boolean moveOnWall(boolean clockwise) throws GameActionException {
 		MapLocation mloc = rc.getLocation();
 
 		MapLocation loc = null;
@@ -364,7 +394,8 @@ public class Landscaper extends Unit {
 			loc = locHQ.add(directions[i]);
 
 			if (loc.equals(mloc)) {
-				loc = locHQ.add(directions[(i + 1) % 8]);
+				if (clockwise) loc = locHQ.add(directions[(i + 1) % 8]);
+				else loc = locHQ.add(directions[(i + 7) % 8]);
 				break;
 			}
 		}
@@ -375,7 +406,6 @@ public class Landscaper extends Unit {
 	/* this will see if this landscaper needs to move for adaptive wall, and make it move */
 	public boolean correctWall() throws GameActionException {
 		boolean[][] occupied = getOccupied();
-		int gap = getClockwiseGap(occupied);
 
 		int count = 0;
 		for (int i = 0; i < 3; i++) {
@@ -384,15 +414,31 @@ public class Landscaper extends Unit {
 			}
 		}
 
+		/* clockwise */
+		int gap = getClockwiseGap(occupied);
+
 		if (count == 1) {
-			return moveOnWall();
+			if (moveOnWall(true)) return true;
 		} else if (count == 2) {
 			
 		} else if (count == 3) {
-			if (gap > 2) return moveOnWall();
+			if (gap > 2) if (moveOnWall(true)) return true;
 		} else {
-			if (gap > 1) return moveOnWall();
+			if (gap > 1) if (moveOnWall(true)) return true;
 		}
+
+		// /* counterclockwise */
+		// gap = getCounterclockwiseGap(occupied);
+
+		// if (count == 1) {
+		// 	if (moveOnWall(false)) return true;
+		// } else if (count == 2) {
+			
+		// } else if (count == 3) {
+		// 	if (gap > 2) if (moveOnWall(false)) return true;
+		// } else {
+		// 	if (gap > 1) if (moveOnWall(false)) return true;
+		// }
 
 		return false;
 	}
