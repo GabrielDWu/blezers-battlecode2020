@@ -157,7 +157,7 @@ public abstract class Robot {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir));
+		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir)) && rc.senseElevation(rc.adjacentLocation(dir)) > GameConstants.getWaterLevel(rc.getRoundNum()+1);
 	}
 
 	public boolean tryMove(Direction dir) throws GameActionException {

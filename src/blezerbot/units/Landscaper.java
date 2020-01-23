@@ -65,7 +65,7 @@ public class Landscaper extends Unit {
 				if (locHQ == null) {
 					return;
 				}
-				if (idDS != -1 && !rc.canSenseRobot(idDS)) {
+				if (idDS != -1 && !rc.canSenseRobot(idDS) && mloc.distanceSquaredTo(locDS) <= rc.getCurrentSensorRadiusSquared()) {
 					status = LandscaperStatus.BUILDING;
 					break;
 				}
@@ -526,6 +526,10 @@ public class Landscaper extends Unit {
 
 		}
 		return false;
+	}
+
+	public boolean canMove(Direction dir) throws GameActionException {
+		return super.canMove(dir) && (status == LandscaperStatus.DEFENDING || status == LandscaperStatus.BUILDING || locHQ == null || !rc.getLocation().add(dir).isAdjacentTo(locHQ));
 	}
 
 }
