@@ -53,7 +53,7 @@ public class DeliveryDrone extends Unit {
 		super.run();
 
 		//Update closest water
-		if(rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
+		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 		for(MapLocation loc: getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared())){
 			if(rc.senseFlooding(loc) && !rc.isLocationOccupied(loc) && (closeWater == null || kingDistance(rc.getLocation(),loc) <= closeWaterDist)){
 				closeWater = loc;

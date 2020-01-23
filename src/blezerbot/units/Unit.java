@@ -28,7 +28,11 @@ public abstract class Unit extends Robot {
 			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 		}
 	}
-	ArrayList<MapLocation> returnGetLocationInRadius = new ArrayList<MapLocation> ();
+	public void startLife() throws GameActionException {
+		super.startLife();
+		returnGetLocationInRadius = new ArrayList<MapLocation>();
+	}
+	ArrayList<MapLocation> returnGetLocationInRadius;
 	void getLocationInRadiusHelper(MapLocation center, int dx, int dy){
 		int x = dx + center.x;
 		int y = dy  +center.y;

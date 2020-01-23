@@ -137,6 +137,7 @@ public class Miner extends Unit {
 					}
 					break;
 				case SEARCHING:
+					setChosenRefinery();
 					for (int x = -5; x <= 5; x++) {
 						if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
 						for (int y = -5; y <= 5; y++) {
@@ -179,7 +180,15 @@ public class Miner extends Unit {
 							soupLoc = null;
 						}
 						if (rc.getSoupCarrying() >= 100) {
-							status = MinerStatus.RETURNING;
+							setChosenRefinery();
+							int refineryDist = rc.getLocation().distanceSquaredTo(chosenRefinery);
+							if (refineryDist > 48 || refineryDist > 15 && locREFINERY.size() < 3 || chosenRefinery.equals(locHQ) && rc.getTeamSoup() >= 150) {
+								prevStatus = MinerStatus.RETURNING;
+								status = MinerStatus.BUILDING;
+								buildingType = RobotType.REFINERY;
+								buildingTries = 0;
+							}
+							if (status != MinerStatus.BUILDING) status = MinerStatus.RETURNING;
 						}
 						else if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
 							soupLoc = null;
@@ -188,23 +197,6 @@ public class Miner extends Unit {
 					}
 					break;
 				case RETURNING:
-					if(chosenRefinery == null){
-						chosenRefinery = locHQ;
-						if(locREFINERY.size() > 0){
-							chosenRefinery = locREFINERY.get(0);
-						}
-						//later can add this
-						/*
-						int best = rc.getLocation().distanceSquaredTo(locHQ);
-						for(MapLocation loc: locREFINERY){
-							if(rc.getLocation().distanceSquaredTo(loc) < best){
-								chosenRefinery = loc;
-							}
-						}*/
-					}
-					if (chosenRefinery.equals(locHQ) && locREFINERY.size() > 0) {
-						chosenRefinery = locREFINERY.get(0);
-					}
 					goTo(chosenRefinery);
 					if (rc.getLocation().isAdjacentTo(chosenRefinery)) {
 						status = MinerStatus.DEPOSITING;
@@ -219,6 +211,17 @@ public class Miner extends Unit {
 						} else status = MinerStatus.SEARCHING;
 					}
 					break;
+			}
+		}
+	}
+	public void setChosenRefinery() throws GameActionException {
+		if (chosenRefinery == null || chosenRefinery.equals(locHQ)) {
+			chosenRefinery = locHQ;
+			int best = Integer.MAX_VALUE;
+			for (MapLocation rloc : locREFINERY) {
+				if (rc.getLocation().distanceSquaredTo(rloc) < best) {
+					chosenRefinery = rloc;
+				}
 			}
 		}
 	}
