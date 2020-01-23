@@ -119,8 +119,9 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BUILDING:
-				
-				if (!correctWall()) reinforceWall(mloc, d);
+				if (!correctWall()) {
+					reinforceWall(mloc, d);
+				}
 				break;
 			case TERRAFORMING:
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
@@ -132,7 +133,10 @@ public class Landscaper extends Unit {
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					if (nearLattice != null) {
-						if (!tryTerraform(mloc, nearLattice)) moveAwayFromHQ(mloc);
+						if (!tryTerraform(mloc, nearLattice)) {
+							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+							else moveAwayFromHQ(mloc);
+						}
 					}
 				}
 
@@ -170,7 +174,7 @@ public class Landscaper extends Unit {
 		}
 	}
 
-	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException{
+	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException {
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
 		int currentDist = taxicabDistance(mloc, enemyHQ);
@@ -201,7 +205,7 @@ public class Landscaper extends Unit {
 	}
 
 	/* pick a random move taking me not closer to the HQ */
-	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException{
+	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException {
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
 		int currentDist = taxicabDistance(mloc, locHQ);
@@ -302,7 +306,7 @@ public class Landscaper extends Unit {
 
 	public boolean[][] getOccupied() {
 		boolean[][] occupied = new boolean[3][3];
-		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 3, rc.getTeam()); /* only robots directly adjacent */
+		RobotInfo[] around = rc.senseNearbyRobots(locHQ, 2, rc.getTeam()); /* only robots directly adjacent */
 
 		for (RobotInfo robot: around) {
 			if (robot.type == RobotType.LANDSCAPER) {
@@ -314,6 +318,7 @@ public class Landscaper extends Unit {
 			}
 		}
 
+		/* this landscaper isn't included, so include it */
 		MapLocation mloc = rc.getLocation();
 		int curX = 1 + (mloc.x - locHQ.x);
 		int curY = 1 + (mloc.y - locHQ.y);
@@ -378,8 +383,6 @@ public class Landscaper extends Unit {
 			}
 		}
 
-		System.out.println("COUNT GAP " + count + " " + gap);
-
 		if (count == 1) {
 			return moveOnWall();
 		} else if (count == 2) {
@@ -414,7 +417,7 @@ public class Landscaper extends Unit {
                 if(message.data[0] != rc.getID()) return false;
                 switch(message.data[1]) {
                     case 0:
-                        status = LandscaperStatus.DEFENDING;
+                        if (status != LandscaperStatus.BUILDING) status = LandscaperStatus.DEFENDING;
                         return true;
                     case 1:
                         status = LandscaperStatus.TERRAFORMING;
