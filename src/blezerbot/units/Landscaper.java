@@ -433,6 +433,12 @@ public class Landscaper extends Unit {
 			}
 		}
 
+		/* 
+		formula to later adapt (?):
+		move if gap > ceil((number of wall cells - number of landscapers) / number of landscapers)
+		this will not work with 1 landscaper if we're on an edge
+		*/
+
 		/* clockwise */
 		int gap = getClockwiseGap(occupied);
 
