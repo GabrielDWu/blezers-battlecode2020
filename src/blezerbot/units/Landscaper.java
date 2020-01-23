@@ -261,6 +261,14 @@ public class Landscaper extends Unit {
 		return false;
 	}
 
+	public boolean isOurBuilding(MapLocation loc) throws GameActionException {
+		RobotInfo info = rc.senseRobotAtLocation(loc);
+
+		if (info == null) return false;
+
+		return info.team == rc.getTeam() && info.type.isBuilding();
+	}
+
 	/* look for any square we can terraform
 	look at center first, so we can do stuff 
 	*/
@@ -287,6 +295,7 @@ public class Landscaper extends Unit {
 		/* either too high, too low, or already good */
 		if (Math.abs(newElevation - currentElevation) > terraformThreshold) return false;
 		if (newElevation == terraformHeight) return false;
+		if (isOurBuilding(nloc)) return false;
 		
 		if (newElevation > terraformHeight) { /* if our target square is higher, dig from it */
 			if (rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit) {
