@@ -14,6 +14,7 @@ public class HQ extends Building {
 
 	/* turtling stuff */
 	int waitingForBuilding;
+	int wallSquares; /* should be 8, unless we're in a corner or edge */
 	boolean builtDesignSchool;
 	Direction turtleDesignSchoolDir;
 	boolean landscaperWalled;
@@ -34,6 +35,14 @@ public class HQ extends Building {
 		units = new ArrayList[10];
 		for(int i=0; i<10; i++){
 			units[i] = new ArrayList<InternalUnit>();
+		}
+
+		wallSquares = 0;
+		MapLocation loc = rc.getLocation();
+		for (Direction dir: directions) {
+			MapLocation nloc = loc.add(dir);
+
+			if (rc.onTheMap(nloc)) ++wallSquares;
 		}
 	}
 
@@ -65,7 +74,7 @@ public class HQ extends Building {
 			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
-		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 8 && !landscaperWalled) {
+		if (units[RobotType.LANDSCAPER.ordinal()].size() >= wallSquares && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
 			System.out.println("tellbuild");
@@ -148,7 +157,7 @@ public class HQ extends Building {
 
 				switch(unitType){
 					case LANDSCAPER:
-						if(units[RobotType.LANDSCAPER.ordinal()].size() <= 8){
+						if(units[RobotType.LANDSCAPER.ordinal()].size() <= wallSquares){
 							writeMessage(Message.doSomething(unitID, 0));	//Defend
 							addMessageToQueue();
 						}else{
