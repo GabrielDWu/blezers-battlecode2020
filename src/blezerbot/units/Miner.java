@@ -59,7 +59,7 @@ public class Miner extends Unit {
 			setVisitedAndSeen();
 			MapLocation nloc = null;
 			MapLocation mloc = rc.getLocation();
-			if (!(status == MinerStatus.DEPOSITING && chosenRefinery != null && chosenRefinery.equals(locHQ)) && prevStatus != MinerStatus.NOTHING && locHQ != null && mloc.isAdjacentTo(locHQ)) {
+			if (!(status == MinerStatus.DEPOSITING && chosenRefinery != null && chosenRefinery.equals(locHQ)) && prevStatus != MinerStatus.NOTHING && !(/*building design school by HQ*/ status == MinerStatus.BUILDING && buildingType == RobotType.DESIGN_SCHOOL && buildLocation != null && buildLocation.isAdjacentTo(mloc)) && locHQ != null && mloc.isAdjacentTo(locHQ)) {
 				goTo(mloc.add(mloc.directionTo(locHQ).opposite()));
 			}
 			int h = rc.getMapHeight();
@@ -137,7 +137,6 @@ public class Miner extends Unit {
 					}
 					break;
 				case SEARCHING:
-					setChosenRefinery();
 					for (int x = -5; x <= 5; x++) {
 						if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
 						for (int y = -5; y <= 5; y++) {
@@ -197,6 +196,7 @@ public class Miner extends Unit {
 					}
 					break;
 				case RETURNING:
+					setChosenRefinery();
 					goTo(chosenRefinery);
 					if (rc.getLocation().isAdjacentTo(chosenRefinery)) {
 						status = MinerStatus.DEPOSITING;
