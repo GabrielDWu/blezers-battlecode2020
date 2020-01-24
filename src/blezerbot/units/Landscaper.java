@@ -12,7 +12,8 @@ public class Landscaper extends Unit {
 		NOTHING,
 		BUILDING,
         TERRAFORMING,
-		BURY_ENEMY_BUILDING
+		BURY_ENEMY_BUILDING,
+		HQ_TERRAFORM
 	}
 	LandscaperStatus status;
 	MapLocation buryTarget = null;
@@ -29,11 +30,11 @@ public class Landscaper extends Unit {
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
 	final static int terraformTries = 20; /* how many random moves away from hq to try? */
-
+	int currentTerraformRadiusSquared = 1;
+	int currentDirection = 0; // 0 cw 1 ccw
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
 	}
-
 	public void startLife() throws GameActionException{
 		super.startLife();
 		status = LandscaperStatus.NOTHING;
@@ -51,6 +52,7 @@ public class Landscaper extends Unit {
 		if(r == RobotType.REFINERY) return 4;
 		return -1;
 	}
+
 	public void run() throws GameActionException {
 		super.run();
 		MapLocation mloc = rc.getLocation();
@@ -84,6 +86,7 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		System.out.println(status);
+		//if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -101,6 +104,7 @@ public class Landscaper extends Unit {
 				if(enemyHQ != null){
 					if(!rc.getLocation().isAdjacentTo(enemyHQ)){
 						goTo(enemyHQ);
+						System.out.println("TRYING");
 					}
 					else{
 						if(rc.canDepositDirt(attackDir)){
@@ -226,6 +230,32 @@ public class Landscaper extends Unit {
 					}
 				}
 
+				break;
+			case HQ_TERRAFORM:
+				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+					/* if we're too close to HQ, move */
+					/* also if we're in a lattice square, move */
+
+					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+					else moveAwayFromHQ(mloc);
+				} else {
+					Direction nearLattice = findLattice(mloc);
+					tryTerraform(mloc, Direction.CENTER, nearLattice);
+					if (nearLattice != null) {
+						Direction dir = bestTerraform(nearLattice);
+						System.out.println(dir);
+						if(dir != null){
+							tryTerraform(mloc, dir, nearLattice);
+						}
+						else{
+							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+							else moveAwayFromHQ(mloc);
+						}
+					} else {
+						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+						else moveAwayFromHQ(mloc);
+					}
+				}
 				break;
 			case BURY_ENEMY_BUILDING:
 				if(buryTarget == null || surroundedLocation(buryTarget)){
@@ -387,7 +417,56 @@ public class Landscaper extends Unit {
 
 		return false;
 	}
-
+	public Direction bestTerraform(Direction nearLattice) throws GameActionException {
+		Direction dir = null;
+		int best = Integer.MAX_VALUE;
+		for(Direction d: directions){
+			MapLocation nloc = rc.getLocation().add(d);
+			if(isLattice(nloc) || rc.onTheMap(nloc) == false) continue;
+			if(kingDistance(nloc, locHQ) < terraformDist){
+				continue;
+			}
+			if(canTerraform(rc.getLocation(), d, nearLattice)){
+				if(dir == null){
+					dir = d;
+					best = nloc.distanceSquaredTo(locHQ);
+				}
+				else if(best>nloc.distanceSquaredTo(locHQ)){
+					best = nloc.distanceSquaredTo(locHQ);
+					dir = d;
+				}
+			}
+		}
+		return dir;
+	}
+	public boolean canTerraform(MapLocation mloc, Direction dir, Direction nearLattice) throws GameActionException{
+		MapLocation nloc = mloc.add(dir);
+		if(rc.canSenseLocation(nloc) == false) return false;
+		int currentElevation = rc.senseElevation(mloc);
+		int newElevation = rc.senseElevation(nloc);
+		if(Math.abs(newElevation - currentElevation)>terraformThreshold) return false;
+		if(newElevation == terraformHeight) return false;
+		if(isOurBuilding(nloc)) return false;
+		System.out.println("BAD");
+		if(newElevation>terraformHeight){
+			if(rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit){
+				if(attackEnemyBuilding()) return true;
+				if(rc.canDepositDirt(nearLattice)) return true;
+			}
+			else{
+				if(rc.canDigDirt(dir)) return true;
+			}
+		}
+		else{
+			if(rc.getDirtCarrying()<1){
+				if(rc.canDigDirt(nearLattice)) return true;
+			}
+			else{
+				if(rc.canDepositDirt(dir)) return true;
+			}
+		}
+		return false;
+	}
 	/* try to terraform a specific square */
 	public boolean tryTerraform(MapLocation mloc, Direction dir, Direction nearLattice) throws GameActionException {
 		MapLocation nloc = mloc.add(dir);
@@ -407,7 +486,7 @@ public class Landscaper extends Unit {
 					return true;
 				}
 			} else {
-				if (rc.canDigDirt(nearLattice)) {
+				if (rc.canDigDirt(dir)) {
 					rc.digDirt(dir);
 					return true;
 				}
@@ -419,13 +498,12 @@ public class Landscaper extends Unit {
 					return true;
 				}
 			} else {
-				if (rc.canDepositDirt(nearLattice)) {
+				if (rc.canDepositDirt(dir)) {
 					rc.depositDirt(dir);
 					return true;
 				}
 			}
 		}
-
 		return false;
 	}
 

@@ -69,6 +69,11 @@ public class Miner extends Unit {
 			int w = rc.getMapWidth();
 			switch (status) {
 				case FIND_ENEMY_HQ:
+					System.out.println(rc.getRoundNum() + "HUH");
+					if(rc.getRoundNum()>=300) {
+						status = MinerStatus.SEARCHING;
+						break;
+					}
 					if (enemyHQ != null) {
 						status = MinerStatus.RUSH_ENEMY_HQ;
 						break;
