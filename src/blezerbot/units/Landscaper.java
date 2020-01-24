@@ -48,7 +48,9 @@ public class Landscaper extends Unit {
 		if(locHQ != null){
 			d = rc.getLocation().directionTo(locHQ);
 		}
-
+		if(enemyHQ != null && enemyHQ.distanceSquaredTo(rc.getLocation())<= 4){
+			status = LandscaperStatus.ATTACKING;
+		}
 		switch (status) {
 			case ATTACKING:
 				Direction attackDir = rc.getLocation().directionTo(enemyHQ);
