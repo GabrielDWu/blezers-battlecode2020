@@ -97,7 +97,7 @@ public abstract class Robot {
 	}
 
 	public void startTurn() throws GameActionException{
-	    //if(rc.getRoundNum() >= 20){rc.resign();}
+	    if(rc.getRoundNum() >= 700){rc.resign();}
 	    turnCount = rc.getRoundNum()-birthRound+1;
 
 	    //process all messages for the previous round
@@ -170,14 +170,14 @@ public abstract class Robot {
 	public void randomMove() throws GameActionException {
 		int ri = r.nextInt(8);
 		for(int i=0; i<8; i++) {
-			tryMove(directions[(ri+i)%8]);
+			if(tryMove(directions[(ri+i)%8])) return;
 		}
 	}
 
 	public void randomOrthogonalMove() throws GameActionException {
 		int ri = r.nextInt(4)*2;
 		for(int i=0; i<8; i+=2) {
-			tryMove(directions[(ri+i)%8]);
+			if(tryMove(directions[(ri+i)%8])) return;
 		}
 	}
 

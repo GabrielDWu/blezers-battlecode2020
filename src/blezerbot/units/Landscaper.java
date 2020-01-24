@@ -13,8 +13,8 @@ public class Landscaper extends Unit {
 		BUILDING,
         TERRAFORMING
 	}
-	LandscaperStatus status = null;
-	MapLocation locDS = null;
+	LandscaperStatus status;
+	MapLocation locDS;
 	int filledOffset;
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */

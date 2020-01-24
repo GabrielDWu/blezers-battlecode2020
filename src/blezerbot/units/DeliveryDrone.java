@@ -22,9 +22,10 @@ public class DeliveryDrone extends Unit {
 	int[][] flooded;
 	MapLocation investigate;
 	MapLocation harassCenter;
-	int harassRadius = 10; // Radius of circle about which you circle
+	final static int harassRadius = 100; // Radius of circle about which you circle
 	MapLocation dropLocation;
 	MapLocation waitLocation;
+	MapLocation lastSeen;
 
 	MapLocation closeWater;
 	int closeWaterDist;	//King distance to closeWater
@@ -32,10 +33,9 @@ public class DeliveryDrone extends Unit {
 	MapLocation searchDest;	//Utility variable for findWater
 	DeliveryDroneStatus prevStatus;	//What to do once DROP_WATER is done.
 	int searchDestTries;
-	ArrayList<MapLocation> waterLocations = new ArrayList<MapLocation>();
-	int searchID = 0;
+	ArrayList<MapLocation> waterLocations;
+	int searchID;
 	int enemyHQc;
-	Direction spiral = Direction.SOUTH;
 	boolean sentFound = false;
 
 	public DeliveryDrone(RobotController rc) throws GameActionException {
@@ -59,13 +59,14 @@ public class DeliveryDrone extends Unit {
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 		for(MapLocation loc: getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared())){
-			if(rc.senseFlooding(loc) && !rc.isLocationOccupied(loc) && (closeWater == null || kingDistance(rc.getLocation(),loc) <= closeWaterDist)){
+			if(rc.canSenseLocation(loc) && rc.senseFlooding(loc) && !rc.isLocationOccupied(loc) &&
+					(closeWater == null || kingDistance(rc.getLocation(),loc) <= closeWaterDist)){
 				closeWater = loc;
 				closeWaterDist = kingDistance(rc.getLocation(),loc);
 			}
 		}
 
-		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.ATTACKING)){
+		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)){
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
 					rc.dropUnit(dir);
@@ -75,6 +76,7 @@ public class DeliveryDrone extends Unit {
 		if (locHQ == null) return;
 		switch(status) {
 			case FIND_ENEMY_HQ:
+				System.out.println("FEQ");
 				if (enemyHQ != null) {
 					status = DeliveryDroneStatus.CIRCLING;
 					break;
@@ -85,6 +87,7 @@ public class DeliveryDrone extends Unit {
 					writeMessage(Message.enemyHqLocation(enemyHQ));
 					addMessageToQueue();
 					sentFound = true;
+					System.out.println("Found enemy hq");
 				}
 				break;
 
@@ -157,14 +160,18 @@ public class DeliveryDrone extends Unit {
 				break;
 			case HARASS:
 				if(harassCenter == null){
-					status = NOTHING;
+					status = DeliveryDroneStatus.NOTHING;
 					break;
 				}
 
 				//Update investigate
-				if(investigate != null && rc.canSenseLocation(investigate)) {
-					RobotInfo rob = rc.senseRobotAtLocation(investigate);
-					if (rob == null || rob.getTeam() == rc.getTeam() || rob.getType == RobotType.DELIVERY_DRONE) {
+				if(investigate != null) {
+					if(rc.canSenseLocation(investigate)) {
+						RobotInfo rob = rc.senseRobotAtLocation(investigate);
+						if (rob == null || rob.getTeam() == rc.getTeam() || rob.getType() == RobotType.DELIVERY_DRONE) {
+							investigate = null;
+						}
+					}else{
 						investigate = null;
 					}
 				}
@@ -178,9 +185,11 @@ public class DeliveryDrone extends Unit {
 				}
 
 				if(investigate != null) {
-					if (rc.isAdjacentTo(investigate)) {
-						if (rc.canPickUpUnit(rc.getLocation().directionTo(investigate))) {
-							rc.pickUpUnit(rc.getLocation().directionTo(investigate));
+					System.out.println("Investigate " + investigate);
+					if (rc.getLocation().isAdjacentTo(investigate)) {
+						int robID = rc.senseRobotAtLocation(investigate).getID();
+						if (rc.canPickUpUnit(robID)) {
+							rc.pickUpUnit(robID);
 							status = DeliveryDroneStatus.DROP_WATER;
 							prevStatus = DeliveryDroneStatus.HARASS;
 						}
@@ -192,9 +201,10 @@ public class DeliveryDrone extends Unit {
 						goTo(harassCenter);
 					}else{
 						Direction ccw = rc.getLocation().directionTo(harassCenter).rotateRight().rotateRight();
-						randomOrthogalMove();
+						randomOrthogonalMove();
 					}
 				}
+				break;
 
             case DROP_WATER:
             	if(closeWater == null){
@@ -438,7 +448,94 @@ public class DeliveryDrone extends Unit {
 			case SOUTHWEST:
 				return false;
 		}
-		return rc.canMove(dir)&&(!netGunRadius(rc.getLocation().add(dir)))&&((enemyHQ != null && rc.getLocation().add(dir).distanceSquaredTo(enemyHQ) > 15) || (enemyHQ == null && rc.getLocation().add(dir).distanceSquaredTo(enemyHQs[enemyHQc]) > 15));
+		return rc.canMove(dir)&&(!netGunRadius(rc.getLocation().add(dir))) &&
+				((enemyHQ != null && rc.getLocation().add(dir).distanceSquaredTo(enemyHQ) > 15) ||
+						(enemyHQ == null && (enemyHQc < 0 ||
+								rc.getLocation().add(dir).distanceSquaredTo(enemyHQs[enemyHQc]) > 15)));
+	}
+
+	public void goTo(MapLocation loc) throws GameActionException {
+		if(!rc.isReady() || rc.getLocation().equals(loc)) return;
+		if (unitVisited == null) return;
+		if (!loc.equals(dest)) {
+			dest = loc;
+			lastDist = 0;
+			hugging = false;
+			unitVisitedIndex++;
+			if (unitVisitedIndex > 15) {
+				unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
+				unitVisitedIndex = 0;
+			}
+		}
+		MapLocation mloc = rc.getLocation();
+		incUnitVisited(mloc);
+		if (getUnitVisited(mloc) > 4) {
+			randomOrthogonalMove();
+			return;
+		}
+
+		//Check if still should be hugging (if nothing around you, hugging=false)
+		if(hugging){
+			hugging = false;
+			for(Direction dir : orthogonalDirections){
+				if(!canMove(dir)){
+					hugging = true;
+					break;
+				}
+			}
+		}
+		if (!hugging) {
+			Direction dir;
+			if(Math.abs(mloc.x - loc.x) > Math.abs(mloc.y - loc.y)){
+				if(mloc.x > loc.x){
+					dir = Direction.WEST;
+				}else{
+					dir = Direction.EAST;
+				}
+			}else{
+				if(mloc.y > loc.y){
+					dir = Direction.SOUTH;
+				}else{
+					dir = Direction.NORTH;
+				}
+			}
+
+			if (tryMove(dir)) return;
+
+			//Turn right until you see an empty space
+			facing = dir;
+			int cnt = 0;
+			while(!canMove(facing)){
+				facing = facing.rotateRight().rotateRight();
+				cnt++;
+				if(cnt>4) return;
+			}
+			lastDist = mloc.distanceSquaredTo(loc);
+			hugging = true;
+		}
+		if (mloc.distanceSquaredTo(loc) < lastDist) {
+			hugging = false;
+			goTo(loc);
+			return;
+		}
+		Direction dir = facing.rotateLeft().rotateLeft();
+		//Left turn
+		if(tryMove(dir)){
+			facing=dir;
+			return;
+		}
+		dir = dir.rotateRight().rotateRight();
+
+		//Forward
+		if(tryMove(dir))return;
+
+		dir = dir.rotateRight().rotateRight();
+
+		//Right turn
+		if(tryMove(dir)){
+			facing = dir;
+			return;
+		}
 	}
 
 }

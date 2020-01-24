@@ -92,11 +92,7 @@ public abstract class Unit extends Robot {
 		MapLocation mloc = rc.getLocation();
 		incUnitVisited(mloc);
 		if (getUnitVisited(mloc) > 4) {
-			Direction sdir = directions[r.nextInt(directions.length)];
-			int dcount = 0;
-			while (dcount++ < directions.length && !tryMove(sdir)) {
-				sdir = sdir.rotateRight();
-			}
+			randomMove();
 			return;
 		}
 
@@ -118,7 +114,7 @@ public abstract class Unit extends Robot {
 			facing = (orthogonal(dir) ? dir : dir.rotateRight());
 			int cnt = 0;
 			while(!canMove(facing)){
-				facing = nextDir90(facing, true);
+				facing = facing.rotateRight().rotateRight();
 				cnt++;
 				if(cnt>4) return;
 			}
@@ -130,7 +126,7 @@ public abstract class Unit extends Robot {
 			goTo(loc);
 			return;
 		}
-		Direction dir = nextDir90(facing, false);
+		Direction dir = facing.rotateLeft().rotateLeft();
 		//Left turn
 		if(tryMove(dir)){
 			facing=dir;
@@ -172,7 +168,6 @@ public abstract class Unit extends Robot {
 				return;
 			}
 		}
-		if(tryMove(dir))return;
 		dir = dir.rotateRight();
 
 		//Right turn
