@@ -1,7 +1,7 @@
 package rushblezer.buildings;
 
 import battlecode.common.*;
-import blezerbot.*;
+import rushblezer.*;
 
 public abstract class Building extends Robot {
 

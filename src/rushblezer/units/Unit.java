@@ -1,7 +1,7 @@
 package rushblezer.units;
 
 import battlecode.common.*;
-import blezerbot.*;
+import rushblezer.*;
 import java.util.*;
 
 public abstract class Unit extends Robot {

@@ -3,7 +3,7 @@ package rushblezer.units;
 import battlecode.common.*;
 import java.util.*;
 import java.lang.*;
-import blezerbot.*;
+import rushblezer.*;
 
 public class Miner extends Unit {
 

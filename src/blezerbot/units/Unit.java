@@ -217,4 +217,18 @@ public abstract class Unit extends Robot {
 	    } else return false;
 	}
 
+	public void randomMove() throws GameActionException {
+		int ri = r.nextInt(8);
+		for(int i=0; i<8; i++) {
+			if(tryMove(directions[(ri+i)%8])) return;
+		}
+	}
+
+	public void randomOrthogonalMove() throws GameActionException {
+		int ri = r.nextInt(4)*2;
+		for(int i=0; i<8; i+=2) {
+			if(tryMove(directions[(ri+i)%8])) return;
+		}
+	}
+
 }

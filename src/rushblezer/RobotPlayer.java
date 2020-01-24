@@ -1,9 +1,9 @@
 package rushblezer;
 
 import battlecode.common.*;
-import blezerbot.*;
-import blezerbot.buildings.*;
-import blezerbot.units.*;
+import rushblezer.*;
+import rushblezer.buildings.*;
+import rushblezer.units.*;
 
 public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {

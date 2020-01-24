@@ -3,8 +3,8 @@ package rushblezer;
 import battlecode.common.*;
 import java.util.*;
 import java.lang.Math;
-import blezerbot.units.*;
-import blezerbot.buildings.*;
+import rushblezer.units.*;
+import rushblezer.buildings.*;
 
 import static rushblezer.Message.MessageType;
 
