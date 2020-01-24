@@ -11,9 +11,11 @@ public class Landscaper extends Unit {
 		DEFENDING,
 		NOTHING,
 		BUILDING,
-        TERRAFORMING
+        TERRAFORMING,
+		BURY_ENEMY_BUILDING
 	}
 	LandscaperStatus status;
+	MapLocation buryTarget = null;
 	MapLocation locDS;
 	int filledOffset;
 	RobotType attackType = RobotType.HQ;
@@ -41,11 +43,40 @@ public class Landscaper extends Unit {
 		tryingClockwise = true;
 		movedOnWall = false;
 	}
-
+	public int buryPriority(RobotType r){
+		if(r == RobotType.NET_GUN) return 0;
+		if(r == RobotType.FULFILLMENT_CENTER) return 1;
+		if(r == RobotType.DESIGN_SCHOOL) return 2;
+		if(r == RobotType.VAPORATOR) return 3;
+		if(r == RobotType.REFINERY) return 4;
+		return -1;
+	}
 	public void run() throws GameActionException {
 		super.run();
 		MapLocation mloc = rc.getLocation();
 		Direction d = null;
+		if(buryTarget == null){
+			RobotInfo[] nearRobots = rc.senseNearbyRobots();
+			for(RobotInfo r: nearRobots){
+				if(r.type != RobotType.HQ){
+					if(r.getTeam() != rc.getTeam()){
+						int priority = buryPriority(r.type);
+						if(priority == -1) continue;
+						else{
+							if(buryTarget == null) buryTarget = r.location;
+							else{
+								if(buryPriority(rc.senseRobotAtLocation(buryTarget).type) > buryPriority(r.type)){
+									buryTarget = r.location;
+								}
+							}
+							status = LandscaperStatus.BURY_ENEMY_BUILDING;
+							System.out.println("HERE");
+						}
+					}
+				}
+			}
+		}
+
 		if(locHQ != null){
 			d = rc.getLocation().directionTo(locHQ);
 		}
@@ -195,6 +226,35 @@ public class Landscaper extends Unit {
 					}
 				}
 
+				break;
+			case BURY_ENEMY_BUILDING:
+				if(buryTarget == null || surroundedLocation(buryTarget)){
+					status = LandscaperStatus.TERRAFORMING;
+					break;
+				}
+				attackDir = rc.getLocation().directionTo(buryTarget);
+				if(rc.getDirtCarrying() < 1){
+					Direction dir = randomDirection();
+					while(dir==attackDir){
+						dir = randomDirection();
+					}
+					if(rc.canDigDirt(dir)) rc.digDirt(dir);
+				}
+				if(buryTarget != null){
+					if(!rc.getLocation().isAdjacentTo(buryTarget)){
+						goTo(buryTarget);
+					}
+					else{
+						if(rc.canDepositDirt(attackDir)){
+							rc.depositDirt(attackDir);
+							/// if buried go back to terraforming
+							if(rc.senseRobotAtLocation(rc.getLocation().add(attackDir)) == null){
+								status = LandscaperStatus.TERRAFORMING;
+								break;
+							}
+						}
+					}
+				}
 				break;
 		}
 	}
