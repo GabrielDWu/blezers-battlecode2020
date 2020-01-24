@@ -1,9 +1,9 @@
-package blezerbot.units;
+package rushblezer.units;
 
 import battlecode.common.*;
 import java.util.*;
 import java.lang.*;
-import blezerbot.*;
+import rushblezer.*;
 
 public class Miner extends Unit {
 
@@ -59,7 +59,7 @@ public class Miner extends Unit {
 			setVisitedAndSeen();
 			MapLocation nloc = null;
 			MapLocation mloc = rc.getLocation();
-			if (!(status == MinerStatus.DEPOSITING && chosenRefinery != null && chosenRefinery.equals(locHQ)) && prevStatus != MinerStatus.NOTHING && !(/*building design school by HQ*/ status == MinerStatus.BUILDING && buildingType == RobotType.DESIGN_SCHOOL && buildLocation != null && buildLocation.isAdjacentTo(mloc)) && locHQ != null && mloc.isAdjacentTo(locHQ)) {
+			if (!(status == MinerStatus.DEPOSITING && chosenRefinery != null && chosenRefinery.equals(locHQ)) && prevStatus != MinerStatus.NOTHING && locHQ != null && mloc.isAdjacentTo(locHQ)) {
 				goTo(mloc.add(mloc.directionTo(locHQ).opposite()));
 			}
 			int h = rc.getMapHeight();
@@ -121,7 +121,10 @@ public class Miner extends Unit {
 						// (for e.g. waiting for accumulation of soup)
 						if(rc.getLocation().equals(buildLocation)){
 							//Move in a random direction
-							randomMove();
+							int ri = r.nextInt(8);
+							for(int i=0; i<8; i++) {
+								tryMove(directions[(ri+i)%8]);
+							}
 						}else if(rc.getLocation().isAdjacentTo(buildLocation)){
 							if(rc.canBuildRobot(buildingType, rc.getLocation().directionTo(buildLocation))){
 								rc.buildRobot(buildingType, rc.getLocation().directionTo(buildLocation));
@@ -134,6 +137,7 @@ public class Miner extends Unit {
 					}
 					break;
 				case SEARCHING:
+					setChosenRefinery();
 					for (int x = -5; x <= 5; x++) {
 						if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
 						for (int y = -5; y <= 5; y++) {
@@ -193,7 +197,6 @@ public class Miner extends Unit {
 					}
 					break;
 				case RETURNING:
-					setChosenRefinery();
 					goTo(chosenRefinery);
 					if (rc.getLocation().isAdjacentTo(chosenRefinery)) {
 						status = MinerStatus.DEPOSITING;
@@ -487,7 +490,7 @@ public class Miner extends Unit {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return dir != null && super.canMove(dir) && !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
+		return super.canMove(dir) && !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
 	}
 
 }

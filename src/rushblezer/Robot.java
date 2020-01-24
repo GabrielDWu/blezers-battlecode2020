@@ -1,12 +1,12 @@
-package blezerbot;
+package rushblezer;
 
 import battlecode.common.*;
 import java.util.*;
 import java.lang.Math;
-import blezerbot.units.*;
-import blezerbot.buildings.*;
+import rushblezer.units.*;
+import rushblezer.buildings.*;
 
-import static blezerbot.Message.MessageType;
+import static rushblezer.Message.MessageType;
 
 public abstract class Robot {
 
@@ -97,7 +97,7 @@ public abstract class Robot {
 	}
 
 	public void startTurn() throws GameActionException{
-	    //if(rc.getRoundNum() >= 700){rc.resign();}
+	    //if(rc.getRoundNum() >= 20){rc.resign();}
 	    turnCount = rc.getRoundNum()-birthRound+1;
 
 	    //process all messages for the previous round
@@ -156,6 +156,17 @@ public abstract class Robot {
 		}
 	}
 
+	public boolean canMove(Direction dir) throws GameActionException {
+		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir));
+	}
+
+	public boolean tryMove(Direction dir) throws GameActionException {
+	    if (rc.isReady() && canMove(dir)) {
+	        rc.move(dir);
+	        return true;
+	    } else return false;
+	}
+
 	public boolean tryBuild (RobotType r) throws GameActionException {
 		for (Direction dir : directions) {
 			if (rc.canBuildRobot(r, dir)) {
@@ -201,13 +212,6 @@ public abstract class Robot {
 	/* will we move on this square when terraforming? */
 	public boolean isForMovement(MapLocation a) {
 		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.x % 2);
-	}
-
-	/* can we use this spot to build the wall */
-	/* this exists so if we have some wacko 1000 tile right next to HQ, we can 
-	later make it so we don't try to power through it */
-	public boolean isValidWall(MapLocation a) {
-		return rc.onTheMap(a);
 	}
 
 	/***** BLOCKCHAIN ******/
