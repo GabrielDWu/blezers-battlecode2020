@@ -121,10 +121,7 @@ public class Miner extends Unit {
 						// (for e.g. waiting for accumulation of soup)
 						if(rc.getLocation().equals(buildLocation)){
 							//Move in a random direction
-							int ri = r.nextInt(8);
-							for(int i=0; i<8; i++) {
-								tryMove(directions[(ri+i)%8]);
-							}
+							randomMove();
 						}else if(rc.getLocation().isAdjacentTo(buildLocation)){
 							if(rc.canBuildRobot(buildingType, rc.getLocation().directionTo(buildLocation))){
 								rc.buildRobot(buildingType, rc.getLocation().directionTo(buildLocation));

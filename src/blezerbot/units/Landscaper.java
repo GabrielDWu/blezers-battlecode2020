@@ -13,8 +13,8 @@ public class Landscaper extends Unit {
 		BUILDING,
         TERRAFORMING
 	}
-	LandscaperStatus status = null;
-	MapLocation locDS = null;
+	LandscaperStatus status;
+	MapLocation locDS;
 	int filledOffset;
 	int idDS;
 	boolean doneMoving; /* are we in proper wall position */

@@ -61,7 +61,7 @@ public class DesignSchool extends Building {
 					builtLandscapers++;
 				}
 			case MAKING:
-				if(builtLandscapers > 20) break;
+				if(builtLandscapers > 10) break;
 				for (Direction dir : directions) {
 					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
 						rc.buildRobot(RobotType.LANDSCAPER, dir);
