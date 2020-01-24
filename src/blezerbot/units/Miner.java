@@ -52,10 +52,12 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(status);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
 			if (status == MinerStatus.NOTHING) {
+				if (!safeFromFlood[Direction.CENTER.ordinal()]) {
+					randomMove();
+				}
 				return;
 			}
 			if (status == null) status = MinerStatus.SEARCHING;
@@ -149,23 +151,20 @@ public class Miner extends Unit {
 					}
 					break;
 				case SEARCHING:
-					for (int x = -5; x <= 5; x++) {
-						if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
-						for (int y = -5; y <= 5; y++) {
-							nloc = mloc.translate(x, y);
-							if (!(rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0)) continue;
-							if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
-								continue;
-							}
-							status = MinerStatus.MINING;
-							soupLoc = nloc;
-							break;
-						}
-						if (status != MinerStatus.SEARCHING) break;
+					MapLocation[] nsoup = rc.senseNearbySoup();
+					if (nsoup.length > 0) {
+						status = MinerStatus.MINING;
+						soupLoc = nsoup[0];
 					}
-					if (status == MinerStatus.SEARCHING) findSoup();
-					break;
+					if (status == MinerStatus.SEARCHING) {
+						findSoup();
+						break;
+					}
+					// start mining if it saw soup
 				case MINING:
+					if (!safeFromFlood[Direction.CENTER.ordinal()]) {
+						randomMove();
+					}
 					if (soupLoc != null && !mloc.isAdjacentTo(soupLoc)) {
 						for (Direction dir : directions) {
 							if (tryMine(dir)) { 
@@ -215,6 +214,9 @@ public class Miner extends Unit {
 					}
 					break;
 				case DEPOSITING:
+					if (!safeFromFlood[Direction.CENTER.ordinal()]) {
+						randomMove();
+					}
 					if (rc.canDepositSoup(mloc.directionTo(chosenRefinery))) rc.depositSoup(mloc.directionTo(chosenRefinery), rc.getSoupCarrying());
 					if (rc.getSoupCarrying() == 0) {
 						chosenRefinery = null;

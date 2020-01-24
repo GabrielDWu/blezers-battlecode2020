@@ -9,4 +9,8 @@ public abstract class Building extends Robot {
 		super(rc);
 	}
 
+	public void run() throws GameActionException {
+		super.run();
+	}
+
 }
