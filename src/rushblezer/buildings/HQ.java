@@ -1,4 +1,4 @@
-package blezerbot.buildings;
+package rushblezer.buildings;
 
 import battlecode.common.*;
 import java.util.*;
@@ -14,7 +14,6 @@ public class HQ extends Building {
 
 	/* turtling stuff */
 	int waitingForBuilding;
-	int wallSquares; /* should be 8, unless we're in a corner or edge */
 	boolean builtDesignSchool;
 	Direction turtleDesignSchoolDir;
 	boolean landscaperWalled;
@@ -35,14 +34,6 @@ public class HQ extends Building {
 		units = new ArrayList[10];
 		for(int i=0; i<10; i++){
 			units[i] = new ArrayList<InternalUnit>();
-		}
-
-		wallSquares = 0;
-		MapLocation loc = rc.getLocation();
-		for (Direction dir: directions) {
-			MapLocation nloc = loc.add(dir);
-
-			if (isValidWall(nloc)) ++wallSquares;
 		}
 	}
 
@@ -74,9 +65,10 @@ public class HQ extends Building {
 			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
-		if (units[RobotType.LANDSCAPER.ordinal()].size() >= wallSquares && !landscaperWalled) {
+		if (units[RobotType.LANDSCAPER.ordinal()].size() >= 2 && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
+			System.out.println("tellbuild");
 			addMessageToQueue();
 		}
 		if (buildingDesignSchool == 0 && units[2 /*refinery*/].size() > 0 && rc.getTeamSoup() > 70 && rc.isReady()) {
@@ -156,23 +148,11 @@ public class HQ extends Building {
 
 				switch(unitType){
 					case LANDSCAPER:
-						if(units[RobotType.LANDSCAPER.ordinal()].size() <= wallSquares){
+						if(units[RobotType.LANDSCAPER.ordinal()].size() <= 2){
 							writeMessage(Message.doSomething(unitID, 0));	//Defend
 							addMessageToQueue();
 						}else{
 							writeMessage(Message.doSomething(unitID, 1));	//Terraform
-							addMessageToQueue();
-						}
-						break;
-					case DELIVERY_DRONE:
-						if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 2  && (units[RobotType.DELIVERY_DRONE.ordinal()].size() <= 4
-							|| enemyHQ == null)){
-							//Harass own hq location for defense
-							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
-							addMessageToQueue();
-						}else if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 5){
-							//Harass opponent's hq to be annoying
-							writeMessage(Message.tellHarass(unitID, enemyHQ));
 							addMessageToQueue();
 						}
 						break;

@@ -1,4 +1,4 @@
-package blezerbot;
+package rushblezer;
 
 import battlecode.common.*;
 
@@ -17,8 +17,7 @@ public class Message {
 		UNWAIT,
 		BUILD_WALL,
 		DRONE_ATTACK,
-		REFINERY_LOC,
-        HARASS
+		REFINERY_LOC
 	}
 
 	static int[][] typeData = new int[][]{
@@ -34,7 +33,6 @@ public class Message {
 		{6, 6 /*x, y*/}, // build wall at location
 		{},	//	drone attack
 		{6, 6 /*x, y*/, 15 /*miner id*/}, // tell miner about refinery
-        {15 /*miner id*/, 6, 6 /*x, y*/}, // tell a drone to harass a certain location
 	};
 
 	static MessageType[] messageTypes;
@@ -96,7 +94,6 @@ public class Message {
 
 	public static Message doSomething(int robotID, int instruction) {
 	    /*
-	    Generic message to tell a specific robot to do a specific thing
 	    0 - DEFENDING (landscaper)
 	    1 - TERRAFORMING (landscaper)
 	     */
@@ -113,10 +110,6 @@ public class Message {
 
     public static Message refineryLocation(MapLocation loc, int robotID) {
         return new Message(MessageType.REFINERY_LOC, typeData[11], new int[]{loc.x, loc.y, robotID});
-    }
-
-    public static Message tellHarass(int robotID, MapLocation loc) {
-        return new Message(MessageType.HARASS, typeData[12], new int[]{robotID, loc.x, loc.y});
     }
 
 	public int getInt(int size){

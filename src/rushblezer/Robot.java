@@ -1,4 +1,4 @@
-package blezerbot;
+package rushblezer;
 
 import battlecode.common.*;
 import java.util.*;
@@ -6,7 +6,7 @@ import java.lang.Math;
 import blezerbot.units.*;
 import blezerbot.buildings.*;
 
-import static blezerbot.Message.MessageType;
+import static rushblezer.Message.MessageType;
 
 public abstract class Robot {
 
@@ -97,7 +97,7 @@ public abstract class Robot {
 	}
 
 	public void startTurn() throws GameActionException{
-	    //if(rc.getRoundNum() >= 700){rc.resign();}
+	    //if(rc.getRoundNum() >= 20){rc.resign();}
 	    turnCount = rc.getRoundNum()-birthRound+1;
 
 	    //process all messages for the previous round
@@ -156,10 +156,8 @@ public abstract class Robot {
 		}
 	}
 
-<<<<<<< HEAD
-=======
 	public boolean canMove(Direction dir) throws GameActionException {
-		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir)) && rc.senseElevation(rc.adjacentLocation(dir)) > GameConstants.getWaterLevel(rc.getRoundNum()+1);
+		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir));
 	}
 
 	public boolean tryMove(Direction dir) throws GameActionException {
@@ -169,21 +167,6 @@ public abstract class Robot {
 	    } else return false;
 	}
 
-	public void randomMove() throws GameActionException {
-		int ri = r.nextInt(8);
-		for(int i=0; i<8; i++) {
-			if(tryMove(directions[(ri+i)%8])) return;
-		}
-	}
-
-	public void randomOrthogonalMove() throws GameActionException {
-		int ri = r.nextInt(4)*2;
-		for(int i=0; i<8; i+=2) {
-			if(tryMove(directions[(ri+i)%8])) return;
-		}
-	}
-
->>>>>>> aaf4ad852df2304ea68b267bc8bd013dd1272783
 	public boolean tryBuild (RobotType r) throws GameActionException {
 		for (Direction dir : directions) {
 			if (rc.canBuildRobot(r, dir)) {
@@ -229,13 +212,6 @@ public abstract class Robot {
 	/* will we move on this square when terraforming? */
 	public boolean isForMovement(MapLocation a) {
 		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.x % 2);
-	}
-
-	/* can we use this spot to build the wall */
-	/* this exists so if we have some wacko 1000 tile right next to HQ, we can 
-	later make it so we don't try to power through it */
-	public boolean isValidWall(MapLocation a) {
-		return rc.onTheMap(a);
 	}
 
 	/***** BLOCKCHAIN ******/

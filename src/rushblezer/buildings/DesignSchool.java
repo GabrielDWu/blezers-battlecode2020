@@ -1,4 +1,4 @@
-package blezerbot.buildings;
+package rushblezer.buildings;
 
 import battlecode.common.*;
 import java.util.*;
@@ -29,13 +29,6 @@ public class DesignSchool extends Building {
 		if (locHQ == null) return;
 		switch (status){
 			case TURTLE_MAKING:
-				/* try this first */
-				Direction adj = rc.getLocation().directionTo(locHQ);
-				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
-					rc.buildRobot(RobotType.LANDSCAPER, adj);
-					builtLandscapers++;
-				}
-
 				for (Direction dir : directions) {
 					if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
 						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
@@ -61,7 +54,7 @@ public class DesignSchool extends Building {
 					builtLandscapers++;
 				}
 			case MAKING:
-				if(builtLandscapers > 10) break;
+				if(builtLandscapers > 20) break;
 				for (Direction dir : directions) {
 					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
 						rc.buildRobot(RobotType.LANDSCAPER, dir);
