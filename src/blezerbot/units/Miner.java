@@ -109,9 +109,12 @@ public class Miner extends Unit {
 						}
 					}
 					else{
+						System.out.println("HERE" + " "  + status);
 						goTo(enemyHQ);
+						System.out.println("AFTER" +  " " + status);
 					}
 				case BUILDING:
+					if(buildingType == null) status = MinerStatus.SEARCHING;
 					if(buildLocation == null){	// can build anywhere far from hq
 						if (buildingTries++ > 3){
 							status = prevStatus == null ? MinerStatus.MINING : prevStatus;
