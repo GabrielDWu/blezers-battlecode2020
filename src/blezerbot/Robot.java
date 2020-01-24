@@ -157,7 +157,7 @@ public abstract class Robot {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir));
+		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir)) && rc.senseElevation(rc.adjacentLocation(dir)) > GameConstants.getWaterLevel(rc.getRoundNum()+1);
 	}
 
 	public boolean tryMove(Direction dir) throws GameActionException {
@@ -226,6 +226,13 @@ public abstract class Robot {
 	/* will we move on this square when terraforming? */
 	public boolean isForMovement(MapLocation a) {
 		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.x % 2);
+	}
+
+	/* can we use this spot to build the wall */
+	/* this exists so if we have some wacko 1000 tile right next to HQ, we can 
+	later make it so we don't try to power through it */
+	public boolean isValidWall(MapLocation a) {
+		return rc.onTheMap(a);
 	}
 
 	/***** BLOCKCHAIN ******/
