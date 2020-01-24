@@ -97,7 +97,7 @@ public abstract class Robot {
 	}
 
 	public void startTurn() throws GameActionException{
-	    if(rc.getRoundNum() >= 700){rc.resign();}
+	    //if(rc.getRoundNum() >= 700){rc.resign();}
 	    turnCount = rc.getRoundNum()-birthRound+1;
 
 	    //process all messages for the previous round

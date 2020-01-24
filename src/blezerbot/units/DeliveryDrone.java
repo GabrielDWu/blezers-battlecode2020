@@ -76,9 +76,9 @@ public class DeliveryDrone extends Unit {
 		if (locHQ == null) return;
 		switch(status) {
 			case FIND_ENEMY_HQ:
-				System.out.println("FEQ");
 				if (enemyHQ != null) {
-					status = DeliveryDroneStatus.CIRCLING;
+					status = DeliveryDroneStatus.HARASS;
+					harassCenter = enemyHQ;
 					break;
 				}
 				MapLocation loc = findEnemyHQ();
@@ -185,7 +185,6 @@ public class DeliveryDrone extends Unit {
 				}
 
 				if(investigate != null) {
-					System.out.println("Investigate " + investigate);
 					if (rc.getLocation().isAdjacentTo(investigate)) {
 						int robID = rc.senseRobotAtLocation(investigate).getID();
 						if (rc.canPickUpUnit(robID)) {

@@ -14,7 +14,7 @@ public class FulfillmentCenter extends Building {
 
 	public void run() throws GameActionException {
 		super.run();
-		if (builtDrones < 8) {
+		if (builtDrones < 10) {
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, dir)) {
 					rc.buildRobot(RobotType.DELIVERY_DRONE, dir);
