@@ -21,7 +21,7 @@ public class Landscaper extends Unit {
 	int moveTries; /* how many times have we tried to move here */
 	boolean tryingClockwise;
 	boolean movedOnWall;
-	final static int moveCap = 20;
+	final static int moveCap = 125;
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
@@ -126,6 +126,8 @@ public class Landscaper extends Unit {
 								if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
 							}
 						}
+
+						/* if totally necessary, replace this with filled logic (and re-test it) */
 						if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) {
 							if (tryingClockwise && !movedOnWall) tryingClockwise = false;
 							else doneMoving = true;
