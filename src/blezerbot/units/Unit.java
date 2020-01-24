@@ -13,6 +13,8 @@ public abstract class Unit extends Robot {
 	int unitVisitedIndex;
 	public boolean[][] seen;
 	public int[][] visited;
+	public boolean[] safeFromFlood;
+	public boolean[][] _notFlooded;
 
 	public Unit(RobotController rc) throws GameActionException {
 		super(rc);
@@ -26,11 +28,31 @@ public abstract class Unit extends Robot {
 			}
 			if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
 			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
+			if (rc.getType() != RobotType.DELIVERY_DRONE) {
+				if (_notFlooded == null) _notFlooded = new boolean[5][5];
+				System.out.println(Clock.getBytecodesLeft());
+				for (int i = 0; i < 5; i++) {
+					for (int j = 0; j < 5; j++) {
+						MapLocation l = rc.getLocation().translate(i-2, j-2);
+						if (rc.canSenseLocation(l) && rc.senseFlooding(l)) _notFlooded[i][j] = false;
+						else _notFlooded[i][j] = true;
+					}
+				}
+				for (Direction dir : directions) {
+					int x = dir.dx + 2;
+					int y = dir.dy + 2;
+					safeFromFlood[dir.ordinal()] = !rc.canSenseLocation(rc.adjacentLocation(dir)) || rc.senseElevation(rc.adjacentLocation(dir)) > GameConstants.getWaterLevel(rc.getRoundNum()+1) ||  _notFlooded[x+1][y]&&_notFlooded[x+1][y+1]&&_notFlooded[x+1][y-1]&&_notFlooded[x-1][y]&&_notFlooded[x-1][y+1]&&_notFlooded[x-1][y-1]&&_notFlooded[x][y+1]&&_notFlooded[x][y-1]&&_notFlooded[x][y];
+				}
+				System.out.println(Clock.getBytecodesLeft());
+				System.out.println(Arrays.toString(safeFromFlood));
+				System.out.println(Arrays.deepToString(_notFlooded));
+			}
 		}
 	}
 	public void startLife() throws GameActionException {
 		super.startLife();
 		returnGetLocationInRadius = new ArrayList<MapLocation>();
+		safeFromFlood = new boolean[9];
 	}
 	ArrayList<MapLocation> returnGetLocationInRadius;
 	void getLocationInRadiusHelper(MapLocation center, int dx, int dy){
@@ -187,6 +209,17 @@ public abstract class Unit extends Robot {
 			facing = dir.rotateLeft();
 			return;
 		}
+	}
+
+	public boolean canMove(Direction dir) throws GameActionException {
+		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir)) && (!rc.isReady() || safeFromFlood[dir.ordinal()]);
+	}
+
+	public boolean tryMove(Direction dir) throws GameActionException {
+	    if (rc.isReady() && canMove(dir)) {
+	        rc.move(dir);
+	        return true;
+	    } else return false;
 	}
 
 }

@@ -156,17 +156,6 @@ public abstract class Robot {
 		}
 	}
 
-	public boolean canMove(Direction dir) throws GameActionException {
-		return rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir)) && rc.senseElevation(rc.adjacentLocation(dir)) > GameConstants.getWaterLevel(rc.getRoundNum()+1);
-	}
-
-	public boolean tryMove(Direction dir) throws GameActionException {
-	    if (rc.isReady() && canMove(dir)) {
-	        rc.move(dir);
-	        return true;
-	    } else return false;
-	}
-
 	public boolean tryBuild (RobotType r) throws GameActionException {
 		for (Direction dir : directions) {
 			if (rc.canBuildRobot(r, dir)) {
