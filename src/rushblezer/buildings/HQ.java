@@ -156,6 +156,7 @@ public class HQ extends Building {
 							addMessageToQueue();
 						}
 						break;
+
 				}
 				return true;
 		}

@@ -46,10 +46,13 @@ public class Miner extends Unit {
 		super.startLife();
 		locREFINERY = new ArrayList<MapLocation>();
 		buildableTiles = -1;
+		enemyHQs = new MapLocation[3];
+		enemyHQc = -1;
 	}
 
 	public void run() throws GameActionException {
 		super.run();
+		System.out.println(status);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
 			if (status == MinerStatus.NOTHING) {
@@ -80,16 +83,28 @@ public class Miner extends Unit {
 					break;
 				case RUSH_ENEMY_HQ:
 					if(rc.getLocation().isAdjacentTo(enemyHQ) == true){
+						if(rc.getTeamSoup()<RobotType.DESIGN_SCHOOL.cost) break;
 						Direction di = null;
 						int best = Integer.MAX_VALUE;
 						for(Direction d: directions){
 							int dist = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));
+							if(d == Direction.SOUTHWEST){
+								System.out.println("HUHUHUHUH " + dist + " "  + best + " " + rushHQHelper(best, dist) + " " + rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d));
+							}
 							if(rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d) && rushHQHelper(best, dist)) {
-								best = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));
+								best = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));;
+								System.out.println("DASDADAD");
 								di = d;
+								if(d == Direction.SOUTHWEST){
+									System.out.println("look ma i made it");
+								}
 							}
 						}
 						if(di == null){
+							status = MinerStatus.SEARCHING;
+						}
+						else{
+							rc.buildRobot(RobotType.DESIGN_SCHOOL, di);
 							status = MinerStatus.SEARCHING;
 						}
 					}
@@ -102,7 +117,7 @@ public class Miner extends Unit {
 							status = prevStatus == null ? MinerStatus.MINING : prevStatus;
 						}
 						for (Direction dir : directions) {
-							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 &&
+							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 && buildingType != null &&
 									rc.canBuildRobot(buildingType, dir)) {
 								rc.buildRobot(buildingType, dir);
 								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
@@ -223,9 +238,9 @@ public class Miner extends Unit {
 		}
 	}
 	public boolean rushHQHelper(int a, int b){
-		if(a == 1) return false;
-		if(a == 2) return false;
-		if(a == 0 && (b==1 || b == 2)) return true;
+		if(a == 0) return true;
+		if(a == 1||a==2) return false;
+		if(b == 0) return false;
 		if(b<= a) return true;
 		return false;
 	}
@@ -469,9 +484,12 @@ public class Miner extends Unit {
 				return true;
 			case UNWAIT:
 				if (message.data[0] != rc.getID()) return false;
-				prevStatus = null;
-				status = MinerStatus.MINING;
-				return true;
+				switch(message.data[1]){
+					case 2:
+						status = MinerStatus.FIND_ENEMY_HQ;
+						return true;
+				}
+				return false;
 			case REFINERY_LOC:
 				if (message.data[2] != rc.getID()) return false;
 				locREFINERY.add(new MapLocation(message.data[0], message.data[1]));

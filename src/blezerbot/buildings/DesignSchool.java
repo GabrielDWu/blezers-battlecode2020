@@ -27,6 +27,9 @@ public class DesignSchool extends Building {
 	public void run() throws GameActionException {
 		super.run();
 		if (locHQ == null) return;
+		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 4){
+			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
+		}
 		switch (status){
 			case TURTLE_MAKING:
 				/* for convenience of landscapers, try this specific location first */
