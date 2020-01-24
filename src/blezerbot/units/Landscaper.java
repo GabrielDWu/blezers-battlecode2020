@@ -7,7 +7,7 @@ import blezerbot.*;
 public class Landscaper extends Unit {
 
 	enum LandscaperStatus {
-		ATTACKING,
+		ATTACKING_HQ,
 		DEFENDING,
 		NOTHING,
 		BUILDING,
@@ -16,6 +16,7 @@ public class Landscaper extends Unit {
 	LandscaperStatus status;
 	MapLocation locDS;
 	int filledOffset;
+	RobotType attackType = RobotType.HQ;
 	int idDS;
 	boolean doneMoving; /* are we in proper wall position */
 	int moveTries; /* how many times have we tried to move here */
@@ -48,11 +49,16 @@ public class Landscaper extends Unit {
 		if(locHQ != null){
 			d = rc.getLocation().directionTo(locHQ);
 		}
-		if(enemyHQ != null && enemyHQ.distanceSquaredTo(rc.getLocation())<= 4){
-			status = LandscaperStatus.ATTACKING;
+		if(enemyHQ != null && enemyHQ.distanceSquaredTo(rc.getLocation())<= 10 && surroundedLocation(enemyHQ) == false){
+			status = LandscaperStatus.ATTACKING_HQ;
 		}
+		System.out.println(status);
 		switch (status) {
-			case ATTACKING:
+			case ATTACKING_HQ:
+				if(surroundedLocation(enemyHQ)){
+					status = LandscaperStatus.TERRAFORMING;
+					break;
+				}
 				Direction attackDir = rc.getLocation().directionTo(enemyHQ);
 				if(rc.getDirtCarrying() < 1){
 					Direction dir = randomDirection();

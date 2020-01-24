@@ -49,6 +49,17 @@ public abstract class Unit extends Robot {
 			}
 		}
 	}
+	//optimistic surrounded detection for land troops
+	public boolean surroundedLocation(MapLocation a) throws GameActionException {
+		if(rc.canSenseLocation(a) == false) return true;
+		for(Direction dir: directions){
+			MapLocation nloc = a.add(dir);
+			if(rc.canSenseLocation(nloc)){
+				if(!(rc.senseFlooding(nloc)  ||rc.senseRobotAtLocation(nloc) != null)) return true;
+			}
+		}
+		return false;
+	}
 	public void startLife() throws GameActionException {
 		super.startLife();
 		returnGetLocationInRadius = new ArrayList<MapLocation>();
