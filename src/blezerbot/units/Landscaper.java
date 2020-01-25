@@ -17,6 +17,7 @@ public class Landscaper extends Unit {
 	}
 	LandscaperStatus status;
 	MapLocation buryTarget = null;
+	Direction terraformTarget;
 	MapLocation locDS;
 	int filledOffset;
 	RobotType attackType = RobotType.HQ;
@@ -25,7 +26,7 @@ public class Landscaper extends Unit {
 	int moveTries; /* how many times have we tried to move here */
 	boolean tryingClockwise;
 	boolean movedOnWall;
-	final static int moveCap = 20;
+	final static int moveCap = 125; /* how many tries to move into wall position before stopping? */
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
@@ -43,6 +44,7 @@ public class Landscaper extends Unit {
 		moveTries = 0;
 		tryingClockwise = true;
 		movedOnWall = false;
+		terraformTarget = null;
 	}
 	public int buryPriority(RobotType r){
 		if(r == RobotType.NET_GUN) return 0;
@@ -176,6 +178,8 @@ public class Landscaper extends Unit {
 								if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
 							}
 						}
+
+						/* if totally necessary, replace this with filled logic (and re-test it) */
 						if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) {
 							if (tryingClockwise && !movedOnWall) tryingClockwise = false;
 							else doneMoving = true;
@@ -257,18 +261,22 @@ public class Landscaper extends Unit {
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					tryTerraform(mloc, Direction.CENTER, nearLattice);
-					if (nearLattice != null) {
-						Direction dir = bestTerraform(nearLattice);
-						if(dir != null){
-							tryTerraform(mloc, dir, nearLattice);
+					if (terraformTarget != null) {
+						if (!tryTerraform(mloc, terraformTarget, nearLattice)) {
+							tryMove(terraformTarget);
+							terraformTarget = null;
 						}
-						else{
+					}
+
+					if (terraformTarget == null) {
+						Direction dir = bestTerraform(nearLattice);
+
+						if (dir == null) {
 							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
 							else moveAwayFromHQ(mloc);
+						} else {
+							terraformTarget = dir;
 						}
-					} else {
-						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-						else moveAwayFromHQ(mloc);
 					}
 				}
 				break;

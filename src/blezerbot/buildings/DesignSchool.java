@@ -32,7 +32,7 @@ public class DesignSchool extends Building {
 		}
 		switch (status){
 			case TURTLE_MAKING:
-				/* try this first */
+				/* for convenience of landscapers, try this specific location first */
 				Direction adj = rc.getLocation().directionTo(locHQ);
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
 					rc.buildRobot(RobotType.LANDSCAPER, adj);
