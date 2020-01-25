@@ -17,7 +17,7 @@ public class Miner extends Unit {
 		NOTHING,
 		FIND_ENEMY_HQ,
 		RUSH_ENEMY_HQ,
-		BUILD_VAPORATOR
+		BUILD_VAPORATOR,
 	}
 
 	MinerStatus status = null;
@@ -85,6 +85,7 @@ public class Miner extends Unit {
 		System.out.println(Landscaper.terraformHeight);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
+			System.out.println(status);
 			if (status == MinerStatus.NOTHING) {
 				if (!safeFromFlood[Direction.CENTER.ordinal()]) {
 					randomMove();

@@ -14,7 +14,8 @@ public class DeliveryDrone extends Unit {
 		ATTACKING,	//Diving in to abduct landscapers from enemy wall
 		NOTHING,
 		HARASS,
-		DROP_WATER
+		DROP_WATER,
+		DEFENDING
 	}
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
