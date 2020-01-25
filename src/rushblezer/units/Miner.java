@@ -472,9 +472,12 @@ public class Miner extends Unit {
 				return true;
 			case UNWAIT:
 				if (message.data[0] != rc.getID()) return false;
-				prevStatus = null;
-				status = MinerStatus.MINING;
-				return true;
+				switch(message.data[1]){
+					case 2:
+						status = MinerStatus.FIND_ENEMY_HQ;
+						return true;
+				}
+				return false;
 			case REFINERY_LOC:
 				if (message.data[2] != rc.getID()) return false;
 				locREFINERY.add(new MapLocation(message.data[0], message.data[1]));

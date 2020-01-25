@@ -155,6 +155,11 @@ public class HQ extends Building {
 				debug("Added unit " + units[unitType.ordinal()].get(units[unitType.ordinal()].size()-1));
 
 				switch(unitType){
+					case MINER:
+						if(units[RobotType.MINER.ordinal()].size() == 1){
+							writeMessage(Message.doSomething(unitID, 2));	//Rush
+							addMessageToQueue();
+						}
 					case LANDSCAPER:
 						if(units[RobotType.LANDSCAPER.ordinal()].size() <= wallSquares){
 							writeMessage(Message.doSomething(unitID, 0));	//Defend

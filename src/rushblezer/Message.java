@@ -96,6 +96,7 @@ public class Message {
 	    /*
 	    0 - DEFENDING (landscaper)
 	    1 - TERRAFORMING (landscaper)
+	    2 - FIND_ENEMY_HQ (Miner)
 	     */
 		return new Message(MessageType.UNWAIT, typeData[8], new int[]{robotID, instruction});
 	}
