@@ -158,7 +158,7 @@ public class Landscaper extends Unit {
 						boolean done = false;
 						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
 						//debug("DIFF " + diff);
-						if (diff > 3) {
+						if (diff > 0) {
 							// if (tryingClockwise) System.out.println("DIFF " + diff + " " + rc.canDigDirt(moveDir));
 							if (rc.canDigDirt(moveDir)) {
 								rc.digDirt(moveDir);
@@ -173,7 +173,7 @@ public class Landscaper extends Unit {
 									}
 								}
 							}
-						} else if (diff < -3) {
+						} else if (diff < 0) {
 							if (rc.getDirtCarrying() < 1) {
 								Direction mdir = null;
 								int mdirt = Integer.MIN_VALUE;
