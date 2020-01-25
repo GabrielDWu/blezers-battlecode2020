@@ -17,6 +17,7 @@ public class Landscaper extends Unit {
 	}
 	LandscaperStatus status;
 	MapLocation buryTarget = null;
+	Direction terraformTarget;
 	MapLocation locDS;
 	int filledOffset;
 	RobotType attackType = RobotType.HQ;
@@ -25,7 +26,7 @@ public class Landscaper extends Unit {
 	int moveTries; /* how many times have we tried to move here */
 	boolean tryingClockwise;
 	boolean movedOnWall;
-	final static int moveCap = 125;
+	final static int moveCap = 125; /* how many tries to move into wall position before stopping? */
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
@@ -43,6 +44,7 @@ public class Landscaper extends Unit {
 		moveTries = 0;
 		tryingClockwise = true;
 		movedOnWall = false;
+		terraformTarget = null;
 	}
 	public int buryPriority(RobotType r){
 		if(r == RobotType.NET_GUN) return 0;
@@ -244,19 +246,23 @@ public class Landscaper extends Unit {
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					tryTerraform(mloc, Direction.CENTER, nearLattice);
-					if (nearLattice != null) {
-						Direction dir = bestTerraform(nearLattice);
-						System.out.println(dir);
-						if(dir != null){
-							tryTerraform(mloc, dir, nearLattice);
+
+					if (terraformTarget != null) {
+						if (!tryTerraform(mloc, terraformTarget, nearLattice)) {
+							tryMove(terraformTarget);
+							terraformTarget = null;
 						}
-						else{
+					}
+
+					if (terraformTarget == null) {
+						Direction dir = bestTerraform(nearLattice);
+
+						if (dir == null) {
 							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
 							else moveAwayFromHQ(mloc);
+						} else {
+							terraformTarget = dir;
 						}
-					} else {
-						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-						else moveAwayFromHQ(mloc);
 					}
 				}
 				break;
@@ -449,7 +455,7 @@ public class Landscaper extends Unit {
 		if(Math.abs(newElevation - currentElevation)>terraformThreshold) return false;
 		if(newElevation == terraformHeight) return false;
 		if(isOurBuilding(nloc)) return false;
-		System.out.println("BAD");
+		// System.out.println("BAD");
 		if(newElevation>terraformHeight){
 			if(rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit){
 				if(attackEnemyBuilding()) return true;
