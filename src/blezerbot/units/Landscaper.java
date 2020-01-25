@@ -77,14 +77,16 @@ public class Landscaper extends Unit {
 									buryTarget = r.location;
 								}
 							}
-							lastStatus = status;
+							if (status != LandscaperStatus.NOTHING) lastStatus = status;
+							else if (mloc.isAdjacentTo(locHQ)) lastStatus = LandscaperStatus.DEFENDING;
+							else lastStatus = LandscaperStatus.TERRAFORMING;
 							status = LandscaperStatus.BURY_ENEMY_BUILDING;
 						}
 					}
 				}
 			}
 		}
-
+		System.out.println(status + " " + lastStatus);
 		if(locHQ != null){
 			d = rc.getLocation().directionTo(locHQ);
 		}
@@ -196,7 +198,7 @@ public class Landscaper extends Unit {
 						}
 
 						if (!done) {
-							System.out.println(moveTries);
+							// System.out.println(moveTries);
 							/* if totally necessary, replace this with filled logic (and re-test it) */
 							if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) {
 								if (tryingClockwise && !movedOnWall) tryingClockwise = false;
