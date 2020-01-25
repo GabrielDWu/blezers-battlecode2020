@@ -385,7 +385,6 @@ public class Landscaper extends Unit {
 
 		return false;
 	}
-	public Direction hugClockwise
 	public boolean isOurRobot(MapLocation loc)  throws GameActionException {
 		RobotInfo info = rc.senseRobotAtLocation(loc);
 
