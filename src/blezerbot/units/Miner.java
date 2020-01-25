@@ -55,6 +55,7 @@ public class Miner extends Unit {
 		enemyHQc = -1;
 	}
 	public boolean canBuildVaporator(MapLocation a) throws GameActionException {
+		if(rc.canSenseLocation(a) == false) return false;
 		if(rc.senseElevation(a) < vaporatorHeight) return false;
 		boolean ok = false;
 		if(isLattice(a)) return false;
