@@ -52,6 +52,7 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
+		System.out.println(status);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
 			if (status == MinerStatus.NOTHING) {
@@ -71,7 +72,6 @@ public class Miner extends Unit {
 			int w = rc.getMapWidth();
 			switch (status) {
 				case FIND_ENEMY_HQ:
-					System.out.println(rc.getRoundNum() + "HUH");
 					if(rc.getRoundNum()>=300) {
 						status = MinerStatus.SEARCHING;
 						break;
@@ -153,8 +153,13 @@ public class Miner extends Unit {
 				case SEARCHING:
 					MapLocation[] nsoup = rc.senseNearbySoup();
 					if (nsoup.length > 0) {
-						status = MinerStatus.MINING;
-						soupLoc = nsoup[0];
+						for (int i = 0; i < nsoup.length; i++) {
+							if (soupTries[nsoup[i].x][nsoup[i].y] <= 6) {
+								status = MinerStatus.MINING;
+								soupLoc = nsoup[i];
+								break;
+							}
+						}
 					}
 					if (status == MinerStatus.SEARCHING) {
 						findSoup();
@@ -451,11 +456,9 @@ public class Miner extends Unit {
 
 	public boolean executeMessage(Message message){
 		/*Returns true if message applies to me*/
-		System.out.println("BE EXECUTE");
 		if(super.executeMessage(message)){
 			return true;
 		}
-		System.out.println("EXECUTING STUFF");
 		switch (message.type) {
 			case BIRTH_INFO:
 				//Miners want to store refinery locations
