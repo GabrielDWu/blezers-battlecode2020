@@ -54,6 +54,7 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		visited[rc.getLocation().x][rc.getLocation().y]++;
 		super.run();
 		MapLocation mloc = rc.getLocation();
 		Direction d = null;
@@ -86,7 +87,7 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		System.out.println(status);
-		//if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
+		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -384,7 +385,7 @@ public class Landscaper extends Unit {
 
 		return false;
 	}
-
+	public Direction hugClockwise
 	public boolean isOurRobot(MapLocation loc)  throws GameActionException {
 		RobotInfo info = rc.senseRobotAtLocation(loc);
 
