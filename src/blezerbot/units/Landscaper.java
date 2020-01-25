@@ -60,6 +60,7 @@ public class Landscaper extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
+		if(status==LandscaperStatus.NOTHING)debug("NOTHING");
 		visited[rc.getLocation().x][rc.getLocation().y]++;
 		MapLocation mloc = rc.getLocation();
 		Direction d = null;
@@ -152,7 +153,7 @@ public class Landscaper extends Unit {
 					Direction moveDir = getNextWallDirection(tryingClockwise);
 					if (rc.canSenseLocation(mloc.add(moveDir))) {
 						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
-						System.out.println("DIFF " + diff);
+						//debug("DIFF " + diff);
 						if (diff > 3) {
 							if (rc.canDigDirt(moveDir)) rc.digDirt(moveDir);
 							else {
@@ -817,9 +818,12 @@ public class Landscaper extends Unit {
                     case 0:
                         if (status != LandscaperStatus.BUILDING) status = LandscaperStatus.DEFENDING;
                         return true;
-                    case 1:
-                        status = LandscaperStatus.TERRAFORMING;
-                        return true;
+					case 1:
+						status = LandscaperStatus.TERRAFORMING;
+						return true;
+					case 3:
+						status = LandscaperStatus.CORNER;
+						return true;
                 }
                 return false;
 
