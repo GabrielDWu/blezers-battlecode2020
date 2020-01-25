@@ -27,7 +27,8 @@ public class Landscaper extends Unit {
 	int moveTries; /* how many times have we tried to move here */
 	boolean tryingClockwise;
 	boolean movedOnWall;
-	final static int moveCap = 125; /* how many tries to move into wall position before stopping? */
+	final static int moveCap = 15; /* how many tries to move into a position without our robot */
+	final static int blockedCap = 125; /* how many tries to move into a position with our robot */
 	final static int terraformHeight = 10; /* how high should I make the land? */
 	final static int terraformDist = 3; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
@@ -87,7 +88,7 @@ public class Landscaper extends Unit {
 				}
 			}
 		}
-		System.out.println(status + " " + lastStatus);
+		// System.out.println(status + " " + lastStatus);
 		if(locHQ != null){
 			d = rc.getLocation().directionTo(locHQ);
 		}
@@ -153,7 +154,7 @@ public class Landscaper extends Unit {
 				// }
 				if (!doneMoving) {
 					Direction moveDir = getNextWallDirection(tryingClockwise);
-					if (rc.canSenseLocation(mloc.add(moveDir))) {
+					if (rc.canSenseLocation(mloc.add(moveDir)) && !isOurRobot(mloc.add(moveDir))) {
 						boolean done = false;
 						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
 						//debug("DIFF " + diff);
@@ -191,7 +192,7 @@ public class Landscaper extends Unit {
 								}
 							}
 							else {
-								if (attackEnemyBuilding()) done = true;;
+								if (attackEnemyBuilding()) done = true;
 								if (rc.canDepositDirt(moveDir)) {
 									rc.depositDirt(moveDir);
 									done = true;
@@ -202,13 +203,16 @@ public class Landscaper extends Unit {
 						if (!done) {
 							// System.out.println(moveTries);
 							/* if totally necessary, replace this with filled logic (and re-test it) */
-							if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) {
+							if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) { 
+								if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+								else doneMoving = true;
+							} else if (isOurRobot(mloc.add(moveDir)) && Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)) > 5) { /* 5 is arbitrary */
 								if (tryingClockwise && !movedOnWall) tryingClockwise = false;
 								else doneMoving = true;
 							} else {
 								if (isOurRobot(mloc.add(moveDir))) { /* replace with filled later */
 									moveTries++;
-									if (moveTries >= moveCap) {
+									if (moveTries >= blockedCap) {
 										if (tryingClockwise && !movedOnWall) tryingClockwise = false;
 										else doneMoving = true;
 										moveTries = 0;
@@ -216,6 +220,13 @@ public class Landscaper extends Unit {
 								} else if (tryMove(moveDir)) {
 									moveTries = 0;
 									movedOnWall = true;
+								} else {
+									moveTries++;
+									if (moveTries >= moveCap) {
+										if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+										else doneMoving = true;
+										moveTries = 0;
+									}
 								}
 							}
 						}
