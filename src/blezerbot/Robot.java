@@ -192,7 +192,9 @@ public abstract class Robot {
 
 	/* will we dig from this square when terraforming? */
 	public boolean isLattice(MapLocation a) {
-		return (a.x % 2 == locHQ.x % 2) && (a.y % 2 == locHQ.y % 2);
+		return (((a.x % 2 == locHQ.x % 2) && (a.y % 2 == locHQ.y % 2)) &&
+                !(Math.abs(a.x-locHQ.x)==2 && Math.abs(a.y-locHQ.y)==2) && !(a==locHQ)) ||
+                (Math.abs(a.x-locHQ.x)==3 && Math.abs(a.y-locHQ.y)==3);
 	}
 
 	/* will we build on this square when terraforming? */
