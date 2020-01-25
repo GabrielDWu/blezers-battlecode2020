@@ -47,7 +47,7 @@ public class HQ extends Building {
 
 			if (isValidWall(nloc)) ++wallSquares;
 		}
-
+		debug("Wall Squares: " + wallSquares);
 		isFarFromEdge = (loc.x >= 2 && loc.y >=2 && loc.x < rc.getMapWidth()-2 && loc.y < rc.getMapHeight()-2);
 	}
 
@@ -172,6 +172,7 @@ public class HQ extends Building {
 							//writeMessage(Message.doSomething(unitID, 2));	//Rush
 							//addMessageToQueue();
 						}
+						break;
 					case LANDSCAPER:
 						if(enemyHQ == null || location.distanceSquaredTo(enemyHQ) > 18){
 							debug("domestic " + unitID);
@@ -180,6 +181,7 @@ public class HQ extends Building {
 								writeMessage(Message.doSomething(unitID, 0));	//Defend
 								addMessageToQueue();
 							}else if(isFarFromEdge && domesticScapers <= wallSquares+12){
+								debug("Tell corner");
 								writeMessage(Message.doSomething(unitID, 3));	//Corner
 								addMessageToQueue();
 							}else{
