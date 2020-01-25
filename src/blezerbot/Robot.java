@@ -199,12 +199,12 @@ public abstract class Robot {
 
 	/* will we build on this square when terraforming? */
 	public boolean isForBuilding(MapLocation a) {
-		return !(a.x % 2 == locHQ.x % 2) && !(a.y % 2 == locHQ.x % 2);
+		return !(a.x % 2 == locHQ.x % 2) && !(a.y % 2 == locHQ.y % 2);
 	}
 
 	/* will we move on this square when terraforming? */
 	public boolean isForMovement(MapLocation a) {
-		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.x % 2);
+		return (a.x % 2 == locHQ.x % 2) ^ (a.y % 2 == locHQ.y % 2);
 	}
 
 	/* can we use this spot to build the wall */

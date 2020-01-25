@@ -34,6 +34,7 @@ public class Landscaper extends Unit {
 	final static int terraformTries = 20; /* how many random moves away from hq to try? */
 	int currentTerraformRadiusSquared = 1;
 	int currentDirection = 0; // 0 cw 1 ccw
+	LandscaperStatus lastStatus;
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
 	}
@@ -46,6 +47,7 @@ public class Landscaper extends Unit {
 		tryingClockwise = true;
 		movedOnWall = false;
 		terraformTarget = null;
+		lastStatus = LandscaperStatus.NOTHING;
 	}
 	public int buryPriority(RobotType r){
 		if(r == RobotType.NET_GUN) return 0;
@@ -75,6 +77,7 @@ public class Landscaper extends Unit {
 									buryTarget = r.location;
 								}
 							}
+							lastStatus = status;
 							status = LandscaperStatus.BURY_ENEMY_BUILDING;
 						}
 					}
@@ -149,14 +152,19 @@ public class Landscaper extends Unit {
 					Direction moveDir = getNextWallDirection(tryingClockwise);
 					if (rc.canSenseLocation(mloc.add(moveDir))) {
 						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
+						System.out.println("DIFF " + diff);
 						if (diff > 3) {
 							if (rc.canDigDirt(moveDir)) rc.digDirt(moveDir);
 							else {
 								attackEnemyBuilding();
-								for (Direction dir : directionswcenter) {
-									if (rc.canDepositDirt(dir) && !mloc.add(dir).equals(locHQ) && !mloc.add(dir).equals(locDS) && !mloc.add(dir).isAdjacentTo(locHQ)) {
-										rc.depositDirt(dir);
-									}
+								// for (Direction dir : directionswcenter) {
+								// 	if (rc.canDepositDirt(dir) && !mloc.add(dir).equals(locHQ) && !mloc.add(dir).equals(locDS) && !mloc.add(dir).isAdjacentTo(locHQ)) {
+								// 		rc.depositDirt(dir);
+								// 	}
+								// }
+								Direction dir = findLattice(rc.getLocation());
+								if (dir != null) {
+									if (rc.canDepositDirt(dir)) rc.depositDirt(dir);
 								}
 							}
 						} else if (diff < -3) {
@@ -196,7 +204,6 @@ public class Landscaper extends Unit {
 								movedOnWall = true;
 							}
 						}
-						
 					}
 				}
 
@@ -338,7 +345,7 @@ public class Landscaper extends Unit {
 				break;
 			case BURY_ENEMY_BUILDING:
 				if(buryTarget == null || surroundedLocation(buryTarget)){
-					status = LandscaperStatus.TERRAFORMING;
+					status = lastStatus;
 					break;
 				}
 				attackDir = rc.getLocation().directionTo(buryTarget);
@@ -358,7 +365,7 @@ public class Landscaper extends Unit {
 							rc.depositDirt(attackDir);
 							/// if buried go back to terraforming
 							if(rc.senseRobotAtLocation(rc.getLocation().add(attackDir)) == null){
-								status = LandscaperStatus.TERRAFORMING;
+								status = lastStatus;
 								break;
 							}
 						}
@@ -593,7 +600,7 @@ public class Landscaper extends Unit {
 			if (isLattice(nloc) && kingDistance(nloc, locHQ) >= terraformDist) return dir;
 		}
 
-		return null; /* should never happen */
+		return null; /* should only happen if between wall and HQ */
 	}
 
 	public boolean[][] getOccupied() {
