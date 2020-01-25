@@ -30,24 +30,85 @@ public abstract class Unit extends Robot {
 			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 			if (rc.getType() != RobotType.DELIVERY_DRONE) {
 				if (_notFlooded == null) _notFlooded = new boolean[5][5];
-				System.out.println(Clock.getBytecodesLeft());
-				for (int i = 0; i < 5; i++) {
-					for (int j = 0; j < 5; j++) {
-						MapLocation l = rc.getLocation().translate(i-2, j-2);
-						if (rc.canSenseLocation(l) && rc.senseFlooding(l)) _notFlooded[i][j] = false;
-						else _notFlooded[i][j] = true;
-					}
+				MapLocation mloc = rc.getLocation();
+				boolean[] ni = _notFlooded[0];
+				MapLocation t = mloc.translate(-2, -2);
+				ni[0] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-2, -1);
+				ni[1] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-2, 0);
+				ni[2] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-2, 1);
+				ni[3] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-2, 2);
+				ni[4] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				ni = _notFlooded[1];
+				t = mloc.translate(-1, -2);
+				ni[0] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-1, -1);
+				ni[1] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-1, 0);
+				ni[2] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-1, 1);
+				ni[3] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(-1, 2);
+				ni[4] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				ni = _notFlooded[2];
+				t = mloc.translate(0, -2);
+				ni[0] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(0, -1);
+				ni[1] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(0, 0);
+				ni[2] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(0, 1);
+				ni[3] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(0, 2);
+				ni[4] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				ni = _notFlooded[3];
+				t = mloc.translate(1, -2);
+				ni[0] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(1, -1);
+				ni[1] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(1, 0);
+				ni[2] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(1, 1);
+				ni[3] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(1, 2);
+				ni[4] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				ni = _notFlooded[4];
+				t = mloc.translate(2, -2);
+				ni[0] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(2, -1);
+				ni[1] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(2, 0);
+				ni[2] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(2, 1);
+				ni[3] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				t = mloc.translate(2, 2);
+				ni[4] = !(rc.canSenseLocation(t) && rc.senseFlooding(t));
+				float w = GameConstants.getWaterLevel(rc.getRoundNum()+1);
+				int x;
+				int y;
+				for (Direction dir : directionswcenter) {
+					x = dir.dx + 2;
+					y = dir.dy + 2;
+					safeFromFlood[dir.ordinal()] = !rc.canSenseLocation(rc.adjacentLocation(dir)) || rc.senseElevation(rc.adjacentLocation(dir)) > w || (_notFlooded[x+1][y]&&_notFlooded[x+1][y+1]&&_notFlooded[x+1][y-1]&&_notFlooded[x-1][y]&&_notFlooded[x-1][y+1]&&_notFlooded[x-1][y-1]&&_notFlooded[x][y+1]&&_notFlooded[x][y-1]&&_notFlooded[x][y]);
 				}
-				for (Direction dir : directions) {
-					int x = dir.dx + 2;
-					int y = dir.dy + 2;
-					safeFromFlood[dir.ordinal()] = !rc.canSenseLocation(rc.adjacentLocation(dir)) || rc.senseElevation(rc.adjacentLocation(dir)) > GameConstants.getWaterLevel(rc.getRoundNum()+1) ||  _notFlooded[x+1][y]&&_notFlooded[x+1][y+1]&&_notFlooded[x+1][y-1]&&_notFlooded[x-1][y]&&_notFlooded[x-1][y+1]&&_notFlooded[x-1][y-1]&&_notFlooded[x][y+1]&&_notFlooded[x][y-1]&&_notFlooded[x][y];
-				}
-				System.out.println(Clock.getBytecodesLeft());
-				System.out.println(Arrays.toString(safeFromFlood));
-				System.out.println(Arrays.deepToString(_notFlooded));
 			}
 		}
+	}
+
+	//optimistic surrounded detection for land troops
+	public boolean surroundedLocation(MapLocation a) throws GameActionException {
+		if(rc.getLocation().isAdjacentTo(a)) return false;
+		if(rc.canSenseLocation(a) == false) return false;
+		for(Direction dir: directions){
+			MapLocation nloc = a.add(dir);
+			if(rc.canSenseLocation(nloc)){
+				if(!(rc.senseFlooding(nloc)  ||rc.senseRobotAtLocation(nloc) != null)) return false;
+			}
+		}
+		return true;
 	}
 	public void startLife() throws GameActionException {
 		super.startLife();

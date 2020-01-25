@@ -27,9 +27,10 @@ public class DesignSchool extends Building {
 	public void run() throws GameActionException {
 		super.run();
 		if (locHQ == null) return;
-		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 4){
+		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
+		System.out.println(status);
 		switch (status){
 			case TURTLE_MAKING:
 				/* for convenience of landscapers, try this specific location first */
@@ -50,7 +51,7 @@ public class DesignSchool extends Building {
 				break;
 			case RUSH_ENEMY_HQ:
 				/// don't want to waste resources
-				if(builtLandscapers>2) break;
+				if(builtLandscapers>3) break;
 				Direction di = null;
 				int best = Integer.MAX_VALUE;
 				for(Direction d: directions){
@@ -63,6 +64,7 @@ public class DesignSchool extends Building {
 					rc.buildRobot(RobotType.LANDSCAPER, di);
 					builtLandscapers++;
 				}
+				//System.out.println(rc.getTeamSoup() + " SOUP");
 			case MAKING:
 				if(builtLandscapers > 10) break;
 				for (Direction dir : directions) {

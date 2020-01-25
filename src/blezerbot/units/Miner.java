@@ -52,10 +52,12 @@ public class Miner extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(status);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
 			if (status == MinerStatus.NOTHING) {
+				if (!safeFromFlood[Direction.CENTER.ordinal()]) {
+					randomMove();
+				}
 				return;
 			}
 			if (status == null) status = MinerStatus.SEARCHING;
@@ -69,6 +71,11 @@ public class Miner extends Unit {
 			int w = rc.getMapWidth();
 			switch (status) {
 				case FIND_ENEMY_HQ:
+					System.out.println(rc.getRoundNum() + "HUH");
+					if(rc.getRoundNum()>=300) {
+						status = MinerStatus.SEARCHING;
+						break;
+					}
 					if (enemyHQ != null) {
 						status = MinerStatus.RUSH_ENEMY_HQ;
 						break;
@@ -88,16 +95,9 @@ public class Miner extends Unit {
 						int best = Integer.MAX_VALUE;
 						for(Direction d: directions){
 							int dist = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));
-							if(d == Direction.SOUTHWEST){
-								System.out.println("HUHUHUHUH " + dist + " "  + best + " " + rushHQHelper(best, dist) + " " + rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d));
-							}
 							if(rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d) && rushHQHelper(best, dist)) {
 								best = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));;
-								System.out.println("DASDADAD");
 								di = d;
-								if(d == Direction.SOUTHWEST){
-									System.out.println("look ma i made it");
-								}
 							}
 						}
 						if(di == null){
@@ -111,7 +111,9 @@ public class Miner extends Unit {
 					else{
 						goTo(enemyHQ);
 					}
+					break;
 				case BUILDING:
+					if(buildingType == null) status = MinerStatus.SEARCHING;
 					if(buildLocation == null){	// can build anywhere far from hq
 						if (buildingTries++ > 3){
 							status = prevStatus == null ? MinerStatus.MINING : prevStatus;
@@ -149,23 +151,20 @@ public class Miner extends Unit {
 					}
 					break;
 				case SEARCHING:
-					for (int x = -5; x <= 5; x++) {
-						if ((mloc.x+x) < 0 || (mloc.x+x) >= w) break;
-						for (int y = -5; y <= 5; y++) {
-							nloc = mloc.translate(x, y);
-							if (!(rc.canSenseLocation(nloc) && rc.senseSoup(nloc) > 0)) continue;
-							if (nloc.y >= 0 && nloc.y < h && soupTries[nloc.x][nloc.y] > 6) {
-								continue;
-							}
-							status = MinerStatus.MINING;
-							soupLoc = nloc;
-							break;
-						}
-						if (status != MinerStatus.SEARCHING) break;
+					MapLocation[] nsoup = rc.senseNearbySoup();
+					if (nsoup.length > 0) {
+						status = MinerStatus.MINING;
+						soupLoc = nsoup[0];
 					}
-					if (status == MinerStatus.SEARCHING) findSoup();
-					break;
+					if (status == MinerStatus.SEARCHING) {
+						findSoup();
+						break;
+					}
+					// start mining if it saw soup
 				case MINING:
+					if (!safeFromFlood[Direction.CENTER.ordinal()]) {
+						randomMove();
+					}
 					if (soupLoc != null && !mloc.isAdjacentTo(soupLoc)) {
 						for (Direction dir : directions) {
 							if (tryMine(dir)) { 
@@ -215,6 +214,9 @@ public class Miner extends Unit {
 					}
 					break;
 				case DEPOSITING:
+					if (!safeFromFlood[Direction.CENTER.ordinal()]) {
+						randomMove();
+					}
 					if (rc.canDepositSoup(mloc.directionTo(chosenRefinery))) rc.depositSoup(mloc.directionTo(chosenRefinery), rc.getSoupCarrying());
 					if (rc.getSoupCarrying() == 0) {
 						chosenRefinery = null;
@@ -449,9 +451,11 @@ public class Miner extends Unit {
 
 	public boolean executeMessage(Message message){
 		/*Returns true if message applies to me*/
+		System.out.println("BE EXECUTE");
 		if(super.executeMessage(message)){
 			return true;
 		}
+		System.out.println("EXECUTING STUFF");
 		switch (message.type) {
 			case BIRTH_INFO:
 				//Miners want to store refinery locations
