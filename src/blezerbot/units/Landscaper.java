@@ -28,7 +28,7 @@ public class Landscaper extends Unit {
 	boolean movedOnWall;
 	final static int moveCap = 125; /* how many tries to move into wall position before stopping? */
 	final static int terraformHeight = 10; /* how high should I make the land? */
-	final static int terraformDist = 4; /* how far should I be from the hq before starting? */
+	final static int terraformDist = 3; /* how far should I be from the hq before starting? */
 	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
 	final static int terraformTries = 20; /* how many random moves away from hq to try? */
 	int currentTerraformRadiusSquared = 1;
@@ -75,7 +75,7 @@ public class Landscaper extends Unit {
 								}
 							}
 							status = LandscaperStatus.BURY_ENEMY_BUILDING;
-							System.out.println("HERE");
+							// System.out.println("HERE");
 						}
 					}
 				}
@@ -88,7 +88,7 @@ public class Landscaper extends Unit {
 		if(enemyHQ != null && enemyHQ.distanceSquaredTo(rc.getLocation())<= 10 && surroundedLocation(enemyHQ) == false){
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
-		System.out.println(status);
+		// System.out.println(status);
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
 		switch (status) {
 			case ATTACKING_HQ:
@@ -107,7 +107,7 @@ public class Landscaper extends Unit {
 				if(enemyHQ != null){
 					if(!rc.getLocation().isAdjacentTo(enemyHQ)){
 						goTo(enemyHQ);
-						System.out.println("TRYING");
+						// System.out.println("TRYING");
 					}
 					else{
 						if(rc.canDepositDirt(attackDir)){
@@ -439,7 +439,7 @@ public class Landscaper extends Unit {
 					dir = d;
 					best = nloc.distanceSquaredTo(locHQ);
 				}
-				else if(best>nloc.distanceSquaredTo(locHQ)){
+				else if(best >= nloc.distanceSquaredTo(locHQ)){
 					best = nloc.distanceSquaredTo(locHQ);
 					dir = d;
 				}
@@ -606,7 +606,6 @@ public class Landscaper extends Unit {
 	public Direction getNextWallDirection(boolean clockwise) {
 		MapLocation mloc = rc.getLocation();
 		Direction moveDir = null, toHQ = mloc.directionTo(locHQ);
-		if (toHQ == null) return null;
 		
 		if (!clockwise) {
 			if (orthogonal(toHQ)) {
