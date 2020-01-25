@@ -284,6 +284,7 @@ public class Miner extends Unit {
 			for (MapLocation rloc : locREFINERY) {
 				if (rc.getLocation().distanceSquaredTo(rloc) < best) {
 					chosenRefinery = rloc;
+					best = rc.getLocation().distanceSquaredTo(rloc);
 				}
 			}
 		}
