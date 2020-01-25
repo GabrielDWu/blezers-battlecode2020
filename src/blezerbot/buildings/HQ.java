@@ -174,6 +174,7 @@ public class HQ extends Building {
 						}
 					case LANDSCAPER:
 						if(enemyHQ == null || location.distanceSquaredTo(enemyHQ) > 18){
+							debug("domestic " + unitID);
 							domesticScapers++;
 							if(domesticScapers <= wallSquares){
 								writeMessage(Message.doSomething(unitID, 0));	//Defend
