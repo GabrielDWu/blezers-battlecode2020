@@ -150,20 +150,21 @@ public class Landscaper extends Unit {
 				if (!doneMoving) {
 					Direction moveDir = getNextWallDirection(tryingClockwise);
 					if (rc.canSenseLocation(mloc.add(moveDir))) {
+						boolean done = false;
 						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
-						System.out.println("DIFF " + diff);
 						if (diff > 3) {
-							if (rc.canDigDirt(moveDir)) rc.digDirt(moveDir);
-							else {
-								attackEnemyBuilding();
-								// for (Direction dir : directionswcenter) {
-								// 	if (rc.canDepositDirt(dir) && !mloc.add(dir).equals(locHQ) && !mloc.add(dir).equals(locDS) && !mloc.add(dir).isAdjacentTo(locHQ)) {
-								// 		rc.depositDirt(dir);
-								// 	}
-								// }
-								Direction dir = findLattice(rc.getLocation());
+							// if (tryingClockwise) System.out.println("DIFF " + diff + " " + rc.canDigDirt(moveDir));
+							if (rc.canDigDirt(moveDir)) {
+								rc.digDirt(moveDir);
+								done = true;
+							} else {
+								if (attackEnemyBuilding()) done = true;
+								Direction dir = findWallLattice(mloc);
 								if (dir != null) {
-									if (rc.canDepositDirt(dir)) rc.depositDirt(dir);
+									if (rc.canDepositDirt(dir)) {
+										rc.depositDirt(dir);
+										done = true;
+									}
 								}
 							}
 						} else if (diff < -3) {
@@ -179,28 +180,38 @@ public class Landscaper extends Unit {
 										}
 									}
 								}
-								if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+								if (mdir != null && rc.canDigDirt(mdir)) {
+									rc.digDirt(mdir);
+									done = true;
+								}
 							}
 							else {
-								attackEnemyBuilding();
-								if (rc.canDepositDirt(moveDir)) rc.depositDirt(moveDir);
+								if (attackEnemyBuilding()) done = true;;
+								if (rc.canDepositDirt(moveDir)) {
+									rc.depositDirt(moveDir);
+									done = true;
+								}
 							}
 						}
 
-						/* if totally necessary, replace this with filled logic (and re-test it) */
-						if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) {
-							if (tryingClockwise && !movedOnWall) tryingClockwise = false;
-							else doneMoving = true;
-						} else {
-							if (isOurRobot(mloc.add(moveDir))) {
-								moveTries++;
-								if (moveTries >= moveCap) {
-									if (tryingClockwise && !movedOnWall) tryingClockwise = false;
-									else doneMoving = true;
+						if (!done) {
+							System.out.println(moveTries);
+							/* if totally necessary, replace this with filled logic (and re-test it) */
+							if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) {
+								if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+								else doneMoving = true;
+							} else {
+								if (isOurRobot(mloc.add(moveDir))) { /* replace with filled later */
+									moveTries++;
+									if (moveTries >= moveCap) {
+										if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+										else doneMoving = true;
+										moveTries = 0;
+									}
+								} else if (tryMove(moveDir)) {
+									moveTries = 0;
+									movedOnWall = true;
 								}
-							} else if (tryMove(moveDir)) {
-								moveTries = 0;
-								movedOnWall = true;
 							}
 						}
 					}
@@ -542,6 +553,16 @@ public class Landscaper extends Unit {
 			MapLocation nloc = mloc.add(dir);
 
 			if (isLattice(nloc) && kingDistance(nloc, locHQ) >= terraformDist) return dir;
+		}
+
+		return null; /* should only happen if between wall and HQ */
+	}
+
+	public Direction findWallLattice(MapLocation mloc) {
+		for (Direction dir: directions) {
+			MapLocation nloc = mloc.add(dir);
+
+			if (isLattice(nloc) && kingDistance(nloc, locHQ) > 0) return dir;
 		}
 
 		return null; /* should only happen if between wall and HQ */
