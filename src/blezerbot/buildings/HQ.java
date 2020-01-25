@@ -22,6 +22,8 @@ public class HQ extends Building {
 	int attackTimer;
 	MapLocation buildingMinerLoc;
 	MapLocation buildingDSLoc;
+	int domesticScapers;
+	boolean isFarFromEdge;
 
 	/* post turtle stuff */
 
@@ -45,6 +47,8 @@ public class HQ extends Building {
 
 			if (isValidWall(nloc)) ++wallSquares;
 		}
+
+		isFarFromEdge = (loc.x >= 2 && loc.y >=2 && loc.x < rc.getMapWidth()-2 && loc.y < rc.getMapHeight()-2);
 	}
 
 	public void run() throws GameActionException {
@@ -165,16 +169,22 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							writeMessage(Message.doSomething(unitID, 2));	//Rush
-							addMessageToQueue();
+							//writeMessage(Message.doSomething(unitID, 2));	//Rush
+							//addMessageToQueue();
 						}
 					case LANDSCAPER:
-						if(units[RobotType.LANDSCAPER.ordinal()].size() <= wallSquares){
-							writeMessage(Message.doSomething(unitID, 0));	//Defend
-							addMessageToQueue();
-						}else{
-							writeMessage(Message.doSomething(unitID, 1));	//Terraform
-							addMessageToQueue();
+						if(enemyHQ == null || location.distanceSquaredTo(enemyHQ) > 18){
+							domesticScapers++;
+							if(domesticScapers <= wallSquares){
+								writeMessage(Message.doSomething(unitID, 0));	//Defend
+								addMessageToQueue();
+							}else if(isFarFromEdge && domesticScapers <= wallSquares+12){
+								writeMessage(Message.doSomething(unitID, 3));	//Corner
+								addMessageToQueue();
+							}else{
+								writeMessage(Message.doSomething(unitID, 1));	//Terraform
+								addMessageToQueue();
+							}
 						}
 						break;
 					case DELIVERY_DRONE:

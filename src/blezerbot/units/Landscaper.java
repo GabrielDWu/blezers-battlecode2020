@@ -13,7 +13,8 @@ public class Landscaper extends Unit {
 		BUILDING,
         TERRAFORMING,
 		BURY_ENEMY_BUILDING,
-		HQ_TERRAFORM
+		HQ_TERRAFORM,
+		CORNER
 	}
 	LandscaperStatus status;
 	MapLocation buryTarget = null;
@@ -162,7 +163,7 @@ public class Landscaper extends Unit {
 							if (rc.getDirtCarrying() < 1) {
 								Direction mdir = null;
 								int mdirt = Integer.MIN_VALUE;
-								for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+								for (Direction dir : directions) {
 									if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
 										int ndirt = rc.senseElevation(mloc.add(dir));
 										if (ndirt > mdirt && rc.canDigDirt(dir)) {
@@ -204,7 +205,7 @@ public class Landscaper extends Unit {
 					if (rc.getDirtCarrying() < 1) {
 						Direction mdir = null;
 						int mdirt = Integer.MIN_VALUE;
-						for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+						for (Direction dir : directions) {
 							if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
 								int ndirt = rc.senseElevation(mloc.add(dir));
 								if (ndirt > mdirt && rc.canDigDirt(dir)) {
@@ -228,7 +229,62 @@ public class Landscaper extends Unit {
 				} else {
 					reinforceWall(mloc, d);
 				}
-				
+
+				break;
+			case CORNER:
+				if(locHQ == null) return;
+				boolean inPlace = (kingDistance(locHQ, rc.getLocation())==2) && !isLattice(rc.getLocation());
+				if(inPlace) {
+					if (rc.getDirtCarrying() < 1) {
+						Direction mdir = null;
+						int mdirt = Integer.MIN_VALUE;
+						for (Direction dir : directions) {
+							if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+								int ndirt = rc.senseElevation(mloc.add(dir));
+								if (ndirt > mdirt && rc.canDigDirt(dir)) {
+									mdir = dir;
+									mdirt = ndirt;
+								}
+							}
+						}
+						if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+					} else {
+						//Make sure it won't flood soon
+						if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()+5)) {
+							if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
+						}else {
+							attackEnemyBuilding();
+							Direction mdir = null;
+							int mdirt = Integer.MAX_VALUE;
+							for (Direction dir : directions) {
+								if (rc.canSenseLocation(mloc.add(dir)) && mloc.add(dir).isAdjacentTo(locHQ)) {
+									int ndirt = rc.senseElevation(mloc.add(dir));
+									if (ndirt < mdirt && rc.canDepositDirt(dir)) {
+										mdir = dir;
+										mdirt = ndirt;
+									}
+								}
+							}
+							rc.depositDirt(mdir);
+						}
+					}
+
+				}else {
+					Direction dir = rc.getLocation().directionTo(locHQ);
+
+					if(canMove(dir)) {
+						rc.move(dir);
+					}else {
+						for(int i=0; i<8; i++) {
+							dir = dir.rotateLeft();
+							if(canMove(dir) && !isLattice(mloc.add(dir))) {
+								rc.move(dir);
+								break;
+							}
+						}
+					}
+				}
+
 				break;
 			case TERRAFORMING:
 				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
@@ -321,7 +377,7 @@ public class Landscaper extends Unit {
 
 			Direction mdir = null;
 			int mdirt = Integer.MIN_VALUE;
-			for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+			for (Direction dir : directions) {
 				if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
 					int ndirt = rc.senseElevation(mloc.add(dir));
 					if (ndirt > mdirt && rc.canDigDirt(dir)) {
