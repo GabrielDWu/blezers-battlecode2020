@@ -30,10 +30,13 @@ public class DesignSchool extends Building {
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
+		System.out.println(status);
 		switch (status){
 			case TURTLE_MAKING:
+			//	System.out.println("HERE");
 				/* for convenience of landscapers, try this specific location first */
 				Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
+				//System.out.println(adj +  " ADJ");
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
 					rc.buildRobot(RobotType.LANDSCAPER, adj);
 					builtLandscapers++;
@@ -41,6 +44,7 @@ public class DesignSchool extends Building {
 
 				for (Direction dir : directions) {
 					if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
+					//	System.out.println(dir + " YAY " +  rc.canBuildRobot(RobotType.LANDSCAPER, dir));
 						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
 							rc.buildRobot(RobotType.LANDSCAPER, dir);
 							builtLandscapers++;

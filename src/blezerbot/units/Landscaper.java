@@ -60,7 +60,10 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
+
+	//	System.out.println("UGH" + " " + rc.getRoundNum());
 		super.run();
+	//	System.out.println(status);
 		if(status==LandscaperStatus.NOTHING)debug("NOTHING");
 		visited[rc.getLocation().x][rc.getLocation().y]++;
 		MapLocation mloc = rc.getLocation();
@@ -96,6 +99,7 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
+		System.out.println(status);
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -145,6 +149,7 @@ public class Landscaper extends Unit {
 						}
 					}
 				}
+			//	System.out.println("HERE");
 				// for(int i=0; i<8; i++){
 				// 	if(filled[i]){
 				// 		filledUpTo = i;
@@ -153,8 +158,11 @@ public class Landscaper extends Unit {
 				// 	}
 				// }
 				if (!doneMoving) {
+				//	System.out.println("!doneMoving");
 					Direction moveDir = getNextWallDirection(tryingClockwise);
+
 					if (rc.canSenseLocation(mloc.add(moveDir)) && !isOurRobot(mloc.add(moveDir))) {
+					//	System.out.println("WHY");
 						boolean done = false;
 						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
 						//debug("DIFF " + diff);
@@ -231,9 +239,11 @@ public class Landscaper extends Unit {
 							}
 						}
 					}
+					else doneMoving = true;
 				}
 
 				if (doneMoving) {
+				//	System.out.println("HUH");
 					if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
 					if (rc.getDirtCarrying() < 1) {
 						Direction mdir = null;
