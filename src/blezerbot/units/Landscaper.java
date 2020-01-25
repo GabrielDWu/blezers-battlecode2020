@@ -54,8 +54,8 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
-		visited[rc.getLocation().x][rc.getLocation().y]++;
 		super.run();
+		visited[rc.getLocation().x][rc.getLocation().y]++;
 		MapLocation mloc = rc.getLocation();
 		Direction d = null;
 		if(buryTarget == null){
