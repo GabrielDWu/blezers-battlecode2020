@@ -73,7 +73,6 @@ public class Landscaper extends Unit {
 								}
 							}
 							status = LandscaperStatus.BURY_ENEMY_BUILDING;
-							System.out.println("HERE");
 						}
 					}
 				}
@@ -86,7 +85,6 @@ public class Landscaper extends Unit {
 		if(enemyHQ != null && enemyHQ.distanceSquaredTo(rc.getLocation())<= 10 && surroundedLocation(enemyHQ) == false){
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
-		System.out.println(status);
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
 		switch (status) {
 			case ATTACKING_HQ:
@@ -105,7 +103,6 @@ public class Landscaper extends Unit {
 				if(enemyHQ != null){
 					if(!rc.getLocation().isAdjacentTo(enemyHQ)){
 						goTo(enemyHQ);
-						System.out.println("TRYING");
 					}
 					else{
 						if(rc.canDepositDirt(attackDir)){
@@ -125,7 +122,7 @@ public class Landscaper extends Unit {
 				boolean[] filled = new boolean[8];
 				int filledUpTo = -1;
 				if (locDS != null) filled[(locHQ.directionTo(rc.getLocation()).ordinal()+filledOffset)%8] = true;
-				RobotInfo[] r = rc.senseNearbyRobots(locHQ, 4, rc.getTeam());
+				RobotInfo[] r = rc.senseNearbyRobots(locHQ, 5, rc.getTeam());
 				for (int i = 0; i < r.length; i++) {
 					if(locDS == null && r[i].getType() == RobotType.DESIGN_SCHOOL) {
 						locDS = r[i].getLocation();
@@ -161,9 +158,18 @@ public class Landscaper extends Unit {
 							}
 						} else if (diff < -3) {
 							if (rc.getDirtCarrying() < 1) {
-								if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
-								else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
-								else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
+								Direction mdir = null;
+								int mdirt = Integer.MIN_VALUE;
+								for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+									if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+										int ndirt = rc.senseElevation(mloc.add(dir));
+										if (ndirt > mdirt && rc.canDigDirt(dir)) {
+											mdir = dir;
+											mdirt = ndirt;
+										}
+									}
+								}
+								if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
 							}
 							else {
 								attackEnemyBuilding();
@@ -192,9 +198,18 @@ public class Landscaper extends Unit {
 				if (doneMoving) {
 					if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
 					if (rc.getDirtCarrying() < 1) {
-						if (rc.canDigDirt(d.opposite())) rc.digDirt(d.opposite());
-						else if (rc.canDigDirt(d.opposite().rotateLeft())) rc.digDirt(d.opposite().rotateLeft());
-						else if (rc.canDigDirt(d.opposite().rotateRight())) rc.digDirt(d.opposite().rotateRight());
+						Direction mdir = null;
+						int mdirt = Integer.MIN_VALUE;
+						for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
+							if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+								int ndirt = rc.senseElevation(mloc.add(dir));
+								if (ndirt > mdirt && rc.canDigDirt(dir)) {
+									mdir = dir;
+									mdirt = ndirt;
+								}
+							}
+						}
+						if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
 					} else {
 						attackEnemyBuilding();
 						if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
@@ -244,7 +259,6 @@ public class Landscaper extends Unit {
 					tryTerraform(mloc, Direction.CENTER, nearLattice);
 					if (nearLattice != null) {
 						Direction dir = bestTerraform(nearLattice);
-						System.out.println(dir);
 						if(dir != null){
 							tryTerraform(mloc, dir, nearLattice);
 						}
@@ -300,7 +314,7 @@ public class Landscaper extends Unit {
 			Direction mdir = null;
 			int mdirt = Integer.MIN_VALUE;
 			for (Direction dir : new Direction[]{d.opposite(), d.opposite().rotateLeft(), d.opposite().rotateRight()}) {
-				if (rc.canSenseLocation(mloc.add(dir))) {
+				if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
 					int ndirt = rc.senseElevation(mloc.add(dir));
 					if (ndirt > mdirt && rc.canDigDirt(dir)) {
 						mdir = dir;
@@ -447,7 +461,6 @@ public class Landscaper extends Unit {
 		if(Math.abs(newElevation - currentElevation)>terraformThreshold) return false;
 		if(newElevation == terraformHeight) return false;
 		if(isOurBuilding(nloc)) return false;
-		System.out.println("BAD");
 		if(newElevation>terraformHeight){
 			if(rc.getDirtCarrying() >= RobotType.LANDSCAPER.dirtLimit){
 				if(attackEnemyBuilding()) return true;

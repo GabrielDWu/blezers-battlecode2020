@@ -21,6 +21,7 @@ public class HQ extends Building {
 	int buildingDesignSchool;
 	int attackTimer;
 	MapLocation buildingMinerLoc;
+	MapLocation buildingDSLoc;
 
 	/* post turtle stuff */
 
@@ -63,8 +64,7 @@ public class HQ extends Building {
 
 		// build wall
 		if (buildingMinerLoc != null) {
-			System.out.println(rc.senseRobotAtLocation(buildingMinerLoc).getID());
-			writeMessage(Message.build(RobotType.DESIGN_SCHOOL, rc.senseRobotAtLocation(buildingMinerLoc).getID(), buildingMinerLoc.add(buildingMinerLoc.directionTo(locHQ).opposite())));
+			writeMessage(Message.build(RobotType.DESIGN_SCHOOL, rc.senseRobotAtLocation(buildingMinerLoc).getID(), buildingDSLoc));
 			addMessageToQueue();
 			buildingDesignSchool = 1;
 			turtleDesignSchoolDir = rc.getLocation().directionTo(buildingMinerLoc);
@@ -82,9 +82,17 @@ public class HQ extends Building {
 		if (buildingDesignSchool == 0 && units[2 /*refinery*/].size() > 0 && rc.getTeamSoup() > 70 && rc.isReady()) {
 			for (Direction dir : orthogonalDirections) {
 				MapLocation minerLoc = rc.getLocation().add(dir);
-				MapLocation buildLoc = minerLoc.add(dir);
+				MapLocation buildLoc = minerLoc.add(dir.rotateRight());
 				if (rc.onTheMap(buildLoc) && Math.abs(rc.senseElevation(minerLoc)-rc.senseElevation(buildLoc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(buildLoc) && !rc.isLocationOccupied(minerLoc) && !rc.isLocationOccupied(buildLoc)) {
 					buildingMinerLoc = minerLoc;
+					buildingDSLoc = buildLoc;
+					rc.buildRobot(RobotType.MINER, dir);
+					break;
+				}
+				buildLoc = minerLoc.add(dir.rotateLeft());
+				if (rc.onTheMap(buildLoc) && Math.abs(rc.senseElevation(minerLoc)-rc.senseElevation(buildLoc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(buildLoc) && !rc.isLocationOccupied(minerLoc) && !rc.isLocationOccupied(buildLoc)) {
+					buildingMinerLoc = minerLoc;
+					buildingDSLoc = buildLoc;
 					rc.buildRobot(RobotType.MINER, dir);
 					break;
 				}
