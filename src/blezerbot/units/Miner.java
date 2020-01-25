@@ -82,10 +82,9 @@ public class Miner extends Unit {
 	}
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(Landscaper.terraformHeight);
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
-			System.out.println(status);
+			// System.out.println(status);
 			if (status == MinerStatus.NOTHING) {
 				if (!safeFromFlood[Direction.CENTER.ordinal()]) {
 					randomMove();
