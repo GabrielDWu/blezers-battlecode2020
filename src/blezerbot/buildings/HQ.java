@@ -169,8 +169,8 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							writeMessage(Message.doSomething(unitID, 2));	//Rush
-							addMessageToQueue();
+							// writeMessage(Message.doSomething(unitID, 2));	//Rush
+							// addMessageToQueue();
 						}
 						break;
 					case LANDSCAPER:

@@ -201,12 +201,11 @@ public class Landscaper extends Unit {
 						}
 
 						if (!done) {
-							// System.out.println(moveTries);
+							System.out.println(isOurRobot(mloc.add(moveDir)) + " " + Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)));
 							/* if totally necessary, replace this with filled logic (and re-test it) */
-							if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) { 
-								if (tryingClockwise && !movedOnWall) tryingClockwise = false;
-								else doneMoving = true;
-							} else if (isOurRobot(mloc.add(moveDir)) && Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)) > 5) { /* 5 is arbitrary */
+							if (isOurRobot(mloc.add(moveDir)) && Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)) > 5) { /* 5 is arbitrary */
+								doneMoving = true;
+							} else if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) { 
 								if (tryingClockwise && !movedOnWall) tryingClockwise = false;
 								else doneMoving = true;
 							} else {
