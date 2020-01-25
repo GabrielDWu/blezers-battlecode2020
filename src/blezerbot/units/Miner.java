@@ -65,7 +65,6 @@ public class Miner extends Unit {
 				break;
 			}
 		}
-		System.out.println(ok + " YAY");
 		if(a.distanceSquaredTo(locHQ) <= RobotType.VAPORATOR.pollutionRadiusSquared) ok = true;
 		if(!ok) return false;
 
@@ -75,9 +74,6 @@ public class Miner extends Unit {
 		MapLocation mloc = rc.getLocation();
 		for(Direction dir: directions){
 			MapLocation nloc= mloc.add(dir);
-			if(dir == Direction.SOUTH){
-				System.out.println(rc.canBuildRobot(RobotType.VAPORATOR, dir)  + " LOLOL " +canBuildVaporator(nloc) + " " + mloc.x + " " + mloc.y + " ");
-			}
 			if(rc.canBuildRobot(RobotType.VAPORATOR, dir) && canBuildVaporator(nloc)){
 				return dir;
 			}
@@ -104,13 +100,11 @@ public class Miner extends Unit {
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
 			Direction buildVaporatorDirection = buildVaporator();
-			System.out.println(status);
 			//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
 			if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER)){
 				status = MinerStatus.MINING;
 			}
 			if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && numVaporators<maxVaporators){
-				System.out.println(buildVaporatorDirection + " HUH "+ numVaporators);
 				if(buildVaporatorDirection != null){
 					status = MinerStatus.BUILD_VAPORATOR;
 				}
@@ -290,6 +284,7 @@ public class Miner extends Unit {
 			for (MapLocation rloc : locREFINERY) {
 				if (rc.getLocation().distanceSquaredTo(rloc) < best) {
 					chosenRefinery = rloc;
+					best = rc.getLocation().distanceSquaredTo(rloc);
 				}
 			}
 		}

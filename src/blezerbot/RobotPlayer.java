@@ -15,9 +15,8 @@ public strictfp class RobotPlayer {
             case DELIVERY_DRONE:     new DeliveryDrone(rc);     break;
             case FULFILLMENT_CENTER: new FulfillmentCenter(rc); break;
             case REFINERY:           new Refinery(rc);          break;
-            /*
             case VAPORATOR:          new Vaporator(rc);         break;
-            case NET_GUN:            new NetGun(rc);            break;*/
+            case NET_GUN:            new NetGun(rc);            break;
         }
     }
 }
