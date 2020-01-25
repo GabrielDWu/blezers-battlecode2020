@@ -25,6 +25,8 @@ public abstract class Robot {
 	public int base_wager = 2;
 	public int enemy_msg_cnt;   //How many enemy messages went through last round?
 	public int enemy_msg_sum;   //Total wagers of enemy messages last round.
+	public int numVaporators = 0;
+	public int maxVaporators = 8;
 	public Random r;
 	public Direction facing;
 	//public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
@@ -268,6 +270,13 @@ public abstract class Robot {
 				if (enemyHQ != null) return true;
 				enemyHQ = new MapLocation(message.data[0], message.data[1]);
 				return true;
+			case BIRTH_INFO:
+				RobotType unit_type = robot_types[message.data[0]];
+				if(unit_type == RobotType.VAPORATOR){
+					numVaporators++;
+					return true;
+				}
+
 		}
 	    return false;
     }
