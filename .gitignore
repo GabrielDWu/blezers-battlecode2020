@@ -32,3 +32,5 @@ battlecode-scaffold.iws
 .classpath
 .project
 .settings/
+client32/resources/app.asar
+client32/LICENSE.electron.txt
