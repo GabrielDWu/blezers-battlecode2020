@@ -4,6 +4,7 @@ import battlecode.common.*;
 import java.util.*;
 import java.lang.*;
 import blezerbot.*;
+import sun.plugin2.message.GetAppletMessage;
 
 public class Miner extends Unit {
 
@@ -15,7 +16,8 @@ public class Miner extends Unit {
 		BUILDING,
 		NOTHING,
 		FIND_ENEMY_HQ,
-		RUSH_ENEMY_HQ
+		RUSH_ENEMY_HQ,
+		BUILD_VAPORATOR
 	}
 
 	MinerStatus status = null;
@@ -31,6 +33,10 @@ public class Miner extends Unit {
 	MapLocation buildLocation = null;
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
+	int numVaporators = 0;
+	int maxVaporators = 8;
+	int vaporatorRadiusSquared = 9;
+	int vaporatorHeight = 0;
 	boolean sentFound = false;
 	int enemyHQc;
 	MapLocation locDS;
@@ -49,7 +55,32 @@ public class Miner extends Unit {
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
 	}
+	public boolean canBuildVaporator(MapLocation a) throws GameActionException {
+		if(rc.senseElevation(a) < vaporatorHeight) return false;
+		boolean ok = false;
+		if(isLattice(a)) return false;
+		for(MapLocation refine: locREFINERY){
+			if(refine.distanceSquaredTo(a) <= RobotType.VAPORATOR.pollutionRadiusSquared){
+				ok = true;
+				break;
+			}
+		}
+		if(a.distanceSquaredTo(locHQ) <= RobotType.VAPORATOR.pollutionRadiusSquared) ok = true;
+		if(!ok) return ok;
+		if(a.distanceSquaredTo(locHQ) < vaporatorRadiusSquared ) return false;
 
+		return true;
+	}
+	public Direction buildVaporator() throws GameActionException {
+		MapLocation mloc = rc.getLocation();
+		for(Direction dir: directions){
+			MapLocation nloc= mloc.add(dir);
+			if(rc.canBuildRobot(RobotType.VAPORATOR, dir) && canBuildVaporator(nloc)){
+				return dir;
+			}
+		}
+		return null;
+	}
 	public void run() throws GameActionException {
 		super.run();
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
@@ -69,7 +100,16 @@ public class Miner extends Unit {
 			}
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
+			Direction buildVaporatorDirection = buildVaporator();
+			if(status == MinerStatus.SEARCHING && numVaporators<maxVaporators){
+				if(buildVaporatorDirection != null){
+					status = MinerStatus.BUILD_VAPORATOR;
+				}
+			}
 			switch (status) {
+				case BUILD_VAPORATOR:
+					rc.buildRobot(RobotType.VAPORATOR,buildVaporatorDirection);
+					break;
 				case FIND_ENEMY_HQ:
 					if(rc.getRoundNum()>=300) {
 						status = MinerStatus.SEARCHING;
