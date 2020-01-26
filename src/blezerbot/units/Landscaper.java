@@ -28,7 +28,9 @@ public class Landscaper extends Unit {
 	int moveTries; /* how many times have we tried to move here */
 	boolean tryingClockwise;
 	boolean movedOnWall;
+	int floodTries;
 	public final static int moveCap = 15; /* how many tries to move into a position without our robot */
+	public final static int floodCap = 50; /* when the design school's build location is flooded for x turns, go into building mode */
 	public final static int blockedCap = 250; /* how many tries to move into a position with our robot */
 	public final static int terraformHeight = 10; /* how high should I make the land? */
 	public final static int terraformDist = 3; /* how far should I be from the hq before starting? */
@@ -48,6 +50,7 @@ public class Landscaper extends Unit {
 		movedOnWall = false;
 		terraformTarget = null;
 		lastStatus = LandscaperStatus.NOTHING;
+		floodTries = 0;
 	}
 	public int buryPriority(RobotType r){
 		if(r == RobotType.NET_GUN) return 0;
@@ -243,6 +246,10 @@ public class Landscaper extends Unit {
 					}
 
 					if (doneMoving) {
+						if (rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
+							++floodTries;
+							if (floodTries == floodCap) status = LandscaperStatus.BUILDING;
+						} else floodTries = 0;
 					//	System.out.println("HUH");
 						if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
 						if (rc.getDirtCarrying() < 1) {
