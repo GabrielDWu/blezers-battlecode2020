@@ -20,7 +20,7 @@ public class DeliveryDrone extends Unit {
 		DROP_WATER,
 		DEFENDING_HQ,
 	}
-	final static int droneRushThreshold = 40;
+	final static int droneRushThreshold = 20;
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
@@ -110,7 +110,7 @@ public class DeliveryDrone extends Unit {
 	}
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(status);
+		System.out.println(status + " " + rc.getRoundNum());
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 		ArrayList<MapLocation> senseLocations = getLocationsInRadius(rc.getLocation(), Math.min(rc.getCurrentSensorRadiusSquared(), 8));
