@@ -77,7 +77,7 @@ public class DeliveryDrone extends Unit {
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
-		cornerThreshold = 3;
+		//cornerThreshold = 3;
 	}
 	boolean adjacentToBase() throws GameActionException{
 		// for now i'll do this
