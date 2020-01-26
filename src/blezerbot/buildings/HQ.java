@@ -25,7 +25,7 @@ public class HQ extends Building {
 	MapLocation buildingDSLoc;
 	int domesticScapers;
 	boolean isFarFromEdge;
-	HQStatus status;
+	HQstatus status;
 
 	public static enum HQstatus{
 		FIRST_MINERS,
@@ -88,12 +88,12 @@ public class HQ extends Building {
 					}
 					break;
 				}else {
-					status = FIRST_LANDSCAPERS;
+					status = HQstatus.FIRST_LANDSCAPERS;
 					//No break here
 				}
 			case FIRST_LANDSCAPERS:
 
-			}
+
 		}
 
 
@@ -189,7 +189,7 @@ public class HQ extends Building {
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
 							//writeMessage(Message.doSomething(unitID, 2));	//Rush
-						}else if status=HQstatus.FIRST_LANDSCAPERS{
+						}else if (status==HQstatus.FIRST_LANDSCAPERS){
 							specialMiner = unitID;
 						}
 						break;
