@@ -58,7 +58,7 @@ public class HQ extends Building {
 
 			if (isValidWall(nloc)) {
 				++wallSquares;
-				if (!orthogonal(dir)) wallSquares++;
+				if (!orthogonal(dir)) wallSquares += 3;
 			}
 		}
 		isFarFromEdge = (loc.x >= 2 && loc.y >=2 && loc.x < rc.getMapWidth()-2 && loc.y < rc.getMapHeight()-2);
