@@ -129,6 +129,7 @@ public class Landscaper extends Unit {
 							}
 						}
 					}
+<<<<<<< HEAD
 					break;
 				case DEFENDING:
 					if (locHQ == null) {
@@ -139,6 +140,17 @@ public class Landscaper extends Unit {
 						keepGoing = true;
 						break;
 					}
+=======
+				}
+				break;
+			case DEFENDING:
+				if (locHQ == null) {
+					return;
+				}
+				if (idDS != -1 && !rc.canSenseRobot(idDS) && mloc.distanceSquaredTo(locDS) <= rc.getCurrentSensorRadiusSquared()) {
+					status = LandscaperStatus.BUILDING;
+				} else {
+>>>>>>> 9fe23886c4124de7569c8273e14a668ef7dfc984
 					boolean[] filled = new boolean[8];
 					int filledUpTo = -1;
 					if (locDS != null) filled[(locHQ.directionTo(rc.getLocation()).ordinal()+filledOffset)%8] = true;
@@ -167,6 +179,7 @@ public class Landscaper extends Unit {
 					//	System.out.println("!doneMoving");
 						Direction moveDir = getNextWallDirection(tryingClockwise);
 
+<<<<<<< HEAD
 						if (rc.canSenseLocation(mloc.add(moveDir))) {
 						//	System.out.println("WHY");
 							boolean done = false;
@@ -212,15 +225,70 @@ public class Landscaper extends Unit {
 											done = true;
 										}
 									}
+=======
+						if (rc.canSenseLocation(mloc.add(moveDir)) && !isOurRobot(mloc.add(moveDir))) {
+						//	System.out.println("WHY");
+							boolean done = false;
+							int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
+							//debug("DIFF " + diff);
+							if (diff > 0) {
+								// if (tryingClockwise) System.out.println("DIFF " + diff + " " + rc.canDigDirt(moveDir));
+								if (rc.canDigDirt(moveDir)) {
+									rc.digDirt(moveDir);
+									done = true;
+								} else {
+									if (attackEnemyBuilding()) done = true;
+									Direction dir = findWallLattice(mloc);
+									if (dir != null) {
+										if (rc.canDepositDirt(dir)) {
+											rc.depositDirt(dir);
+											done = true;
+										}
+									}
+								}
+							} else if (diff < 0) {
+								if (rc.getDirtCarrying() < 1) {
+									Direction mdir = null;
+									int mdirt = Integer.MIN_VALUE;
+									for (Direction dir : directions) {
+										if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+											int ndirt = rc.senseElevation(mloc.add(dir));
+											if (ndirt > mdirt && rc.canDigDirt(dir)) {
+												mdir = dir;
+												mdirt = ndirt;
+											}
+										}
+									}
+									if (mdir != null && rc.canDigDirt(mdir)) {
+										rc.digDirt(mdir);
+										done = true;
+									}
+								}
+								else {
+									if (attackEnemyBuilding()) done = true;
+									if (rc.canDepositDirt(moveDir)) {
+										rc.depositDirt(moveDir);
+										done = true;
+									}
+>>>>>>> 9fe23886c4124de7569c8273e14a668ef7dfc984
 								}
 							}
 
 							if (!done) {
+<<<<<<< HEAD
 								System.out.println(isOurRobot(mloc.add(moveDir)) + " " + Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)));
 								/* if totally necessary, replace this with filled logic (and re-test it) */
 								if (isOurRobot(mloc.add(moveDir)) && Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)) > 0) { /* means that the landscaper in front is doneMoving */
 									doneMoving = true;
 								} else if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) { 
+=======
+								// System.out.println(moveTries);
+								/* if totally necessary, replace this with filled logic (and re-test it) */
+								if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) { 
+									if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+									else doneMoving = true;
+								} else if (isOurRobot(mloc.add(moveDir)) && Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)) > 5) { /* 5 is arbitrary */
+>>>>>>> 9fe23886c4124de7569c8273e14a668ef7dfc984
 									if (tryingClockwise && !movedOnWall) tryingClockwise = false;
 									else doneMoving = true;
 								} else {
@@ -245,6 +313,7 @@ public class Landscaper extends Unit {
 								}
 							}
 						}
+						else doneMoving = true;
 					}
 
 					if (doneMoving) {
@@ -269,12 +338,19 @@ public class Landscaper extends Unit {
 						}
 					}
 					break;
+<<<<<<< HEAD
 				case BUILDING:
 					if (rc.getRoundNum() % 5 == 0) {
 						if (!correctWall()) {
 							reinforceWall(mloc, d);
 						}
 					} else {
+=======
+				}
+			case BUILDING:
+				if (rc.getRoundNum() % 5 == 0) {
+					if (!correctWall()) {
+>>>>>>> 9fe23886c4124de7569c8273e14a668ef7dfc984
 						reinforceWall(mloc, d);
 					}
 
