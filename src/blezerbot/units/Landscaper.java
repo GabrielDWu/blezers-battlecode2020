@@ -206,7 +206,6 @@ public class Landscaper extends Unit {
 								}
 							}
 
-							System.out.println(moveTries + " " + tryingClockwise);
 
 							if (!done) {
 								// System.out.println(isOurRobot(mloc.add(moveDir)) + " " + Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)));
