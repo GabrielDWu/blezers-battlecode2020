@@ -108,22 +108,17 @@ public class DeliveryDrone extends Unit {
 	}
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(badMap());
 		System.out.println(status);
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 		ArrayList<MapLocation> senseLocations = getLocationsInRadius(rc.getLocation(), Math.min(rc.getCurrentSensorRadiusSquared(), 8));
-	//	int cnt = 0;
 		for(MapLocation loc: senseLocations){
 			if(rc.canSenseLocation(loc) && rc.senseFlooding(loc) && !rc.isLocationOccupied(loc) &&
 					(closeWater == null || kingDistance(rc.getLocation(),loc) <= closeWaterDist)){
 				closeWater = loc;
 				closeWaterDist = kingDistance(rc.getLocation(),loc);
 			}
-		 //if(cnt <5)System.out.println("BYTE" + Clock.getBytecodeNum());
-		// cnt++;
-		}
-		//System.out.println(status + "ROUND 1/2: " + rc.getRoundNum());
+		};
 
 		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)){
 			for(Direction dir: directions){
@@ -133,7 +128,6 @@ public class DeliveryDrone extends Unit {
 				}
 			}
 		}
-	//	System.out.println(status + " Round SECOND: " + rc.getRoundNum());
 		if (locHQ == null) return;
 		/// maybe modify if we carry our own troops, idk how to sense held robot info
 		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DEFENDING_HQ && holdingTeam != rc.getTeam()){
@@ -144,7 +138,6 @@ public class DeliveryDrone extends Unit {
 		if(enemyHQ != null && harassCenter != enemyHQ && status == DeliveryDroneStatus.HARASS){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
-	//	status = DeliveryDroneStatus.DEFENDING_HQ;
 		switch(status) {
 			case DEFENDING_HQ:
 				if(locHQ == null){
@@ -171,7 +164,7 @@ public class DeliveryDrone extends Unit {
 					}
 				}
 				for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
-					if(enemy.type != RobotType.DELIVERY_DRONE){
+					if(enemy.type != RobotType.DELIVERY_DRONE && !isBuilding(enemy.type)){
 						if(investigate == null || rc.getLocation().distanceSquaredTo(enemy.getLocation()) <
 								rc.getLocation().distanceSquaredTo(investigate)) {
 							investigate = enemy.getLocation();
@@ -189,7 +182,6 @@ public class DeliveryDrone extends Unit {
 				}
 				else {
 					if (closeToHQ){
-						//System.out.println
 						MapLocation use = locHQ;
 						if(HQInCorner()) use = getCloseCornerHQ();
 						Direction dir = rc.getLocation().directionTo(use);
@@ -200,7 +192,6 @@ public class DeliveryDrone extends Unit {
 								break;
 							}
 						}
-					//	break;
 					}
 					Direction bestDir = null;
 					int dist = rc.getLocation().distanceSquaredTo(locHQ);
@@ -355,7 +346,7 @@ public class DeliveryDrone extends Unit {
 					}
 				}
 				for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
-					if(enemy.type != RobotType.DELIVERY_DRONE){
+					if(enemy.type != RobotType.DELIVERY_DRONE && !isBuilding(enemy.type)){
 						if(investigate == null || rc.getLocation().distanceSquaredTo(enemy.getLocation()) <
 								rc.getLocation().distanceSquaredTo(investigate)) {
 							investigate = enemy.getLocation();
