@@ -43,7 +43,7 @@ public class HQ extends Building {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
-		attackTimer = Integer.MAX_VALUE;
+		attackTimer = 300;
 		waitingForBuilding = Integer.MAX_VALUE;
 		units = new ArrayList[10];
 		for(int i=0; i<10; i++){
@@ -149,16 +149,13 @@ public class HQ extends Building {
 
 
 
-
 		attackTimer--;
-		if(attackTimer > 200 && units[7 /*drone*/].size() >= 7){
-			attackTimer = 200;
+        if(attackTimer == 0 && numDrones>=18) {
+        	attackTimer = 400;
+        	writeMessage(Message.droneAttack());
 		}
-		if(attackTimer <= 0){
-			attackTimer = 200;
-			writeMessage(Message.droneAttack());
-			System.out.println("Called attack");
-		}
+        if(attackTimer<= 0) attackTimer = 400;
+
 
 
 		//Broadcast important info every 9 rounds

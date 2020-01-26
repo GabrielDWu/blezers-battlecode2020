@@ -136,22 +136,24 @@ public class DeliveryDrone extends Unit {
 			status = DeliveryDroneStatus.DROP_WATER;
 		}
 		// assuming we will only harass their hq or ours
-		if(enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ)<=5 && status == DeliveryDroneStatus.HARASS){
+		if(enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ) <= harassCenter.distanceSquaredTo(locHQ) && status == DeliveryDroneStatus.HARASS){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
-		if(numDrones>=droneRushThreshold && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) {
+		/*if(numDrones>=droneRushThreshold && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) {
 			rushRound = rc.getRoundNum();
-			status = DeliveryDroneStatus.HARASS;
+			status = DeliveryDroneStatus.CIRCLING;
 			harassCenter = enemyHQ;
-		}
+		}*/
 		//System.out.println(rushRound + " " + numDrones + " " + status) ;
-		if(rushRound +100<= rc.getRoundNum()  && rushRound != -1 &&numDrones>=droneRushThreshold) {
+		if(rushRound +100<= rc.getRoundNum()  && rushRound != -1) {
 			//System.out.println("HUH");
 			status = DeliveryDroneStatus.ATTACKING;
 		}
 		if(rushRound + 175<= rc.getRoundNum() && rushRound!=-1){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
+	//	status = DeliveryDroneStatus.ATTACKING;
+		System.out.println(status + " " + rc.getRoundNum() + " "  + rushRound);
 		switch(status) {
 			case DEFENDING_HQ:
 				if(locHQ == null){
@@ -602,9 +604,15 @@ public class DeliveryDrone extends Unit {
 				status = DeliveryDroneStatus.PICK_UP;
 				return true;
 			case DRONE_ATTACK:
-				if(status == DeliveryDroneStatus.CIRCLING && rc.getLocation().distanceSquaredTo(enemyHQ)<40){
+				int ri = r.nextInt(5);
+				if(ri<=2) return false;
+				if(status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) rushRound = rc.getRoundNum();
+				if(status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) status = DeliveryDroneStatus.CIRCLING;
+
+			/*	if(status == DeliveryDroneStatus.CIRCLING && rc.getLocation().distanceSquaredTo(enemyHQ)<40){
 					status = DeliveryDroneStatus.ATTACKING;
-				}
+				}*/
+
 				return true;
 			case HARASS:
 				if (message.data[0] != rc.getID()) return false;
