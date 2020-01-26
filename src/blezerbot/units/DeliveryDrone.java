@@ -210,11 +210,11 @@ public class DeliveryDrone extends Unit {
 					Direction dir = rc.getLocation().directionTo(locHQ);
 					if (!badMap()){
 						for (int i = 0; i < 4; i++) {
-								Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
-								if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(locHQ) < dist) {
-									bestDir = nxt;
-									dist = rc.getLocation().add(nxt).distanceSquaredTo(locHQ);
-								}
+							Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+							if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(locHQ) < dist) {
+								bestDir = nxt;
+								dist = rc.getLocation().add(nxt).distanceSquaredTo(locHQ);
+							}
 						}
 						if (bestDir != null) {
 							rc.move(bestDir);
