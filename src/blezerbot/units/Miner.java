@@ -87,6 +87,7 @@ public class Miner extends Unit {
 				}
 				return;
 			}
+			System.out.println(status);
 			if (status == null) status = MinerStatus.SEARCHING;
 			setVisitedAndSeen();
 			MapLocation nloc = null;
@@ -153,7 +154,6 @@ public class Miner extends Unit {
 					}
 					break;
 				case BUILDING:
-
 					if(buildingType == null) status = MinerStatus.SEARCHING;
 					if(buildLocation == null){	// can build anywhere far from hq
 						if (buildingTries++ > 3){
@@ -242,7 +242,6 @@ public class Miner extends Unit {
 								boolean alreadyExists = false;
 								RobotInfo[] nearby = rc.senseNearbyRobots(15, rc.getTeam());
 								for (RobotInfo r : nearby) {
-									System.out.println(r);
 									if (r.getType() == RobotType.REFINERY) {
 										alreadyExists = true;
 									}
@@ -251,6 +250,7 @@ public class Miner extends Unit {
 									prevStatus = MinerStatus.RETURNING;
 									status = MinerStatus.BUILDING;
 									buildingType = RobotType.REFINERY;
+									buildLocation = null;
 									buildingTries = 0;
 								}
 							}
@@ -267,6 +267,9 @@ public class Miner extends Unit {
 					goTo(chosenRefinery);
 					if (rc.getLocation().isAdjacentTo(chosenRefinery)) {
 						status = MinerStatus.DEPOSITING;
+					}
+					else if (rc.getRoundNum() % 20 == 0) {
+						status = MinerStatus.MINING; // try to build refinery
 					}
 					break;
 				case DEPOSITING:
@@ -551,6 +554,14 @@ public class Miner extends Unit {
 			case REFINERY_LOC:
 				if (message.data[2] != rc.getID()) return false;
 				locREFINERY.add(new MapLocation(message.data[0], message.data[1]));
+				return true;
+			case DEATH:
+				RobotType type = robot_types[message.data[1]];
+				if (type == RobotType.REFINERY) {
+					locREFINERY.remove(new MapLocation(message.data[2], message.data[3]));
+					return true;
+				}
+				return false;
 		}
 		return false;
 	}
