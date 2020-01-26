@@ -110,6 +110,7 @@ public class DeliveryDrone extends Unit {
 		return false;
 	}
 	public void run() throws GameActionException {
+		System.out.println(badMap());
 		super.run();
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
