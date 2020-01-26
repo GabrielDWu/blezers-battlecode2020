@@ -27,12 +27,12 @@ public class Landscaper extends Unit {
 	int moveTries; /* how many times have we tried to move here */
 	boolean tryingClockwise;
 	boolean movedOnWall;
-	final static int moveCap = 15; /* how many tries to move into a position without our robot */
-	final static int blockedCap = 125; /* how many tries to move into a position with our robot */
-	final static int terraformHeight = 10; /* how high should I make the land? */
-	final static int terraformDist = 3; /* how far should I be from the hq before starting? */
-	final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
-	final static int terraformTries = 20; /* how many random moves away from hq to try? */
+	public final static int moveCap = 15; /* how many tries to move into a position without our robot */
+	public final static int blockedCap = 125; /* how many tries to move into a position with our robot */
+	public final static int terraformHeight = 10; /* how high should I make the land? */
+	public final static int terraformDist = 3; /* how far should I be from the hq before starting? */
+	public final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
+	public final static int terraformTries = 20; /* how many random moves away from hq to try? */
 	int currentTerraformRadiusSquared = 1;
 	int currentDirection = 0; // 0 cw 1 ccw
 	LandscaperStatus lastStatus;
@@ -60,7 +60,10 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
+
+	//	System.out.println("UGH" + " " + rc.getRoundNum());
 		super.run();
+	//	System.out.println(status);
 		if(status==LandscaperStatus.NOTHING)debug("NOTHING");
 		visited[rc.getLocation().x][rc.getLocation().y]++;
 		MapLocation mloc = rc.getLocation();
@@ -96,307 +99,321 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
-		switch (status) {
-			case ATTACKING_HQ:
-				if(surroundedLocation(enemyHQ)){
-					status = LandscaperStatus.TERRAFORMING;
-					break;
-				}
-				Direction attackDir = rc.getLocation().directionTo(enemyHQ);
-				if(rc.getDirtCarrying() < 1){
-					Direction dir = randomDirection();
-					while(dir==attackDir){
-						dir = randomDirection();
+		// System.out.println(status);
+
+		boolean keepGoing = true;
+
+		while (keepGoing) {
+			keepGoing = false;
+			switch (status) {
+				case ATTACKING_HQ:
+					if(surroundedLocation(enemyHQ)){
+						status = LandscaperStatus.TERRAFORMING;
+						break;
 					}
-					if(rc.canDigDirt(dir)) rc.digDirt(dir);
-				}
-				if(enemyHQ != null){
-					if(!rc.getLocation().isAdjacentTo(enemyHQ)){
-						goTo(enemyHQ);
-					}
-					else{
-						if(rc.canDepositDirt(attackDir)){
-							rc.depositDirt(attackDir);
+					Direction attackDir = rc.getLocation().directionTo(enemyHQ);
+					if(rc.getDirtCarrying() < 1){
+						Direction dir = randomDirection();
+						while(dir==attackDir){
+							dir = randomDirection();
 						}
+						if(rc.canDigDirt(dir)) rc.digDirt(dir);
 					}
-				}
-				break;
-			case DEFENDING:
-				if (locHQ == null) {
-					return;
-				}
-				if (idDS != -1 && !rc.canSenseRobot(idDS) && mloc.distanceSquaredTo(locDS) <= rc.getCurrentSensorRadiusSquared()) {
-					status = LandscaperStatus.BUILDING;
-					break;
-				}
-				boolean[] filled = new boolean[8];
-				int filledUpTo = -1;
-				if (locDS != null) filled[(locHQ.directionTo(rc.getLocation()).ordinal()+filledOffset)%8] = true;
-				RobotInfo[] r = rc.senseNearbyRobots(locHQ, 5, rc.getTeam());
-				for (int i = 0; i < r.length; i++) {
-					if(locDS == null && r[i].getType() == RobotType.DESIGN_SCHOOL) {
-						locDS = r[i].getLocation();
-						idDS = r[i].getID();
-						filledOffset = ((-locHQ.directionTo(locDS).ordinal()-1)%8+8)%8;
-					}else if(locDS != null && r[i].getType() == RobotType.LANDSCAPER){
-						if(r[i].getLocation().isAdjacentTo(locHQ)){
-							//filled[0] is Northeast, then proceeds on clockwise
-							filled[(locHQ.directionTo(r[i].getLocation()).ordinal()+filledOffset)%8] = true;
+					if(enemyHQ != null){
+						if(!rc.getLocation().isAdjacentTo(enemyHQ)){
+							goTo(enemyHQ);
 						}
-					}
-				}
-				// for(int i=0; i<8; i++){
-				// 	if(filled[i]){
-				// 		filledUpTo = i;
-				// 	}else{
-				// 		break;
-				// 	}
-				// }
-				if (!doneMoving) {
-					Direction moveDir = getNextWallDirection(tryingClockwise);
-					if (rc.canSenseLocation(mloc.add(moveDir)) && !isOurRobot(mloc.add(moveDir))) {
-						boolean done = false;
-						int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
-						//debug("DIFF " + diff);
-						if (diff > 0) {
-							// if (tryingClockwise) System.out.println("DIFF " + diff + " " + rc.canDigDirt(moveDir));
-							if (rc.canDigDirt(moveDir)) {
-								rc.digDirt(moveDir);
-								done = true;
-							} else {
-								if (attackEnemyBuilding()) done = true;
-								Direction dir = findWallLattice(mloc);
-								if (dir != null) {
-									if (rc.canDepositDirt(dir)) {
-										rc.depositDirt(dir);
-										done = true;
-									}
-								}
+						else{
+							if(rc.canDepositDirt(attackDir)){
+								rc.depositDirt(attackDir);
 							}
-						} else if (diff < 0) {
-							if (rc.getDirtCarrying() < 1) {
-								Direction mdir = null;
-								int mdirt = Integer.MIN_VALUE;
-								for (Direction dir : directions) {
-									if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
-										int ndirt = rc.senseElevation(mloc.add(dir));
-										if (ndirt > mdirt && rc.canDigDirt(dir)) {
-											mdir = dir;
-											mdirt = ndirt;
+						}
+					}
+					break;
+				case DEFENDING:
+					if (locHQ == null) {
+						return;
+					}
+					if (idDS != -1 && !rc.canSenseRobot(idDS) && mloc.distanceSquaredTo(locDS) <= rc.getCurrentSensorRadiusSquared()) {
+						status = LandscaperStatus.BUILDING;
+						keepGoing = true;
+						break;
+					}
+					boolean[] filled = new boolean[8];
+					int filledUpTo = -1;
+					if (locDS != null) filled[(locHQ.directionTo(rc.getLocation()).ordinal()+filledOffset)%8] = true;
+					RobotInfo[] r = rc.senseNearbyRobots(locHQ, 5, rc.getTeam());
+					for (int i = 0; i < r.length; i++) {
+						if(locDS == null && r[i].getType() == RobotType.DESIGN_SCHOOL) {
+							locDS = r[i].getLocation();
+							idDS = r[i].getID();
+							filledOffset = ((-locHQ.directionTo(locDS).ordinal()-1)%8+8)%8;
+						}else if(locDS != null && r[i].getType() == RobotType.LANDSCAPER){
+							if(r[i].getLocation().isAdjacentTo(locHQ)){
+								//filled[0] is Northeast, then proceeds on clockwise
+								filled[(locHQ.directionTo(r[i].getLocation()).ordinal()+filledOffset)%8] = true;
+							}
+						}
+					}
+				//	System.out.println("HERE");
+					// for(int i=0; i<8; i++){
+					// 	if(filled[i]){
+					// 		filledUpTo = i;
+					// 	}else{
+					// 		break;
+					// 	}
+					// }
+					if (!doneMoving) {
+					//	System.out.println("!doneMoving");
+						Direction moveDir = getNextWallDirection(tryingClockwise);
+
+						if (rc.canSenseLocation(mloc.add(moveDir))) {
+						//	System.out.println("WHY");
+							boolean done = false;
+							if (!isOurRobot(mloc.add(moveDir))) {
+								int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
+								if (diff > 0) {
+									// if (tryingClockwise) System.out.println("DIFF " + diff + " " + rc.canDigDirt(moveDir));
+									if (rc.canDigDirt(moveDir)) {
+										rc.digDirt(moveDir);
+										done = true;
+									} else {
+										if (attackEnemyBuilding()) done = true;
+										Direction dir = findWallLattice(mloc);
+										if (dir != null) {
+											if (rc.canDepositDirt(dir)) {
+												rc.depositDirt(dir);
+												done = true;
+											}
+										}
+									}
+								} else if (diff < 0) {
+									if (rc.getDirtCarrying() < 1) {
+										Direction mdir = null;
+										int mdirt = Integer.MIN_VALUE;
+										for (Direction dir : directions) {
+											if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+												int ndirt = rc.senseElevation(mloc.add(dir));
+												if (ndirt > mdirt && rc.canDigDirt(dir)) {
+													mdir = dir;
+													mdirt = ndirt;
+												}
+											}
+										}
+										if (mdir != null && rc.canDigDirt(mdir)) {
+											rc.digDirt(mdir);
+											done = true;
+										}
+									}
+									else {
+										if (attackEnemyBuilding()) done = true;
+										if (rc.canDepositDirt(moveDir)) {
+											rc.depositDirt(moveDir);
+											done = true;
 										}
 									}
 								}
-								if (mdir != null && rc.canDigDirt(mdir)) {
-									rc.digDirt(mdir);
-									done = true;
-								}
 							}
-							else {
-								if (attackEnemyBuilding()) done = true;
-								if (rc.canDepositDirt(moveDir)) {
-									rc.depositDirt(moveDir);
-									done = true;
-								}
-							}
-						}
 
-						if (!done) {
-							System.out.println(isOurRobot(mloc.add(moveDir)) + " " + Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)));
-							/* if totally necessary, replace this with filled logic (and re-test it) */
-							if (isOurRobot(mloc.add(moveDir)) && Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)) > 5) { /* 5 is arbitrary */
-								doneMoving = true;
-							} else if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) { 
-								if (tryingClockwise && !movedOnWall) tryingClockwise = false;
-								else doneMoving = true;
-							} else {
-								if (isOurRobot(mloc.add(moveDir))) { /* replace with filled later */
-									moveTries++;
-									if (moveTries >= blockedCap) {
-										if (tryingClockwise && !movedOnWall) tryingClockwise = false;
-										else doneMoving = true;
-										moveTries = 0;
-									}
-								} else if (tryMove(moveDir)) {
-									moveTries = 0;
-									movedOnWall = true;
+							if (!done) {
+								System.out.println(isOurRobot(mloc.add(moveDir)) + " " + Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)));
+								/* if totally necessary, replace this with filled logic (and re-test it) */
+								if (isOurRobot(mloc.add(moveDir)) && Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)) > 0) { /* means that the landscaper in front is doneMoving */
+									doneMoving = true;
+								} else if (!isValidWall(mloc.add(moveDir)) || mloc.add(moveDir).equals(locHQ.add(locHQ.directionTo(locDS)))) { 
+									if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+									else doneMoving = true;
 								} else {
-									moveTries++;
-									if (moveTries >= moveCap) {
-										if (tryingClockwise && !movedOnWall) tryingClockwise = false;
-										else doneMoving = true;
+									if (isOurRobot(mloc.add(moveDir))) { /* replace with filled later */
+										moveTries++;
+										if (moveTries >= blockedCap) {
+											if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+											else doneMoving = true;
+											moveTries = 0;
+										}
+									} else if (tryMove(moveDir)) {
 										moveTries = 0;
+										movedOnWall = true;
+									} else {
+										moveTries++;
+										if (moveTries >= moveCap) {
+											if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+											else doneMoving = true;
+											moveTries = 0;
+										}
 									}
 								}
 							}
 						}
 					}
-				}
 
-				if (doneMoving) {
-					if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
-					if (rc.getDirtCarrying() < 1) {
-						Direction mdir = null;
-						int mdirt = Integer.MIN_VALUE;
-						for (Direction dir : directions) {
-							if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
-								int ndirt = rc.senseElevation(mloc.add(dir));
-								if (ndirt > mdirt && rc.canDigDirt(dir)) {
-									mdir = dir;
-									mdirt = ndirt;
-								}
-							}
-						}
-						if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
-					} else {
-						attackEnemyBuilding();
-						if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
-					}
-				}
-				break;
-			case BUILDING:
-				if (rc.getRoundNum() % 5 == 0) {
-					if (!correctWall()) {
-						reinforceWall(mloc, d);
-					}
-				} else {
-					reinforceWall(mloc, d);
-				}
-
-				break;
-			case CORNER:
-				if(locHQ == null) return;
-				boolean inPlace = (kingDistance(locHQ, rc.getLocation())==2) && !isLattice(rc.getLocation());
-				if(inPlace) {
-					if (rc.getDirtCarrying() < 1) {
-						Direction mdir = null;
-						int mdirt = Integer.MIN_VALUE;
-						for (Direction dir : directions) {
-							if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
-								int ndirt = rc.senseElevation(mloc.add(dir));
-								if (ndirt > mdirt && rc.canDigDirt(dir)) {
-									mdir = dir;
-									mdirt = ndirt;
-								}
-							}
-						}
-						if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
-					} else {
-						//Make sure it won't flood soon
-						if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()+5)) {
-							if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
-						}else {
-							attackEnemyBuilding();
+					if (doneMoving) {
+					//	System.out.println("HUH");
+						if(rc.canDigDirt(d)) rc.digDirt(d);//heal hq
+						if (rc.getDirtCarrying() < 1) {
 							Direction mdir = null;
-							int mdirt = Integer.MAX_VALUE;
+							int mdirt = Integer.MIN_VALUE;
 							for (Direction dir : directions) {
-								if (rc.canSenseLocation(mloc.add(dir)) && mloc.add(dir).isAdjacentTo(locHQ)) {
+								if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
 									int ndirt = rc.senseElevation(mloc.add(dir));
-									if (ndirt < mdirt && rc.canDepositDirt(dir)) {
+									if (ndirt > mdirt && rc.canDigDirt(dir)) {
 										mdir = dir;
 										mdirt = ndirt;
 									}
 								}
 							}
-							rc.depositDirt(mdir);
+							if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+						} else {
+							attackEnemyBuilding();
+							if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
 						}
 					}
-
-				}else {
-					Direction dir = rc.getLocation().directionTo(locHQ);
-
-					if(canMove(dir)) {
-						rc.move(dir);
-					}else {
-						for(int i=0; i<8; i++) {
-							dir = dir.rotateLeft();
-							if(canMove(dir) && !isLattice(mloc.add(dir))) {
-								rc.move(dir);
-								break;
-							}
-						}
-					}
-				}
-
-				break;
-			case TERRAFORMING:
-				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
-					/* if we're too close to HQ, move */
-					/* also if we're in a lattice square, move */
-
-					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-					else moveAwayFromHQ(mloc);
-				} else {
-					Direction nearLattice = findLattice(mloc);
-					if (nearLattice != null) {
-						if (!tryTerraform(mloc, nearLattice)) {
-							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-							else moveAwayFromHQ(mloc);
+					break;
+				case BUILDING:
+					if (rc.getRoundNum() % 5 == 0) {
+						if (!correctWall()) {
+							reinforceWall(mloc, d);
 						}
 					} else {
-						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-						else moveAwayFromHQ(mloc);
-					}
-				}
-
-				break;
-			case HQ_TERRAFORM:
-				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
-					/* if we're too close to HQ, move */
-					/* also if we're in a lattice square, move */
-
-					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-					else moveAwayFromHQ(mloc);
-				} else {
-					Direction nearLattice = findLattice(mloc);
-					tryTerraform(mloc, Direction.CENTER, nearLattice);
-					if (terraformTarget != null) {
-						if (!tryTerraform(mloc, terraformTarget, nearLattice)) {
-							tryMove(terraformTarget);
-							terraformTarget = null;
-						}
+						reinforceWall(mloc, d);
 					}
 
-					if (terraformTarget == null) {
-						Direction dir = bestTerraform(nearLattice);
-
-						if (dir == null) {
-							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-							else moveAwayFromHQ(mloc);
-						} else {
-							terraformTarget = dir;
-						}
-					}
-				}
-				break;
-			case BURY_ENEMY_BUILDING:
-				if(buryTarget == null || surroundedLocation(buryTarget)){
-					status = lastStatus;
 					break;
-				}
-				attackDir = rc.getLocation().directionTo(buryTarget);
-				if(rc.getDirtCarrying() < 1){
-					Direction dir = randomDirection();
-					while(dir==attackDir){
-						dir = randomDirection();
-					}
-					if(rc.canDigDirt(dir)) rc.digDirt(dir);
-				}
-				if(buryTarget != null){
-					if(!rc.getLocation().isAdjacentTo(buryTarget)){
-						goTo(buryTarget);
-					}
-					else{
-						if(rc.canDepositDirt(attackDir)){
-							rc.depositDirt(attackDir);
-							/// if buried go back to terraforming
-							if(rc.senseRobotAtLocation(rc.getLocation().add(attackDir)) == null){
-								status = lastStatus;
-								break;
+				case CORNER:
+					if(locHQ == null) return;
+					boolean inPlace = (kingDistance(locHQ, rc.getLocation())==2) && !isLattice(rc.getLocation());
+					if(inPlace) {
+						if (rc.getDirtCarrying() < 1) {
+							Direction mdir = null;
+							int mdirt = Integer.MIN_VALUE;
+							for (Direction dir : directions) {
+								if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+									int ndirt = rc.senseElevation(mloc.add(dir));
+									if (ndirt > mdirt && rc.canDigDirt(dir)) {
+										mdir = dir;
+										mdirt = ndirt;
+									}
+								}
+							}
+							if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+						} else {
+							//Make sure it won't flood soon
+							if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()+5)) {
+								if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
+							}else {
+								attackEnemyBuilding();
+								Direction mdir = null;
+								int mdirt = Integer.MAX_VALUE;
+								for (Direction dir : directions) {
+									if (rc.canSenseLocation(mloc.add(dir)) && mloc.add(dir).isAdjacentTo(locHQ)) {
+										int ndirt = rc.senseElevation(mloc.add(dir));
+										if (ndirt < mdirt && rc.canDepositDirt(dir)) {
+											mdir = dir;
+											mdirt = ndirt;
+										}
+									}
+								}
+								rc.depositDirt(mdir);
+							}
+						}
+
+					}else {
+						Direction dir = rc.getLocation().directionTo(locHQ);
+
+						if(canMove(dir)) {
+							rc.move(dir);
+						}else {
+							for(int i=0; i<8; i++) {
+								dir = dir.rotateLeft();
+								if(canMove(dir) && !isLattice(mloc.add(dir))) {
+									rc.move(dir);
+									break;
+								}
 							}
 						}
 					}
-				}
-				break;
+
+					break;
+				case TERRAFORMING:
+					if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+						/* if we're too close to HQ, move */
+						/* also if we're in a lattice square, move */
+
+						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+						else moveAwayFromHQ(mloc);
+					} else {
+						Direction nearLattice = findLattice(mloc);
+						if (nearLattice != null) {
+							if (!tryTerraform(mloc, nearLattice)) {
+								if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+								else moveAwayFromHQ(mloc);
+							}
+						} else {
+							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+							else moveAwayFromHQ(mloc);
+						}
+					}
+
+					break;
+				case HQ_TERRAFORM:
+					if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+						/* if we're too close to HQ, move */
+						/* also if we're in a lattice square, move */
+
+						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+						else moveAwayFromHQ(mloc);
+					} else {
+						Direction nearLattice = findLattice(mloc);
+						tryTerraform(mloc, Direction.CENTER, nearLattice);
+						if (terraformTarget != null) {
+							if (!tryTerraform(mloc, terraformTarget, nearLattice)) {
+								tryMove(terraformTarget);
+								terraformTarget = null;
+							}
+						}
+
+						if (terraformTarget == null) {
+							Direction dir = bestTerraform(nearLattice);
+
+							if (dir == null) {
+								if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+								else moveAwayFromHQ(mloc);
+							} else {
+								terraformTarget = dir;
+							}
+						}
+					}
+					break;
+				case BURY_ENEMY_BUILDING:
+					if(buryTarget == null || surroundedLocation(buryTarget)){
+						status = lastStatus;
+						break;
+					}
+					attackDir = rc.getLocation().directionTo(buryTarget);
+					if(rc.getDirtCarrying() < 1){
+						Direction dir = randomDirection();
+						while(dir==attackDir){
+							dir = randomDirection();
+						}
+						if(rc.canDigDirt(dir)) rc.digDirt(dir);
+					}
+					if(buryTarget != null){
+						if(!rc.getLocation().isAdjacentTo(buryTarget)){
+							goTo(buryTarget);
+						}
+						else{
+							if(rc.canDepositDirt(attackDir)){
+								rc.depositDirt(attackDir);
+								/// if buried go back to terraforming
+								if(rc.senseRobotAtLocation(rc.getLocation().add(attackDir)) == null){
+									status = lastStatus;
+									break;
+								}
+							}
+						}
+					}
+					break;
+			}
 		}
 	}
 
