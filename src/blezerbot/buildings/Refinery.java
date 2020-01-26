@@ -28,7 +28,6 @@ public class Refinery extends Building {
     				return false;
     			}
     			writeMessage(Message.refineryLocation(rc.getLocation(), message.data[1]));
-    			addMessageToQueue();
     			return true;
     	}
     	return false;

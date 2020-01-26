@@ -14,7 +14,8 @@ public class Landscaper extends Unit {
         TERRAFORMING,
 		BURY_ENEMY_BUILDING,
 		HQ_TERRAFORM,
-		CORNER
+		CORNER,
+		INITIAL_TERRAFORM
 	}
 	LandscaperStatus status;
 	MapLocation buryTarget = null;
@@ -205,8 +206,6 @@ public class Landscaper extends Unit {
 									}
 								}
 							}
-
-							// System.out.println(moveTries + " " + tryingClockwise);
 
 							if (!done) {
 								// System.out.println(isOurRobot(mloc.add(moveDir)) + " " + Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)));

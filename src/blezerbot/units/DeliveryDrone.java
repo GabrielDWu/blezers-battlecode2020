@@ -3,7 +3,7 @@ package blezerbot.units;
 import battlecode.common.*;
 import java.util.*;
 import blezerbot.*;
-import javafx.beans.binding.IntegerBinding;
+// import javafx.beans.binding.IntegerBinding;
 
 import static blezerbot.units.Landscaper.terraformHeight;
 
@@ -20,6 +20,7 @@ public class DeliveryDrone extends Unit {
 		DROP_WATER,
 		DEFENDING_HQ,
 	}
+	final static int droneRushThreshold = 40;
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
@@ -40,6 +41,7 @@ public class DeliveryDrone extends Unit {
 	ArrayList<MapLocation> waterLocations;
 	int searchID;
 	int enemyHQc;
+	int rushRound = -1;
 	boolean sentFound = false;
 	Team holdingTeam = null;
 	MapLocation prevLoc;
@@ -76,6 +78,7 @@ public class DeliveryDrone extends Unit {
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
+		rushRound = -1;
 		//cornerThreshold = 3;
 	}
 	boolean adjacentToBase() throws GameActionException{
@@ -137,12 +140,18 @@ public class DeliveryDrone extends Unit {
 		if(enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ)<=5 && status == DeliveryDroneStatus.HARASS){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
-		if(rc.getRoundNum()>=2000 && numDrones>=40) {
+		if(numDrones>=droneRushThreshold) {
+			rushRound = rc.getRoundNum();
 			status = DeliveryDroneStatus.HARASS;
 			harassCenter = enemyHQ;
 		}
-		if(rc.getRoundNum()>=2100 &&numDrones>=40) {
+		System.out.println(rushRound + " " + numDrones + " " + status) ;
+		if(rushRound +100<= rc.getRoundNum()  && rushRound != -1 &&numDrones>=droneRushThreshold) {
+			System.out.println("HUH");
 			status = DeliveryDroneStatus.ATTACKING;
+		}
+		if(rushRound + 175<= rc.getRoundNum() && rushRound!=-1){
+			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
 		switch(status) {
 			case DEFENDING_HQ:
@@ -210,11 +219,11 @@ public class DeliveryDrone extends Unit {
 					Direction dir = rc.getLocation().directionTo(locHQ);
 					if (!badMap()){
 						for (int i = 0; i < 4; i++) {
-								Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
-								if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(locHQ) < dist) {
-									bestDir = nxt;
-									dist = rc.getLocation().add(nxt).distanceSquaredTo(locHQ);
-								}
+							Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+							if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(locHQ) < dist) {
+								bestDir = nxt;
+								dist = rc.getLocation().add(nxt).distanceSquaredTo(locHQ);
+							}
 						}
 						if (bestDir != null) {
 							rc.move(bestDir);
@@ -267,7 +276,6 @@ public class DeliveryDrone extends Unit {
 				if (loc != null && !sentFound) {
 					enemyHQ = loc;
 					writeMessage(Message.enemyHqLocation(enemyHQ));
-					addMessageToQueue();
 					sentFound = true;
 					System.out.println("Found enemy hq");
 				}
