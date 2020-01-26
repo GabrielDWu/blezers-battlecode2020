@@ -183,23 +183,22 @@ public class DeliveryDrone extends Unit {
 					}
 				}
 				boolean closeToHQ = adjacentToBase();
-				for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
-
-
-					if(enemy.type != RobotType.DELIVERY_DRONE && !isBuilding(enemy.type)){
-						if(investigate == null || rc.getLocation().distanceSquaredTo(enemy.getLocation()) <
-								rc.getLocation().distanceSquaredTo(investigate)) {
-							investigate = enemy.getLocation();
+				boolean pickedUp = false;
+				for(Direction dir: directionswcenter){
+					MapLocation nloc = rc.getLocation().add(dir);
+					if(rc.canSenseLocation(nloc) == false) continue;
+					RobotInfo rinfo = rc.senseRobotAtLocation(nloc);
+					if(rinfo == null) continue;
+					if(rinfo.getTeam() != rc.getTeam()&& rinfo.type != RobotType.DELIVERY_DRONE&& !isBuilding(rinfo.type) ){
+						if(rc.canPickUpUnit(rinfo.getID())){
+							rc.pickUpUnit(rinfo.getID());
+							pickedUp = true;
+							break;
 						}
 					}
 				}
 
-				if(investigate!= null && investigate.isAdjacentTo(rc.getLocation())){
-					int robID = rc.senseRobotAtLocation(investigate).getID();
-					if (rc.canPickUpUnit(robID)) {
-						holdingTeam = rc.senseRobotAtLocation(investigate).getTeam();
-						rc.pickUpUnit(robID);
-					}
+				if(pickedUp){
 
 				}
 				else {
