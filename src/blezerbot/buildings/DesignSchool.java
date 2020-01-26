@@ -33,7 +33,7 @@ public class DesignSchool extends Building {
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
-		System.out.println(status);
+		// System.out.println(status);
 		switch (status){
 			case TURTLE_MAKING:
 				int turn = rc.getRoundNum();
