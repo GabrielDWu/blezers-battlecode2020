@@ -152,6 +152,14 @@ public class DeliveryDrone extends Unit {
 					break;
 				}
 				//Update investigate
+				if(rc.isCurrentlyHoldingUnit()){
+					if(rc.senseFlooding(rc.getLocation())){
+						if(rc.canDropUnit(Direction.CENTER) && holdingTeam != rc.getTeam()){
+							rc.dropUnit(Direction.CENTER);
+							holdingTeam = null;
+						}
+					}
+				}
 				if(investigate != null) {
 					if(rc.canSenseLocation(investigate)) {
 						RobotInfo rob = rc.senseRobotAtLocation(investigate);
