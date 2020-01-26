@@ -15,7 +15,7 @@ public class Refinery extends Building {
         super.run();
     }
 
-    public boolean executeMessage(Message message){
+    public boolean executeMessage(Message message) throws GameActionException {
     	/*Returns true if message applies to me*/
     	if(super.executeMessage(message)){
     		return true;

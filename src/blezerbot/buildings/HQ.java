@@ -168,7 +168,7 @@ public class HQ extends Building {
 
 	}
 
-	public boolean executeMessage(Message message){
+	public boolean executeMessage(Message message) throws GameActionException {
 		/*Returns true if message applies to me*/
 		if(super.executeMessage(message)){
 			return true;
@@ -185,8 +185,8 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							//writeMessage(Message.doSomething(unitID, 2));	//Rush
-							//addMessageToQueue();
+							writeMessage(Message.doSomething(unitID, 2));	//Rush
+							addMessageToQueue();
 						}else if (status==HQstatus.FIRST_LANDSCAPERS){
 							specialMiner = unitID;
 						}
