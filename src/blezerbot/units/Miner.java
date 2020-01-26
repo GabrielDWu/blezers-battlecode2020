@@ -33,12 +33,9 @@ public class Miner extends Unit {
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
 
-	int vaporatorRadiusSquared = 9;
 	int vaporatorHeight = 0;
 	boolean sentFound = false;
 	int enemyHQc;
-	MapLocation locDS;
-	MapLocation locOpposite;
 
 	int buildableTiles;
 

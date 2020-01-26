@@ -30,7 +30,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation dropLocation;
 	MapLocation waitLocation;
 	MapLocation lastSeen;
-	int wallThreshold = terraformHeight + 1;
+	final int wallThreshold = terraformHeight + 1;
 
 	MapLocation closeWater;
 	int closeWaterDist;	//King distance to closeWater
@@ -44,7 +44,7 @@ public class DeliveryDrone extends Unit {
 	boolean sentFound = false;
 	Team holdingTeam = null;
 	MapLocation prevLoc;
-	int cornerThreshold = 3;
+	final static int cornerThreshold = 3;
 	MapLocation prevPrevLoc = null;
 	public DeliveryDrone(RobotController rc) throws GameActionException {
 		super(rc);
