@@ -155,7 +155,6 @@ public class DeliveryDrone extends Unit {
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
 	//	status = DeliveryDroneStatus.ATTACKING;
-		System.out.println(status + " " + rc.getRoundNum() + " "  + rushRound);
 		switch(status) {
 			case DEFENDING_HQ:
 				if(locHQ == null){

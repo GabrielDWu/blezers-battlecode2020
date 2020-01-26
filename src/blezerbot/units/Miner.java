@@ -17,7 +17,10 @@ public class Miner extends Unit {
 		FIND_ENEMY_HQ,
 		RUSH_ENEMY_HQ,
 		BUILD_VAPORATOR,
+		GO_TO_TERRAFORM,
 	}
+
+	boolean onTerraform;
 
 	MinerStatus status = null;
 	MinerStatus prevStatus = null;
@@ -32,6 +35,8 @@ public class Miner extends Unit {
 	MapLocation buildLocation = null;
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
+
+	boolean fulfillmentCenterBuilt;
 
 	int vaporatorHeight = 0;
 	boolean sentFound = false;
@@ -56,7 +61,7 @@ public class Miner extends Unit {
 		if(rc.canSenseLocation(a) == false) return false;
 		if(rc.senseElevation(a) < vaporatorHeight) return false;
 		boolean ok = false;
-		if(isLattice(a)) return false;
+		if(isLattice(a) || a.distanceSquaredTo(locHQ) <= 16) return false;
 		for(MapLocation refine: locREFINERY){
 			if(refine.distanceSquaredTo(a) <= RobotType.VAPORATOR.pollutionRadiusSquared){
 				ok = true;
@@ -82,7 +87,6 @@ public class Miner extends Unit {
 		super.run();
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
-			// System.out.println(status);
 			if (status == MinerStatus.NOTHING) {
 				if (!safeFromFlood[Direction.CENTER.ordinal()]) {
 					randomMove();
@@ -99,14 +103,16 @@ public class Miner extends Unit {
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
 			Direction buildVaporatorDirection = buildVaporator();
-			//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
-			if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER)){
-				status = MinerStatus.MINING;
-			}
-			if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
-					status == MinerStatus.RETURNING) && numVaporators<maxVaporators){
-				if(buildVaporatorDirection != null){
-					status = MinerStatus.BUILD_VAPORATOR;
+			if (onTerraform) {
+				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
+				if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER) && rc.getTeamSoup() < 500){
+					status = MinerStatus.MINING;
+				}
+				if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
+						status == MinerStatus.RETURNING) && numVaporators<maxVaporators){
+					if(buildVaporatorDirection != null){
+						status = MinerStatus.BUILD_VAPORATOR;
+					}
 				}
 			}
 			switch (status) {
@@ -162,7 +168,7 @@ public class Miner extends Unit {
 							if (status == MinerStatus.RETURNING) returnTries = 0;
 						}
 						for (Direction dir : directions) {
-							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 && buildingType != null &&
+							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 && buildingType != null && !isLattice(rc.getLocation().add(dir)) &&
 									rc.canBuildRobot(buildingType, dir)) {
 								rc.buildRobot(buildingType, dir);
 								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
@@ -293,6 +299,18 @@ public class Miner extends Unit {
 						if (soupLoc !=  null) {
 							status = MinerStatus.MINING;
 						} else status = MinerStatus.SEARCHING;
+					}
+					break;
+				case GO_TO_TERRAFORM:
+					if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+						/* if we're too close to HQ, move */
+						/* also if we're in a lattice square, move */
+						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+						else moveAwayFromHQ(mloc);
+					}
+					if (rc.canSenseLocation(rc.getLocation()) && rc.senseElevation(rc.getLocation()) >= terraformHeight) {
+						onTerraform = true;
+						status = MinerStatus.MINING;
 					}
 					break;
 			}
@@ -527,7 +545,10 @@ public class Miner extends Unit {
 			case BIRTH_INFO:
 				//Miners want to store refinery locations
 				RobotType unit_type = robot_types[message.data[0]];
-
+				if (unit_type == RobotType.FULFILLMENT_CENTER) {
+					fulfillmentCenterBuilt = true;
+					return true;
+				}
 				if(unit_type != RobotType.REFINERY){
 					return false;
 				}
@@ -560,6 +581,9 @@ public class Miner extends Unit {
 					case 2:
 						status = MinerStatus.FIND_ENEMY_HQ;
 						return true;
+					case 4:
+						status = MinerStatus.GO_TO_TERRAFORM;
+						return true;
 				}
 				return false;
 			case REFINERY_LOC:
@@ -573,6 +597,15 @@ public class Miner extends Unit {
 					return true;
 				}
 				return false;
+			case BUILD_ANY:
+				if (onTerraform && !fulfillmentCenterBuilt) {
+					buildingType = robot_types[message.data[0]];
+					buildingTries = 0;
+					prevStatus = status == MinerStatus.BUILDING ? prevStatus : status;
+					status = MinerStatus.BUILDING;
+					buildLocation = null;
+					return true;
+				}
 		}
 		return false;
 	}
@@ -585,7 +618,7 @@ public class Miner extends Unit {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return dir != null && super.canMove(dir) && !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
+		return dir != null && super.canMove(dir) && (!onTerraform || rc.canSenseLocation(rc.getLocation()) && rc.senseElevation(rc.getLocation()) >= terraformHeight) &&  !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
 	}
 
 }

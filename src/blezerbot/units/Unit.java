@@ -16,7 +16,10 @@ public abstract class Unit extends Robot {
 	public int[][] visited;
 	public boolean[] safeFromFlood;
 	public boolean[][] _notFlooded;
-	final static int DRONE_RUN_RADIUS = 7;
+	final static int DRONE_RUN_RADIUS = 15;
+	public final static int terraformDist = 3; /* how far should I be from the hq before starting? */
+	public final static int terraformTries = 20; /* how many random moves away from hq to try? */
+	public final static int terraformHeight = 15; /* how high should I make the land? */
 
 	public Unit(RobotController rc) throws GameActionException {
 		super(rc);
@@ -390,6 +393,67 @@ public abstract class Unit extends Robot {
 			facing = dir.rotateRight();
 			return;
 		}
+	}
+
+	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException {
+		int startIndex = r.nextInt(directions.length);
+		int stopIndex = startIndex;
+		int currentDist = taxicabDistance(mloc, enemyHQ);
+
+		for (int i = 0; i < terraformTries; i++) {
+			int ind = r.nextInt(directions.length);
+			Direction dir = directions[ind];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+		}
+
+		do {
+			Direction dir = directions[startIndex];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+
+			++startIndex;
+			startIndex %= directions.length;
+		} while (startIndex != stopIndex);
+
+		return false;
+	}
+
+	/* pick a random move taking me not closer to the HQ */
+	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException {
+		int startIndex = r.nextInt(directions.length);
+		int stopIndex = startIndex;
+		int currentDist = taxicabDistance(mloc, locHQ);
+
+		for (int i = 0; i < terraformTries; i++) {
+			int ind = r.nextInt(directions.length);
+			Direction dir = directions[ind];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+		}
+
+		do {
+			Direction dir = directions[startIndex];
+			MapLocation nloc = mloc.add(dir);
+
+			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+				if (tryMove(dir)) return true;
+			}
+
+			++startIndex;
+			startIndex %= directions.length;
+		} while (startIndex != stopIndex);
+
+		return false;
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {

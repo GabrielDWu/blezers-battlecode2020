@@ -16,6 +16,8 @@ public class DesignSchool extends Building {
 	final static int cooldown = blezerbot.units.Landscaper.blockedCap + 5;
 	boolean waitingForDrone;
 	DesignSchoolStatus status;
+	boolean suicideTimer;
+	int suicideTurns;
 
 	public DesignSchool(RobotController rc) throws GameActionException {
 		super(rc);
@@ -23,45 +25,51 @@ public class DesignSchool extends Building {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
-		status = DesignSchoolStatus.TURTLE_MAKING;
+		status = DesignSchoolStatus.MAKING;
 		lastBuildTurn = -cooldown;
 	}
 
 	public void run() throws GameActionException {
 		super.run();
+		if (suicideTimer) {
+			if (suicideTurns++ > 20) {
+				rc.disintegrate();
+			}
+			return;
+		}
 		if (locHQ == null) return;
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
 		// System.out.println(status);
 		switch (status){
-			case TURTLE_MAKING:
-				int turn = rc.getRoundNum();
-			//	System.out.println("HERE");
-				/* for convenience of landscapers, try this specific location first */
+			// case TURTLE_MAKING:
+			// 	int turn = rc.getRoundNum();
+			// //	System.out.println("HERE");
+			// 	/* for convenience of landscapers, try this specific location first */
 
-				Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
-				//System.out.println(adj +  " ADJ");
-				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
-					rc.buildRobot(RobotType.LANDSCAPER, adj);
-					builtLandscapers++;
-					lastBuildTurn = turn;
-				}
+			// 	Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
+			// 	//System.out.println(adj +  " ADJ");
+			// 	if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
+			// 		rc.buildRobot(RobotType.LANDSCAPER, adj);
+			// 		builtLandscapers++;
+			// 		lastBuildTurn = turn;
+			// 	}
 
-				if (turn - lastBuildTurn >= cooldown) {
-					for (Direction dir : directions) {
-						if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
-						//	System.out.println(dir + " YAY " +  rc.canBuildRobot(RobotType.LANDSCAPER, dir));
-							if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-								rc.buildRobot(RobotType.LANDSCAPER, dir);
-								builtLandscapers++;
-								lastBuildTurn = turn;
-							}
-						}
-					}
-				}
+			// 	if (turn - lastBuildTurn >= cooldown) {
+			// 		for (Direction dir : directions) {
+			// 			if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
+			// 			//	System.out.println(dir + " YAY " +  rc.canBuildRobot(RobotType.LANDSCAPER, dir));
+			// 				if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+			// 					rc.buildRobot(RobotType.LANDSCAPER, dir);
+			// 					builtLandscapers++;
+			// 					lastBuildTurn = turn;
+			// 				}
+			// 			}
+			// 		}
+			// 	}
 				
-				break;
+			// 	break;
 			case RUSH_ENEMY_HQ:
 				/// don't want to waste resources
 				if(builtLandscapers>3) break;
@@ -79,12 +87,20 @@ public class DesignSchool extends Building {
 				}
 				//System.out.println(rc.getTeamSoup() + " SOUP");
 			case MAKING:
-				if(numVaporators<maxVaporators) break;
-				if(builtLandscapers > 20) break;
-				for (Direction dir : directions) {
-					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-						rc.buildRobot(RobotType.LANDSCAPER, dir);
-						builtLandscapers++;
+				if (numVaporators < 2 && builtLandscapers > 5) break;
+				if(numVaporators<maxVaporators/2 && builtLandscapers > 10) break;
+				/* for convenience of landscapers, try this specific location first */
+				Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
+				//System.out.println(adj +  " ADJ");
+				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
+					rc.buildRobot(RobotType.LANDSCAPER, adj);
+					builtLandscapers++;
+				} else {
+					for (Direction dir : directions) {
+						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+							rc.buildRobot(RobotType.LANDSCAPER, dir);
+							builtLandscapers++;
+						}
 					}
 				}
 				break;
@@ -127,7 +143,7 @@ public class DesignSchool extends Building {
 				return true;
 			case BUILD_WALL:
 				//when landscapers start turtling, no longer need to new scapers next to hq
-				status = DesignSchoolStatus.MAKING;
+				suicideTimer = true;
 				return true;
 
 		}
