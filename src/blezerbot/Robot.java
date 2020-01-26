@@ -213,7 +213,7 @@ public abstract class Robot {
 	/* can we use this spot to build the wall */
 	/* this exists so if we have some wacko 1000 tile right next to HQ, we can 
 	later make it so we don't try to power through it */
-	public boolean isValidWall(MapLocation a) {
+	public boolean isValidWall(MapLocation a) throws GameActionException {
 		return rc.onTheMap(a);
 	}
 
@@ -222,7 +222,7 @@ public abstract class Robot {
 	/***** BLOCKCHAIN ******/
 	/***** BLOCKCHAIN ******/
 	/***** BLOCKCHAIN ******/
-	public void processMessage(Transaction t) {
+	public void processMessage(Transaction t) throws GameActionException {
 	    //Check if the message was made by my team
 	    //The way it works: xor all of them with PAD
 	    //Then convert into 224 bits and do a 0-checksum with 8 blocks of 28 bits.
@@ -263,7 +263,7 @@ public abstract class Robot {
 	    return;
 	}
 
-	public boolean executeMessage(Message message){
+	public boolean executeMessage(Message message) throws GameActionException {
 	    /*Returns true if message applies to me*/
 
 		//Messages applicable to all robots
