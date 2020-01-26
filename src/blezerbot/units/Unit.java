@@ -158,7 +158,10 @@ public abstract class Unit extends Robot {
 	public void incUnitVisited(MapLocation loc) {
 		unitVisited[loc.x][loc.y] = (Math.min(((unitVisited[loc.x][loc.y]>>(unitVisitedIndex*4))&0xf)+1,0xf)<<(unitVisitedIndex*4))|((unitVisited[loc.x][loc.y]&(~(long)(0xf<<(unitVisitedIndex*4))))>>unitVisitedIndex*4);
 	}
-
+	public boolean isBuilding(RobotType r){
+		if(r == RobotType.REFINERY || r == RobotType.DESIGN_SCHOOL || r == RobotType.VAPORATOR || r == RobotType.FULFILLMENT_CENTER || r == RobotType.HQ || r == RobotType.NET_GUN) return true;
+		return false;
+	}
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady() || rc.getLocation().equals(loc)) return;
 		if (unitVisited == null) return;
