@@ -66,7 +66,7 @@ public class Landscaper extends Unit {
 
 	public void run() throws GameActionException {
 
-	//	System.out.println("UGH" + " " + rc.getRoundNum());
+		System.out.println("UGH " + status+ " " + rc.getRoundNum());
 		super.run();
 	//	System.out.println(status);
 		if(status==LandscaperStatus.NOTHING)debug("NOTHING");
@@ -506,7 +506,9 @@ public class Landscaper extends Unit {
 					if (!tryTerraform(mloc, Direction.CENTER, nearLattice)) {
 						if (terraformTarget != null) {
 							if (!tryTerraform(mloc, terraformTarget, nearLattice)) {
+								System.out.println(canMove(terraformTarget) + " " + terraformTarget + " HUH " + rc.getRoundNum());
 								if (!tryMove(terraformTarget)) {
+									System.out.println("NANI " + rc.getRoundNum());
 									++terraformMoveTries;
 									if (terraformMoveTries == terraformMoveCap) {
 										terraformTarget = null;
