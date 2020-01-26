@@ -33,8 +33,6 @@ public class Landscaper extends Unit {
 	public final static int terraformDist = 3; /* how far should I be from the hq before starting? */
 	public final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
 	public final static int terraformTries = 20; /* how many random moves away from hq to try? */
-	int currentTerraformRadiusSquared = 1;
-	int currentDirection = 0; // 0 cw 1 ccw
 	LandscaperStatus lastStatus;
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
