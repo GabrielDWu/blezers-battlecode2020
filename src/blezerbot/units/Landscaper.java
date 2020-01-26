@@ -84,7 +84,7 @@ public class Landscaper extends Unit {
 							if (status != LandscaperStatus.NOTHING) lastStatus = status;
 							else if (mloc.isAdjacentTo(locHQ)) lastStatus = LandscaperStatus.DEFENDING;
 							else lastStatus = LandscaperStatus.TERRAFORMING;
-							status = LandscaperStatus.BURY_ENEMY_BUILDING;
+							if (status != LandscaperStatus.DEFENDING || rc.senseRobotAtLocation(buryTarget).type == RobotType.DESIGN_SCHOOL) status = LandscaperStatus.BURY_ENEMY_BUILDING;
 						}
 					}
 				}

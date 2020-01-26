@@ -108,7 +108,7 @@ public class HQ extends Building {
 			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
-		if (units[RobotType.LANDSCAPER.ordinal()].size() >= wallSquares && !landscaperWalled) {
+		if (domesticScapers >= wallSquares && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
 		}
@@ -188,10 +188,10 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							//writeMessage(Message.doSomething(unitID, 2));	//Rush
+							writeMessage(Message.doSomething(unitID, 2));	//Rush
+							addMessageToQueue();
 						}else if (status==HQstatus.FIRST_LANDSCAPERS){
 							specialMiner = unitID;
-							//addMessageToQueue();
 						}
 						break;
 					case LANDSCAPER:
