@@ -87,7 +87,6 @@ public class Miner extends Unit {
 				}
 				return;
 			}
-			System.out.println(status);
 			if (status == null) status = MinerStatus.SEARCHING;
 			setVisitedAndSeen();
 			MapLocation nloc = null;
