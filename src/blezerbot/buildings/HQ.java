@@ -191,6 +191,7 @@ public class HQ extends Building {
 							//writeMessage(Message.doSomething(unitID, 2));	//Rush
 						}else if (status==HQstatus.FIRST_LANDSCAPERS){
 							specialMiner = unitID;
+							//addMessageToQueue();
 						}
 						break;
 					case LANDSCAPER:

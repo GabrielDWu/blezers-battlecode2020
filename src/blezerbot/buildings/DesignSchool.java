@@ -12,6 +12,8 @@ public class DesignSchool extends Building {
 		NOTHING
 	}
 	int builtLandscapers;
+	int lastBuildTurn;
+	final static int cooldown = blezerbot.units.Landscaper.blockedCap + 5;
 	boolean waitingForDrone;
 	DesignSchoolStatus status;
 
@@ -22,6 +24,7 @@ public class DesignSchool extends Building {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		status = DesignSchoolStatus.TURTLE_MAKING;
+		lastBuildTurn = -cooldown;
 	}
 
 	public void run() throws GameActionException {
@@ -30,23 +33,34 @@ public class DesignSchool extends Building {
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
+		// System.out.println(status);
 		switch (status){
 			case TURTLE_MAKING:
+				int turn = rc.getRoundNum();
+			//	System.out.println("HERE");
 				/* for convenience of landscapers, try this specific location first */
+
 				Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
+				//System.out.println(adj +  " ADJ");
 				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
 					rc.buildRobot(RobotType.LANDSCAPER, adj);
 					builtLandscapers++;
+					lastBuildTurn = turn;
 				}
 
-				for (Direction dir : directions) {
-					if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
-						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-							rc.buildRobot(RobotType.LANDSCAPER, dir);
-							builtLandscapers++;
+				if (turn - lastBuildTurn >= cooldown) {
+					for (Direction dir : directions) {
+						if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
+						//	System.out.println(dir + " YAY " +  rc.canBuildRobot(RobotType.LANDSCAPER, dir));
+							if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+								rc.buildRobot(RobotType.LANDSCAPER, dir);
+								builtLandscapers++;
+								lastBuildTurn = turn;
+							}
 						}
 					}
 				}
+				
 				break;
 			case RUSH_ENEMY_HQ:
 				/// don't want to waste resources

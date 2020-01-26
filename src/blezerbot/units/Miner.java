@@ -5,7 +5,6 @@ import java.util.*;
 import java.lang.*;
 import blezerbot.*;
 
-
 public class Miner extends Unit {
 
 	enum MinerStatus {
@@ -34,12 +33,9 @@ public class Miner extends Unit {
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
 
-	int vaporatorRadiusSquared = 9;
 	int vaporatorHeight = 0;
 	boolean sentFound = false;
 	int enemyHQc;
-	MapLocation locDS;
-	MapLocation locOpposite;
 
 	int buildableTiles;
 
@@ -243,10 +239,20 @@ public class Miner extends Unit {
 							setChosenRefinery();
 							int refineryDist = rc.getLocation().distanceSquaredTo(chosenRefinery);
 							if (refineryDist > 48 || refineryDist > 15 && locREFINERY.size() < 3 || chosenRefinery.equals(locHQ) && rc.getTeamSoup() >= 150) {
-								prevStatus = MinerStatus.RETURNING;
-								status = MinerStatus.BUILDING;
-								buildingType = RobotType.REFINERY;
-								buildingTries = 0;
+								boolean alreadyExists = false;
+								RobotInfo[] nearby = rc.senseNearbyRobots(15, rc.getTeam());
+								for (RobotInfo r : nearby) {
+									System.out.println(r);
+									if (r.getType() == RobotType.REFINERY) {
+										alreadyExists = true;
+									}
+								}
+								if (!alreadyExists) {
+									prevStatus = MinerStatus.RETURNING;
+									status = MinerStatus.BUILDING;
+									buildingType = RobotType.REFINERY;
+									buildingTries = 0;
+								}
 							}
 							if (status != MinerStatus.BUILDING) status = MinerStatus.RETURNING;
 						}
@@ -279,14 +285,12 @@ public class Miner extends Unit {
 		}
 	}
 	public void setChosenRefinery() throws GameActionException {
-		if (chosenRefinery == null || chosenRefinery.equals(locHQ)) {
-			chosenRefinery = locHQ;
-			int best = Integer.MAX_VALUE;
-			for (MapLocation rloc : locREFINERY) {
-				if (rc.getLocation().distanceSquaredTo(rloc) < best) {
-					chosenRefinery = rloc;
-					best = rc.getLocation().distanceSquaredTo(rloc);
-				}
+		chosenRefinery = locHQ;
+		int best = Integer.MAX_VALUE;
+		for (MapLocation rloc : locREFINERY) {
+			if (rc.getLocation().distanceSquaredTo(rloc) < best) {
+				chosenRefinery = rloc;
+				best = rc.getLocation().distanceSquaredTo(rloc);
 			}
 		}
 	}

@@ -3,6 +3,9 @@ package blezerbot.units;
 import battlecode.common.*;
 import java.util.*;
 import blezerbot.*;
+import javafx.beans.binding.IntegerBinding;
+
+import static blezerbot.units.Landscaper.terraformHeight;
 
 public class DeliveryDrone extends Unit {
 	enum DeliveryDroneStatus {
@@ -15,7 +18,7 @@ public class DeliveryDrone extends Unit {
 		NOTHING,
 		HARASS,
 		DROP_WATER,
-		DEFENDING
+		DEFENDING_HQ,
 	}
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
@@ -27,7 +30,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation dropLocation;
 	MapLocation waitLocation;
 	MapLocation lastSeen;
-
+	final int wallThreshold = terraformHeight + 1;
 	MapLocation closeWater;
 	int closeWaterDist;	//King distance to closeWater
 
@@ -38,12 +41,34 @@ public class DeliveryDrone extends Unit {
 	int searchID;
 	int enemyHQc;
 	boolean sentFound = false;
-
+	Team holdingTeam = null;
+	MapLocation prevLoc;
+	final static int cornerThreshold = 3;
+	MapLocation prevPrevLoc = null;
 	public DeliveryDrone(RobotController rc) throws GameActionException {
 		super(rc);
 
 	}
-
+	public boolean badMap(){
+		System.out.println(locHQ.y + " " + cornerThreshold);
+		boolean b1 = (locHQ.x<=cornerThreshold || locHQ.x>=rc.getMapWidth() - cornerThreshold);
+		boolean b2 = (locHQ.y<=cornerThreshold || locHQ.y>=rc.getMapHeight() - cornerThreshold);
+		return (b1|| b2);
+	}
+	public boolean HQInCorner(){
+		System.out.println(locHQ.y + " " + cornerThreshold);
+		boolean b1 = (locHQ.x<=cornerThreshold || locHQ.x>=rc.getMapWidth() - cornerThreshold);
+		boolean b2 = (locHQ.y<=cornerThreshold || locHQ.y>=rc.getMapHeight() - cornerThreshold);
+		return (b1 && b2);
+	}
+	MapLocation getCloseCornerHQ(){
+		int x, y;
+		if(locHQ.x<=cornerThreshold) x = 0;
+		else x = rc.getMapWidth()-1;
+		if(locHQ.y<=cornerThreshold) y = 0;
+		else y = rc.getMapHeight()-1;
+		return new MapLocation(x, y);
+	}
 	public void startLife() throws GameActionException{
 		super.startLife();
 		status = DeliveryDroneStatus.FIND_ENEMY_HQ;
@@ -51,31 +76,187 @@ public class DeliveryDrone extends Unit {
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
+		//cornerThreshold = 3;
 	}
-
-
+	boolean adjacentToBase() throws GameActionException{
+		// for now i'll do this
+		for(Direction dir: directions){
+			MapLocation nloc = rc.getLocation().add(dir);
+			if(rc.canSenseLocation(nloc) == false) continue;
+			RobotInfo rinfo = rc.senseRobotAtLocation(nloc);
+			if(rinfo != null && (rinfo.type == RobotType.LANDSCAPER||rinfo.type ==RobotType.HQ) && rinfo.getTeam() == rc.getTeam() && rc.senseElevation(nloc)>=wallThreshold){
+				System.out.println(dir);
+				return true;
+			}
+		}
+		return false;
+	}
+	boolean adjacentToBase(MapLocation loc) throws GameActionException{
+		// for now i'll do this
+		for(Direction dir: directions){
+			MapLocation nloc = loc.add(dir);
+			if(rc.canSenseLocation(nloc) == false) continue;
+			RobotInfo rinfo = rc.senseRobotAtLocation(nloc);
+			if(rinfo != null && (rinfo.type == RobotType.LANDSCAPER||rinfo.type ==RobotType.HQ) && rinfo.getTeam() == rc.getTeam() && rc.senseElevation(nloc)>=wallThreshold){
+			//	System.out.println(dir);
+				System.out.println(dir + " ASD " + loc.x + " " + loc.y);
+				return true;
+			}
+		}
+		return false;
+	}
 	public void run() throws GameActionException {
 		super.run();
-
+		System.out.println(status);
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
-		for(MapLocation loc: getLocationsInRadius(rc.getLocation(), rc.getCurrentSensorRadiusSquared())){
+		ArrayList<MapLocation> senseLocations = getLocationsInRadius(rc.getLocation(), Math.min(rc.getCurrentSensorRadiusSquared(), 8));
+		for(MapLocation loc: senseLocations){
 			if(rc.canSenseLocation(loc) && rc.senseFlooding(loc) && !rc.isLocationOccupied(loc) &&
 					(closeWater == null || kingDistance(rc.getLocation(),loc) <= closeWaterDist)){
 				closeWater = loc;
 				closeWaterDist = kingDistance(rc.getLocation(),loc);
 			}
-		}
+		};
 
 		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)){
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
 					rc.dropUnit(dir);
+					holdingTeam  = null;
 				}
 			}
 		}
 		if (locHQ == null) return;
+		/// maybe modify if we carry our own troops, idk how to sense held robot info
+		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DEFENDING_HQ && holdingTeam != rc.getTeam()){
+			if(status != DeliveryDroneStatus.DROP_WATER)prevStatus = status;
+			status = DeliveryDroneStatus.DROP_WATER;
+		}
+		// assuming we will only harass their hq or ours
+		if(enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ)<=5 && status == DeliveryDroneStatus.HARASS){
+			status = DeliveryDroneStatus.DEFENDING_HQ;
+		}
+		if(rc.getRoundNum()>=2000 && numDrones>=40) {
+			status = DeliveryDroneStatus.HARASS;
+			harassCenter = enemyHQ;
+		}
+		if(rc.getRoundNum()>=2100 &&numDrones>=40) {
+			status = DeliveryDroneStatus.ATTACKING;
+		}
 		switch(status) {
+			case DEFENDING_HQ:
+				if(locHQ == null){
+					status = DeliveryDroneStatus.NOTHING;
+					break;
+				}
+				//Update investigate
+				if(rc.isCurrentlyHoldingUnit()){
+					for(Direction drop: directionswcenter){
+						MapLocation nloc = rc.getLocation().add(drop);
+						if(rc.canSenseLocation(nloc) && rc.senseFlooding(nloc) ){
+							if(rc.canDropUnit(drop) && holdingTeam != rc.getTeam()){
+								rc.dropUnit(drop);
+								holdingTeam = null;
+							}
+						}
+					}
+				}
+				if(investigate != null) {
+					if(rc.canSenseLocation(investigate)) {
+						RobotInfo rob = rc.senseRobotAtLocation(investigate);
+						if (rob == null || rob.getTeam() == rc.getTeam() || rob.getType() == RobotType.DELIVERY_DRONE) {
+							investigate = null;
+						}
+					}else{
+						investigate = null;
+					}
+				}
+				boolean closeToHQ = adjacentToBase();
+				for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
+
+
+					if(enemy.type != RobotType.DELIVERY_DRONE && !isBuilding(enemy.type)){
+						if(investigate == null || rc.getLocation().distanceSquaredTo(enemy.getLocation()) <
+								rc.getLocation().distanceSquaredTo(investigate)) {
+							investigate = enemy.getLocation();
+						}
+					}
+				}
+
+				if(investigate!= null && investigate.isAdjacentTo(rc.getLocation())){
+					int robID = rc.senseRobotAtLocation(investigate).getID();
+					if (rc.canPickUpUnit(robID)) {
+						holdingTeam = rc.senseRobotAtLocation(investigate).getTeam();
+						rc.pickUpUnit(robID);
+					}
+
+				}
+				else {
+					if (closeToHQ){
+						MapLocation use = locHQ;
+						if(HQInCorner()) use = getCloseCornerHQ();
+						Direction dir = rc.getLocation().directionTo(use);
+						for (int i = 0; i < 8; i++) {
+							Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+							if (adjacentToBase(rc.getLocation().add(nxt)) && rc.canMove(nxt)) {
+								rc.move(nxt);
+								break;
+							}
+						}
+					}
+					Direction bestDir = null;
+					int dist = rc.getLocation().distanceSquaredTo(locHQ);
+					Direction dir = rc.getLocation().directionTo(locHQ);
+					if (!badMap()){
+						for (int i = 0; i < 4; i++) {
+								Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+								if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(locHQ) < dist) {
+									bestDir = nxt;
+									dist = rc.getLocation().add(nxt).distanceSquaredTo(locHQ);
+								}
+						}
+						if (bestDir != null) {
+							rc.move(bestDir);
+						}
+						else {
+							for (int i = 0; i < 4; i++) {
+								Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+								if (rc.canMove(nxt)) {
+									rc.move(nxt);
+									break;
+								}
+							}
+						}
+					}
+					else{
+						MapLocation use = locHQ;
+						if(HQInCorner()) use = getCloseCornerHQ();
+						System.out.println(use.x + " " + use.y);
+						dir = rc.getLocation().directionTo(use);
+						for (int i = 0; i < 8; i++) {
+							Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+							if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(use) < dist) {
+								bestDir = nxt;
+								dist = rc.getLocation().add(nxt).distanceSquaredTo(use);
+							}
+						}
+						if (bestDir != null) {
+							rc.move(bestDir);
+						}
+						else {
+							for (int i = 0; i < 4; i++) {
+								Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+								if (rc.canMove(nxt)) {
+									rc.move(nxt);
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				break;
 			case FIND_ENEMY_HQ:
 				if (enemyHQ != null) {
 					status = DeliveryDroneStatus.HARASS;
@@ -139,6 +320,7 @@ public class DeliveryDrone extends Unit {
 				if (!rc.isCurrentlyHoldingUnit()) {
 					for (RobotInfo other : rc.senseNearbyRobots(2, (rc.getTeam() == Team.B) ? Team.A : Team.B)) {
 						if (rc.canPickUpUnit(other.getID())) {
+							holdingTeam = other.getTeam();
 							rc.pickUpUnit(other.getID());
 						}
 					}
@@ -163,7 +345,6 @@ public class DeliveryDrone extends Unit {
 					status = DeliveryDroneStatus.NOTHING;
 					break;
 				}
-
 				//Update investigate
 				if(investigate != null) {
 					if(rc.canSenseLocation(investigate)) {
@@ -176,7 +357,7 @@ public class DeliveryDrone extends Unit {
 					}
 				}
 				for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
-					if(enemy.type != RobotType.DELIVERY_DRONE){
+					if(enemy.type != RobotType.DELIVERY_DRONE && !isBuilding(enemy.type)){
 						if(investigate == null || rc.getLocation().distanceSquaredTo(enemy.getLocation()) <
 								rc.getLocation().distanceSquaredTo(investigate)) {
 							investigate = enemy.getLocation();
@@ -188,6 +369,7 @@ public class DeliveryDrone extends Unit {
 					if (rc.getLocation().isAdjacentTo(investigate)) {
 						int robID = rc.senseRobotAtLocation(investigate).getID();
 						if (rc.canPickUpUnit(robID)) {
+							holdingTeam = rc.senseRobotAtLocation(investigate).getTeam();
 							rc.pickUpUnit(robID);
 							status = DeliveryDroneStatus.DROP_WATER;
 							prevStatus = DeliveryDroneStatus.HARASS;
@@ -206,12 +388,19 @@ public class DeliveryDrone extends Unit {
 				break;
 
             case DROP_WATER:
+            	if(rc.isCurrentlyHoldingUnit() == false) {
+            		status = prevStatus;
+            		//System.out.println(prevStatus + " PREV");
+            		break;
+				}
             	if(closeWater == null){
             		findWater();
+            		System.out.println("HUHUH");
 				}else{
             		if(rc.getLocation().isAdjacentTo(closeWater)){
             			if(rc.canDropUnit(rc.getLocation().directionTo(closeWater))){
             				rc.dropUnit(rc.getLocation().directionTo(closeWater));
+            				holdingTeam = null;
             				if(prevStatus == null){
             					status = DeliveryDroneStatus.NOTHING;
 							}else{
@@ -219,13 +408,13 @@ public class DeliveryDrone extends Unit {
 							}
 						}
 					}else{
+            			System.out.println(closeWater.x + " ASD " + closeWater.y);
 						goTo(closeWater);
 					}
 				}
             	break;
 
 		}
-
 
 	}
 
@@ -285,6 +474,7 @@ public class DeliveryDrone extends Unit {
 	    if(rc.getLocation().isAdjacentTo(closeWater)){
 	        if(rc.canDropUnit(rc.getLocation().directionTo(closeWater))){
                 rc.dropUnit(rc.getLocation().directionTo(closeWater));
+                holdingTeam = null;
             }
         }
 
@@ -311,6 +501,7 @@ public class DeliveryDrone extends Unit {
 			if (rc.isLocationOccupied(dropLocation) == false) {
 				if (rc.getLocation().isAdjacentTo(dropLocation)) {
 					rc.dropUnit(rc.getLocation().directionTo(dropLocation));
+					holdingTeam = null;
 					status = DeliveryDroneStatus.NOTHING;
 					return;
 				}
@@ -346,6 +537,7 @@ public class DeliveryDrone extends Unit {
 	void chasePickUp(RobotInfo target) throws GameActionException {
 		if(rc.getLocation().isAdjacentTo(target.getLocation())){
 			rc.pickUpUnit(searchID);
+			holdingTeam = rc.senseRobotAtLocation(target.getLocation()).getTeam();
 			status = DeliveryDroneStatus.DROP_OFF;
 			return;
 		}
@@ -472,7 +664,6 @@ public class DeliveryDrone extends Unit {
 			randomOrthogonalMove();
 			return;
 		}
-
 		//Check if still should be hugging (if nothing around you, hugging=false)
 		if(hugging){
 			hugging = false;
