@@ -86,7 +86,6 @@ public class DeliveryDrone extends Unit {
 				if (loc != null && !sentFound) {
 					enemyHQ = loc;
 					writeMessage(Message.enemyHqLocation(enemyHQ));
-					addMessageToQueue();
 					sentFound = true;
 					System.out.println("Found enemy hq");
 				}

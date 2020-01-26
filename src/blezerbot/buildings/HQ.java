@@ -15,6 +15,7 @@ public class HQ extends Building {
 	/* turtling stuff */
 	int waitingForBuilding;
 	int wallSquares; /* should be 8, unless we're in a corner or edge */
+	int specialMiner;
 	boolean builtDesignSchool;
 	Direction turtleDesignSchoolDir;
 	boolean landscaperWalled;
@@ -24,6 +25,15 @@ public class HQ extends Building {
 	MapLocation buildingDSLoc;
 	int domesticScapers;
 	boolean isFarFromEdge;
+	HQStatus status;
+
+	public static enum HQstatus{
+		FIRST_MINERS,
+		FIRST_LANDSCAPERS,
+		INNER_TURTLE,
+		VAPES_DRONES,
+		CORNERS
+	}
 
 	/* post turtle stuff */
 
@@ -47,8 +57,8 @@ public class HQ extends Building {
 
 			if (isValidWall(nloc)) ++wallSquares;
 		}
-		debug("Wall Squares: " + wallSquares);
 		isFarFromEdge = (loc.x >= 2 && loc.y >=2 && loc.x < rc.getMapWidth()-2 && loc.y < rc.getMapHeight()-2);
+		status = HQstatus.FIRST_MINERS;
 	}
 
 	public void run() throws GameActionException {
@@ -66,10 +76,30 @@ public class HQ extends Building {
 		}
 		if(unitToShoot >= 0) rc.shootUnit(unitToShoot);
 
+		switch(status){
+			case FIRST_MINERS:
+			//Build original miners
+				if (builtMiners < 4) {
+					for (Direction dir : directions) {
+						if (builtMiners < 8 && rc.canBuildRobot(RobotType.MINER, dir)) {
+							rc.buildRobot(RobotType.MINER, dir);
+							builtMiners++;
+						}
+					}
+					break;
+				}else {
+					status = FIRST_LANDSCAPERS;
+					//No break here
+				}
+			case FIRST_LANDSCAPERS:
+
+			}
+		}
+
+
 		// build wall
 		if (buildingMinerLoc != null) {
 			writeMessage(Message.build(RobotType.DESIGN_SCHOOL, rc.senseRobotAtLocation(buildingMinerLoc).getID(), buildingDSLoc));
-			addMessageToQueue();
 			buildingDesignSchool = 1;
 			turtleDesignSchoolDir = rc.getLocation().directionTo(buildingMinerLoc);
 			buildingMinerLoc = null;
@@ -81,7 +111,6 @@ public class HQ extends Building {
 		if (units[RobotType.LANDSCAPER.ordinal()].size() >= wallSquares && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
-			addMessageToQueue();
 		}
 		if (buildingDesignSchool == 0 && units[2 /*refinery*/].size() > 0 && rc.getTeamSoup() > 70 && rc.isReady()) {
 			for (Direction dir : orthogonalDirections) {
@@ -116,18 +145,10 @@ public class HQ extends Building {
             ArrayList<InternalUnit> miners = units[RobotType.MINER.ordinal()];
             InternalUnit miner = miners.get(r.nextInt(miners.size()));
             writeMessage(Message.build(RobotType.FULFILLMENT_CENTER, miner.id));
-            addMessageToQueue();
         }
 
 
-		if (builtMiners < 4) {
-			for (Direction dir : directions) {
-				if (builtMiners < 8 && rc.canBuildRobot(RobotType.MINER, dir)) {
-					rc.buildRobot(RobotType.MINER, dir);
-					builtMiners++;
-				}
-			}
-		}
+
 
 		attackTimer--;
 		if(attackTimer > 200 && units[7 /*drone*/].size() >= 7){
@@ -136,7 +157,6 @@ public class HQ extends Building {
 		if(attackTimer <= 0){
 			attackTimer = 200;
 			writeMessage(Message.droneAttack());
-			addMessageToQueue();
 			System.out.println("Called attack");
 		}
 
@@ -147,7 +167,6 @@ public class HQ extends Building {
 				writeMessage(Message.enemyHqLocation(enemyHQ));
 			}
 			writeMessage(Message.hqLocation(rc.getLocation()));
-			addMessageToQueue();
 		}
 
 	}
@@ -169,24 +188,20 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							writeMessage(Message.doSomething(unitID, 2));	//Rush
-							addMessageToQueue();
+							//writeMessage(Message.doSomething(unitID, 2));	//Rush
+						}else if status=HQstatus.FIRST_LANDSCAPERS{
+							specialMiner = unitID;
 						}
 						break;
 					case LANDSCAPER:
 						if(enemyHQ == null || location.distanceSquaredTo(enemyHQ) > 18){
-							debug("domestic " + unitID);
 							domesticScapers++;
 							if(domesticScapers <= wallSquares){
 								writeMessage(Message.doSomething(unitID, 0));	//Defend
-								addMessageToQueue();
 							}else if(isFarFromEdge && domesticScapers <= wallSquares+12){
-								debug("Tell corner");
 								writeMessage(Message.doSomething(unitID, 3));	//Corner
-								addMessageToQueue();
 							}else{
 								writeMessage(Message.doSomething(unitID, 1));	//Terraform
-								addMessageToQueue();
 							}
 						}
 						break;
@@ -195,11 +210,9 @@ public class HQ extends Building {
 							|| enemyHQ == null)){
 							//Harass own hq location for defense
 							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
-							addMessageToQueue();
 						}else if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 5){
 							//Harass opponent's hq to be annoying
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
-							addMessageToQueue();
 						}
 						break;
 				}

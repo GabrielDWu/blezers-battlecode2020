@@ -14,7 +14,8 @@ public class Landscaper extends Unit {
         TERRAFORMING,
 		BURY_ENEMY_BUILDING,
 		HQ_TERRAFORM,
-		CORNER
+		CORNER,
+		INITIAL_TERRAFORM
 	}
 	LandscaperStatus status;
 	MapLocation buryTarget = null;

@@ -120,13 +120,15 @@ public abstract class Robot {
 
 	    if(!sentInfo && !queuedInfo){
 	    	writeMessage(Message.birthInfo(type, rc.getID(), rc.getLocation()));
-	        addMessageToQueue();
 	        queuedInfo = true;
 	    }
 	}
 
 	public void endTurn() throws GameActionException{
 	    /*submits stuff from messageQueue*/
+		if(messagePtr > 32){
+			addMessageToQueue();
+		}
 	    while(messageQueue.size() > 0 && messageQueue.get(0).getCost() <= rc.getTeamSoup()){
 			rc.submitTransaction(messageQueue.get(0).getMessage(), messageQueue.get(0).getCost());
 	        messageQueue.remove(0);

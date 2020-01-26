@@ -66,7 +66,7 @@ public class DesignSchool extends Building {
 				//System.out.println(rc.getTeamSoup() + " SOUP");
 			case MAKING:
 				if(numVaporators<maxVaporators) break;
-				if(builtLandscapers > 10) break;
+				if(builtLandscapers > 20) break;
 				for (Direction dir : directions) {
 					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
 						rc.buildRobot(RobotType.LANDSCAPER, dir);
@@ -95,7 +95,6 @@ public class DesignSchool extends Building {
 					int lid = rc.senseRobotAtLocation(rc.getLocation().add(dir)).getID();
 					System.out.println(lid);
 					writeMessage(5, new int[]{lid});
-					addMessageToQueue();
 					break;
 				}
 			}

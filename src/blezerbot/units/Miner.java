@@ -105,7 +105,8 @@ public class Miner extends Unit {
 			if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER)){
 				status = MinerStatus.MINING;
 			}
-			if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && numVaporators<maxVaporators){
+			if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
+					status == MinerStatus.RETURNING) && numVaporators<maxVaporators){
 				if(buildVaporatorDirection != null){
 					status = MinerStatus.BUILD_VAPORATOR;
 				}
@@ -128,7 +129,6 @@ public class Miner extends Unit {
 					if (loc != null && !sentFound) {
 						enemyHQ = loc;
 						writeMessage(Message.enemyHqLocation(enemyHQ));
-						addMessageToQueue();
 						sentFound = true;
 					}
 					break;
