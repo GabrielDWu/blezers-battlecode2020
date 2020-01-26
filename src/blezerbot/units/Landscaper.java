@@ -32,6 +32,8 @@ public class Landscaper extends Unit {
 	int waitToBuildTurns;
 	int doneMovingDeposited;
 	int floodTries;
+	int terraformMoveTries;
+	public final static int terraformMoveCap = 5;
 	public final static int moveCap = 15; /* how many tries to move into a position without our robot */
 	public final static int floodCap = 50; /* when the design school's build location is flooded for x turns, go into building mode */
 	public final static int blockedCap = 250; /* how many tries to move into a position with our robot */
@@ -51,6 +53,7 @@ public class Landscaper extends Unit {
 		terraformTarget = null;
 		lastStatus = LandscaperStatus.NOTHING;
 		floodTries = 0;
+		terraformMoveTries = 0;
 	}
 	public int buryPriority(RobotType r){
 		if(r == RobotType.NET_GUN) return 0;
@@ -500,22 +503,31 @@ public class Landscaper extends Unit {
 					else moveAwayFromHQ(mloc);
 				} else {
 					Direction nearLattice = findLattice(mloc);
-					tryTerraform(mloc, Direction.CENTER, nearLattice);
-					if (terraformTarget != null) {
-						if (!tryTerraform(mloc, terraformTarget, nearLattice)) {
-							tryMove(terraformTarget);
-							terraformTarget = null;
+					if (!tryTerraform(mloc, Direction.CENTER, nearLattice)) {
+						if (terraformTarget != null) {
+							if (!tryTerraform(mloc, terraformTarget, nearLattice)) {
+								if (!tryMove(terraformTarget)) {
+									++terraformMoveTries;
+									if (terraformMoveTries == terraformMoveCap) {
+										terraformTarget = null;
+										terraformMoveTries = 0;
+									}
+								} else {
+									terraformTarget = null;
+									terraformMoveTries = 0;
+								}
+							}
 						}
-					}
-
-					if (terraformTarget == null) {
-						Direction dir = bestTerraform(nearLattice);
-
-						if (dir == null) {
-							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-							else moveAwayFromHQ(mloc);
-						} else {
-							terraformTarget = dir;
+	
+						if (terraformTarget == null) {
+							Direction dir = bestTerraform(nearLattice);
+	
+							if (dir == null) {
+								if (enemyHQ != null) moveTowardEnemyHQ(mloc);
+								else moveAwayFromHQ(mloc);
+							} else {
+								terraformTarget = dir;
+							}
 						}
 					}
 				}
@@ -685,7 +697,7 @@ public class Landscaper extends Unit {
 		int newElevation = rc.senseElevation(nloc);
 
 		/* either too high, too low, or already good */
-		if (Math.abs(newElevation - currentElevation) > terraformThreshold) return false;
+		if (mloc != nloc && Math.abs(newElevation - currentElevation) > terraformThreshold) return false;
 		if (newElevation == terraformHeight) return false;
 		if (isOurBuilding(nloc)) return false;
 		

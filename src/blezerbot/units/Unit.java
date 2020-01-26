@@ -17,7 +17,7 @@ public abstract class Unit extends Robot {
 	public boolean[] safeFromFlood;
 	public boolean[][] _notFlooded;
 	final static int DRONE_RUN_RADIUS = 15;
-	public final static int terraformDist = 3; /* how far should I be from the hq before starting? */
+	public final static int terraformDist = 1; /* how far should I be from the hq before starting? */
 	public final static int terraformTries = 20; /* how many random moves away from hq to try? */
 	public final static int terraformHeight = 15; /* how high should I make the land? */
 
