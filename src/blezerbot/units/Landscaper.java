@@ -436,12 +436,20 @@ public class Landscaper extends Unit {
 		} else {
 			Direction mdir = null;
 			int mdirt = Integer.MAX_VALUE;
+			int mdist = Integer.MAX_VALUE;
 			for (Direction dir : directionswcenter) {
 				if (rc.canSenseLocation(mloc.add(dir))) {
 					int ndirt = rc.senseElevation(mloc.add(dir));
-					if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && ndirt < mdirt && rc.canDepositDirt(dir)) {
-						mdir = dir;
-						mdirt = ndirt;
+					int ndist = mloc.distanceSquaredTo(mloc.add(dir));
+					if (mloc.add(dir).isAdjacentTo(locHQ) && !mloc.add(dir).equals(locHQ) && rc.canDepositDirt(dir)) {
+						if (ndirt < mdirt) {
+							mdir = dir;
+							mdirt = ndirt;
+							mdist = ndist;
+						} else if (ndirt == mdirt && ndist < mdist) {
+							mdir = dir;
+							mdist = ndist;
+						}
 					}
 				}
 			}
@@ -754,20 +762,6 @@ public class Landscaper extends Unit {
 
 		if (moveDir == null) return false;
 		return tryMove(moveDir);
-
-		// MapLocation loc = null;
-		// for (int i = 0; i < directions.length; i++) {
-		// 	loc = locHQ.add(directions[i]);
-
-		// 	if (loc.equals(mloc)) {
-		// 		if (clockwise) loc = locHQ.add(directions[(i + 1) % 8]);
-		// 		else loc = locHQ.add(directions[(i + 7) % 8]);
-		// 		break;
-		// 	}
-		// }
-
-		// if (loc == null) return false;
-		// return tryMove(mloc.directionTo(loc));
 	}
 
 	/* this will see if this landscaper needs to move for adaptive wall, and make it move */
