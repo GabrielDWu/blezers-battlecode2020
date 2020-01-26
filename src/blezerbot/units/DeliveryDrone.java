@@ -109,7 +109,6 @@ public class DeliveryDrone extends Unit {
 	}
 	public void run() throws GameActionException {
 		super.run();
-
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 		ArrayList<MapLocation> senseLocations = getLocationsInRadius(rc.getLocation(), Math.min(rc.getCurrentSensorRadiusSquared(), 8));
@@ -139,7 +138,7 @@ public class DeliveryDrone extends Unit {
 		if(enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ)<=5 && status == DeliveryDroneStatus.HARASS){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
-		if(numDrones>=droneRushThreshold) {
+		if(numDrones>=droneRushThreshold && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) {
 			rushRound = rc.getRoundNum();
 			status = DeliveryDroneStatus.HARASS;
 			harassCenter = enemyHQ;
@@ -276,7 +275,6 @@ public class DeliveryDrone extends Unit {
 					enemyHQ = loc;
 					writeMessage(Message.enemyHqLocation(enemyHQ));
 					sentFound = true;
-					System.out.println("Found enemy hq");
 				}
 				break;
 

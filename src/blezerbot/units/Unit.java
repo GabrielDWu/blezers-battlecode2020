@@ -16,6 +16,7 @@ public abstract class Unit extends Robot {
 	public int[][] visited;
 	public boolean[] safeFromFlood;
 	public boolean[][] _notFlooded;
+	final static int DRONE_RUN_RADIUS = 7;
 
 	public Unit(RobotController rc) throws GameActionException {
 		super(rc);
@@ -30,6 +31,7 @@ public abstract class Unit extends Robot {
 			if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
 			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 			if (rc.getType() != RobotType.DELIVERY_DRONE) {
+				// which tiles will flood next turn?
 				if (_notFlooded == null) _notFlooded = new boolean[5][5];
 				MapLocation mloc = rc.getLocation();
 				boolean[] ni = _notFlooded[0];
@@ -94,6 +96,24 @@ public abstract class Unit extends Robot {
 					x = dir.dx + 2;
 					y = dir.dy + 2;
 					safeFromFlood[dir.ordinal()] = !rc.canSenseLocation(rc.adjacentLocation(dir)) || rc.senseElevation(rc.adjacentLocation(dir)) > w || (_notFlooded[x+1][y]&&_notFlooded[x+1][y+1]&&_notFlooded[x+1][y-1]&&_notFlooded[x-1][y]&&_notFlooded[x-1][y+1]&&_notFlooded[x-1][y-1]&&_notFlooded[x][y+1]&&_notFlooded[x][y-1]&&_notFlooded[x][y]);
+				}
+
+				// run away from drones
+				RobotInfo[] info = rc.senseNearbyRobots(DRONE_RUN_RADIUS, rc.getTeam() == Team.A ? Team.B : Team.A);
+				boolean moved = false;
+				for (RobotInfo r : info) {
+					if (r.getType() == RobotType.DELIVERY_DRONE) {
+						for (Direction dir : directions) {
+							int newDist = rc.getLocation().add(dir).distanceSquaredTo(r.getLocation());
+							if (newDist > rc.getLocation().distanceSquaredTo(r.getLocation()) && newDist > 2) {
+								if (tryMove(dir)) {
+									moved = true;
+									break;
+								}
+							}
+						}
+						if (moved) break;
+					}
 				}
 			}
 		}
