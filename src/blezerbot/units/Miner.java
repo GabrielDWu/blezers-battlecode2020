@@ -39,6 +39,8 @@ public class Miner extends Unit {
 
 	int buildableTiles;
 
+	int returnTries;
+
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
 	}
@@ -157,12 +159,14 @@ public class Miner extends Unit {
 					if(buildLocation == null){	// can build anywhere far from hq
 						if (buildingTries++ > 3){
 							status = prevStatus == null ? MinerStatus.MINING : prevStatus;
+							if (status == MinerStatus.RETURNING) returnTries = 0;
 						}
 						for (Direction dir : directions) {
 							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 && buildingType != null &&
 									rc.canBuildRobot(buildingType, dir)) {
 								rc.buildRobot(buildingType, dir);
 								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
+								if (status == MinerStatus.RETURNING) returnTries = 0;
 							}
 						}
 						if(status != (prevStatus == null ? MinerStatus.MINING : prevStatus)){	//Still trying to build... move away from HQ
@@ -183,6 +187,7 @@ public class Miner extends Unit {
 							if(rc.canBuildRobot(buildingType, rc.getLocation().directionTo(buildLocation))){
 								rc.buildRobot(buildingType, rc.getLocation().directionTo(buildLocation));
 								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
+								if (status == MinerStatus.RETURNING) returnTries = 0;
 							}
 						}else{
 							goTo(buildLocation);
@@ -253,7 +258,10 @@ public class Miner extends Unit {
 									buildingTries = 0;
 								}
 							}
-							if (status != MinerStatus.BUILDING) status = MinerStatus.RETURNING;
+							if (status != MinerStatus.BUILDING) {
+								status = MinerStatus.RETURNING;
+								returnTries = 0;
+							}
 						}
 						else if (soupLoc != null && rc.canSenseLocation(soupLoc) && rc.senseSoup(soupLoc) == 0) {
 							soupLoc = null;
@@ -267,8 +275,12 @@ public class Miner extends Unit {
 					if (rc.getLocation().isAdjacentTo(chosenRefinery)) {
 						status = MinerStatus.DEPOSITING;
 					}
-					else if (rc.getRoundNum() % 20 == 0) {
-						status = MinerStatus.MINING; // try to build refinery
+					else if (++returnTries % 50 == 0) {
+						prevStatus = MinerStatus.RETURNING;
+						status = MinerStatus.BUILDING;
+						buildingType = RobotType.REFINERY;
+						buildLocation = null;
+						buildingTries = 0;
 					}
 					break;
 				case DEPOSITING:
