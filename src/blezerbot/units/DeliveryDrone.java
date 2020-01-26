@@ -3,7 +3,6 @@ package blezerbot.units;
 import battlecode.common.*;
 import java.util.*;
 import blezerbot.*;
-import javafx.beans.binding.IntegerBinding;
 
 import static blezerbot.units.Landscaper.terraformHeight;
 
@@ -52,13 +51,13 @@ public class DeliveryDrone extends Unit {
 
 	}
 	public boolean badMap(){
-		System.out.println(locHQ.y + " " + cornerThreshold);
+		//System.out.println(locHQ.y + " " + cornerThreshold);
 		boolean b1 = (locHQ.x<=cornerThreshold || locHQ.x>=rc.getMapWidth() - cornerThreshold);
 		boolean b2 = (locHQ.y<=cornerThreshold || locHQ.y>=rc.getMapHeight() - cornerThreshold);
 		return (b1|| b2);
 	}
 	public boolean HQInCorner(){
-		System.out.println(locHQ.y + " " + cornerThreshold);
+		//System.out.println(locHQ.y + " " + cornerThreshold);
 		boolean b1 = (locHQ.x<=cornerThreshold || locHQ.x>=rc.getMapWidth() - cornerThreshold);
 		boolean b2 = (locHQ.y<=cornerThreshold || locHQ.y>=rc.getMapHeight() - cornerThreshold);
 		return (b1 && b2);
@@ -88,7 +87,7 @@ public class DeliveryDrone extends Unit {
 			if(rc.canSenseLocation(nloc) == false) continue;
 			RobotInfo rinfo = rc.senseRobotAtLocation(nloc);
 			if(rinfo != null && (rinfo.type == RobotType.LANDSCAPER||rinfo.type ==RobotType.HQ) && rinfo.getTeam() == rc.getTeam() && rc.senseElevation(nloc)>=wallThreshold){
-				System.out.println(dir);
+				//System.out.println(dir);
 				return true;
 			}
 		}
@@ -102,7 +101,7 @@ public class DeliveryDrone extends Unit {
 			RobotInfo rinfo = rc.senseRobotAtLocation(nloc);
 			if(rinfo != null && (rinfo.type == RobotType.LANDSCAPER||rinfo.type ==RobotType.HQ) && rinfo.getTeam() == rc.getTeam() && rc.senseElevation(nloc)>=wallThreshold){
 			//	System.out.println(dir);
-				System.out.println(dir + " ASD " + loc.x + " " + loc.y);
+				//System.out.println(dir + " ASD " + loc.x + " " + loc.y);
 				return true;
 			}
 		}
@@ -110,7 +109,7 @@ public class DeliveryDrone extends Unit {
 	}
 	public void run() throws GameActionException {
 		super.run();
-		System.out.println(status + " " + rc.getRoundNum());
+
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 		ArrayList<MapLocation> senseLocations = getLocationsInRadius(rc.getLocation(), Math.min(rc.getCurrentSensorRadiusSquared(), 8));
@@ -145,9 +144,9 @@ public class DeliveryDrone extends Unit {
 			status = DeliveryDroneStatus.HARASS;
 			harassCenter = enemyHQ;
 		}
-		System.out.println(rushRound + " " + numDrones + " " + status) ;
+		//System.out.println(rushRound + " " + numDrones + " " + status) ;
 		if(rushRound +100<= rc.getRoundNum()  && rushRound != -1 &&numDrones>=droneRushThreshold) {
-			System.out.println("HUH");
+			//System.out.println("HUH");
 			status = DeliveryDroneStatus.ATTACKING;
 		}
 		if(rushRound + 175<= rc.getRoundNum() && rushRound!=-1){
@@ -241,7 +240,7 @@ public class DeliveryDrone extends Unit {
 					else{
 						MapLocation use = locHQ;
 						if(HQInCorner()) use = getCloseCornerHQ();
-						System.out.println(use.x + " " + use.y);
+						//System.out.println(use.x + " " + use.y);
 						dir = rc.getLocation().directionTo(use);
 						for (int i = 0; i < 8; i++) {
 							Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
@@ -404,7 +403,7 @@ public class DeliveryDrone extends Unit {
 				}
             	if(closeWater == null){
             		findWater();
-            		System.out.println("HUHUH");
+            		//System.out.println("HUHUH");
 				}else{
             		if(rc.getLocation().isAdjacentTo(closeWater)){
             			if(rc.canDropUnit(rc.getLocation().directionTo(closeWater))){
@@ -417,7 +416,7 @@ public class DeliveryDrone extends Unit {
 							}
 						}
 					}else{
-            			System.out.println(closeWater.x + " ASD " + closeWater.y);
+            			//System.out.println(closeWater.x + " ASD " + closeWater.y);
 						goTo(closeWater);
 					}
 				}

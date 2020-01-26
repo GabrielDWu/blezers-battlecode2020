@@ -11,6 +11,7 @@ public abstract class Unit extends Robot {
 	int lastDist = -1;
 	long[][] unitVisited;
 	int unitVisitedIndex;
+	boolean goingCW;
 	public boolean[][] seen;
 	public int[][] visited;
 	public boolean[] safeFromFlood;
@@ -162,9 +163,11 @@ public abstract class Unit extends Robot {
 		if(r == RobotType.REFINERY || r == RobotType.DESIGN_SCHOOL || r == RobotType.VAPORATOR || r == RobotType.FULFILLMENT_CENTER || r == RobotType.HQ || r == RobotType.NET_GUN) return true;
 		return false;
 	}
+
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady() || rc.getLocation().equals(loc)) return;
 		if (unitVisited == null) return;
+		MapLocation mloc = rc.getLocation();
 		if (!loc.equals(dest)) {
 			dest = loc;
 			lastDist = 0;
@@ -174,13 +177,21 @@ public abstract class Unit extends Robot {
 				unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
 				unitVisitedIndex = 0;
 			}
+			if (mloc.add(mloc.directionTo(loc).rotateRight()).distanceSquaredTo(loc) <= mloc.add(mloc.directionTo(loc).rotateLeft()).distanceSquaredTo(loc)) {
+				goingCW = true;
+			} else goingCW = false;
 		}
-		MapLocation mloc = rc.getLocation();
 		incUnitVisited(mloc);
 		if (getUnitVisited(mloc) > 4) {
 			randomMove();
 			return;
 		}
+		if (goingCW) goToCW(loc);
+		else goToCCW(loc);
+	}
+
+	public void goToCW(MapLocation loc) throws GameActionException {
+		MapLocation mloc = rc.getLocation();
 
 		//Check if still should be hugging (if nothing around you, hugging=false)
 		if(hugging){
@@ -266,6 +277,97 @@ public abstract class Unit extends Robot {
 		//Right back diagonal turn
 		if(tryMove(dir)){
 			facing = dir.rotateLeft();
+			return;
+		}
+	}
+
+	public void goToCCW(MapLocation loc) throws GameActionException {
+		MapLocation mloc = rc.getLocation();
+
+		//Check if still should be hugging (if nothing around you, hugging=false)
+		if(hugging){
+			hugging = false;
+			for(Direction dir : directions){
+				if(!canMove(dir)){
+					hugging = true;
+					break;
+				}
+			}
+		}
+		if (!hugging) {
+			Direction dir = mloc.directionTo(loc);
+			if (tryMove(dir)) return;
+
+			//Turn right until you see an empty space
+			facing = (orthogonal(dir) ? dir : dir.rotateLeft());
+			int cnt = 0;
+			while(!canMove(facing)){
+				facing = facing.rotateLeft().rotateLeft();
+				cnt++;
+				if(cnt>4) return;
+			}
+			lastDist = mloc.distanceSquaredTo(loc);
+			hugging = true;
+		}
+		if (mloc.distanceSquaredTo(loc) < lastDist) {
+			hugging = false;
+			goTo(loc);
+			return;
+		}
+		Direction dir = facing.rotateRight().rotateRight();
+		//Left turn
+		if(tryMove(dir)){
+			facing=dir;
+			return;
+		}
+		dir = dir.rotateLeft();
+
+		//Left forward diagonal turn
+		if (canMove(dir)) {
+			Direction fdir = dir.rotateLeft();
+			if (canMove(fdir)) {
+				//forward if it gets us closer
+				int fdist = mloc.add(fdir).distanceSquaredTo(loc);	
+				if (fdist < lastDist && fdist < mloc.add(dir).distanceSquaredTo(loc) && tryMove(fdir)) return;
+			}
+			if(tryMove(dir)){
+				facing = dir.rotateRight();
+				return;
+			}
+		}
+		dir = dir.rotateLeft();
+
+		//Forward
+		if(tryMove(dir))return;
+		dir = dir.rotateLeft();
+
+		//Right forward diagonal turn
+		if (canMove(dir)) {
+			Direction fdir = dir.rotateLeft();
+			if (canMove(fdir)) {
+				//right if it gets us closer
+				int fdist = mloc.add(fdir).distanceSquaredTo(loc);	
+				if (fdist < lastDist && fdist < mloc.add(dir).distanceSquaredTo(loc) && tryMove(fdir)) {
+					facing = fdir;
+					return;
+				};
+			}
+			if(tryMove(dir)){
+				return;
+			}
+		}
+		dir = dir.rotateLeft();
+
+		//Right turn
+		if(tryMove(dir)){
+			facing = dir;
+			return;
+		}
+		dir = dir.rotateLeft();
+
+		//Right back diagonal turn
+		if(tryMove(dir)){
+			facing = dir.rotateRight();
 			return;
 		}
 	}
