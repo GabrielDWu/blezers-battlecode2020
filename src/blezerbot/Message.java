@@ -19,7 +19,8 @@ public class Message {
 		DRONE_ATTACK,
 		REFINERY_LOC,
         HARASS,
-        DEATH
+        DEATH,
+        BUILD_ANY
 	}
 
 	static int[][] typeData = new int[][]{
@@ -37,6 +38,7 @@ public class Message {
 		{6, 6 /*x, y*/, 15 /*miner id*/}, // tell miner about refinery
         {15 /*miner id*/, 6, 6 /*x, y*/}, // tell a drone to harass a certain location
         {15 /*id*/, 4 /*type*/, 6 /*x*/, 6 /*y*/}, // death
+        {4 /*type*/}, // build, any place
 	};
 
 	static MessageType[] messageTypes;
@@ -125,6 +127,10 @@ public class Message {
 
     public static Message death(int robotID, RobotType type, MapLocation loc) {
     	return new Message(MessageType.DEATH, typeData[13], new int[]{robotID, type.ordinal(), loc.x, loc.y});
+    }
+
+    public static Message build(RobotType type) {
+    	return new Message(MessageType.BUILD_ANY, typeData[14], new int[]{type.ordinal()});
     }
 
 	public int getInt(int size){

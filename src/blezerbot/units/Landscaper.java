@@ -28,14 +28,14 @@ public class Landscaper extends Unit {
 	int moveTries; /* how many times have we tried to move here */
 	boolean tryingClockwise;
 	boolean movedOnWall;
+	boolean buildingCorner;
+	int waitToBuildTurns;
+	int doneMovingDeposited;
 	int floodTries;
 	public final static int moveCap = 15; /* how many tries to move into a position without our robot */
 	public final static int floodCap = 50; /* when the design school's build location is flooded for x turns, go into building mode */
 	public final static int blockedCap = 250; /* how many tries to move into a position with our robot */
-	public final static int terraformHeight = 10; /* how high should I make the land? */
-	public final static int terraformDist = 3; /* how far should I be from the hq before starting? */
 	public final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
-	public final static int terraformTries = 20; /* how many random moves away from hq to try? */
 	LandscaperStatus lastStatus;
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
@@ -93,6 +93,14 @@ public class Landscaper extends Unit {
 				}
 			}
 		}
+		RobotInfo[] ri = rc.senseNearbyRobots(locHQ, 5, rc.getTeam());
+		for (int i = 0; i < ri.length; i++) {
+			if(locDS == null && ri[i].getType() == RobotType.DESIGN_SCHOOL) {
+				locDS = ri[i].getLocation();
+				idDS = ri[i].getID();
+				filledOffset = ((-locHQ.directionTo(locDS).ordinal()-1)%8+8)%8;
+			}
+		}
 		// System.out.println(status + " " + lastStatus);
 		if(locHQ != null){
 			d = rc.getLocation().directionTo(locHQ);
@@ -102,6 +110,7 @@ public class Landscaper extends Unit {
 		}
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
 		// System.out.println(status);
+		System.out.println(status);
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -131,7 +140,17 @@ public class Landscaper extends Unit {
 				if (locHQ == null) {
 					return;
 				}
-				if (idDS != -1 && !rc.canSenseRobot(idDS) && mloc.distanceSquaredTo(locDS) <= rc.getCurrentSensorRadiusSquared()) {
+				for (int i = 0; i < safeFromFlood.length; i++) {
+					if (!safeFromFlood[i]) status = LandscaperStatus.BUILDING;
+				}
+				if (!mloc.isAdjacentTo(locHQ)) {
+					if (tryMove(mloc.directionTo(locHQ))) return;
+					int di = r.nextInt(directions.length);
+					for (int i = 0; i < directions.length; i++) {
+						if (tryMove(directions[(di+i)%directions.length])) return;
+					}
+				}
+				if (status == LandscaperStatus.BUILDING || idDS != -1 && !rc.canSenseRobot(idDS) && mloc.distanceSquaredTo(locDS) <= rc.getCurrentSensorRadiusSquared()) {
 					status = LandscaperStatus.BUILDING;
 				} else {
 					boolean[] filled = new boolean[8];
@@ -246,7 +265,7 @@ public class Landscaper extends Unit {
 					}
 
 					if (doneMoving) {
-						if (rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
+						if (rc.canSenseLocation(locHQ.add(locHQ.directionTo(locDS))) && rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
 							++floodTries;
 							if (floodTries == floodCap) status = LandscaperStatus.BUILDING;
 						} else floodTries = 0;
@@ -256,7 +275,7 @@ public class Landscaper extends Unit {
 							Direction mdir = null;
 							int mdirt = Integer.MIN_VALUE;
 							for (Direction dir : directions) {
-								if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+								if (rc.canSenseLocation(mloc.add(dir))) {
 									int ndirt = rc.senseElevation(mloc.add(dir));
 									if (ndirt > mdirt && rc.canDigDirt(dir)) {
 										mdir = dir;
@@ -267,7 +286,10 @@ public class Landscaper extends Unit {
 							if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
 						} else {
 							attackEnemyBuilding();
-							if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
+							// deposit 2 dirt to signal to landscaper behind that you're done
+							if (rc.canDepositDirt(Direction.CENTER) && doneMovingDeposited++ < 2) {
+								rc.depositDirt(Direction.CENTER);
+							}
 						}
 					}
 					break;
@@ -282,12 +304,11 @@ public class Landscaper extends Unit {
 				} else {
 					reinforceWall(mloc, d);
 				}
-
 				break;
 			case CORNER:
-				if(locHQ == null) return;
+				if(locHQ == null || locDS == null) return;
 				boolean inPlace = (kingDistance(locHQ, rc.getLocation())==2) && !isLattice(rc.getLocation());
-				if(inPlace) {
+				if (buildingCorner) {
 					if (rc.getDirtCarrying() < 1) {
 						Direction mdir = null;
 						int mdirt = Integer.MIN_VALUE;
@@ -318,25 +339,135 @@ public class Landscaper extends Unit {
 									}
 								}
 							}
-							rc.depositDirt(mdir);
+							if (mdir != null) rc.depositDirt(mdir);
+						}
+					}
+				} else {
+					if (!doneMoving) {
+					//	System.out.println("!doneMoving");
+						Direction moveDir = getNextCornerWallDirection(tryingClockwise);
+						if (!inPlace) {
+							if (!tryMove(moveDir)) {
+								tryingClockwise = !tryingClockwise;
+							}
+							break;
+						}
+
+						MapLocation nextLoc = mloc.add(moveDir);
+						if (isLattice(mloc.add(moveDir))) nextLoc = nextLoc.add(moveDir);
+						if (rc.canSenseLocation(nextLoc)) {
+						//	System.out.println("WHY");
+							boolean done = false;
+							if (!isOurRobot(nextLoc)) {
+								int diff = rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc);
+								if (diff > 0) {
+									// if (tryingClockwise) System.out.println("DIFF " + diff + " " + rc.canDigDirt(moveDir));
+									if (rc.canDigDirt(moveDir)) {
+										rc.digDirt(moveDir);
+										done = true;
+									} else {
+										if (attackEnemyBuilding()) done = true;
+										Direction dir = findWallLattice(mloc);
+										if (dir != null) {
+											if (rc.canDepositDirt(dir)) {
+												rc.depositDirt(dir);
+												done = true;
+											}
+										}
+									}
+								} else if (diff < 0) {
+									if (rc.getDirtCarrying() < 1) {
+										Direction mdir = null;
+										int mdirt = Integer.MIN_VALUE;
+										for (Direction dir : directions) {
+											if (rc.canSenseLocation(mloc.add(dir)) && isLattice(mloc.add(dir))) {
+												int ndirt = rc.senseElevation(mloc.add(dir));
+												if (ndirt > mdirt && rc.canDigDirt(dir)) {
+													mdir = dir;
+													mdirt = ndirt;
+												}
+											}
+										}
+										if (mdir != null && rc.canDigDirt(mdir)) {
+											rc.digDirt(mdir);
+											done = true;
+										}
+									}
+									else {
+										if (attackEnemyBuilding()) done = true;
+										if (rc.canDepositDirt(moveDir)) {
+											rc.depositDirt(moveDir);
+											done = true;
+										}
+									}
+								}
+							}
+
+							if (!done) {
+								// System.out.println(isOurRobot(mloc.add(moveDir)) + " " + Math.abs(rc.senseElevation(mloc.add(moveDir)) - rc.senseElevation(mloc)));
+								/* if totally necessary, replace this with filled logic (and re-test it) */
+								if (isOurRobot(nextLoc) && Math.abs(rc.senseElevation(nextLoc) - rc.senseElevation(mloc)) > 0) { /* means that the landscaper in front is doneMoving */
+									if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+									else doneMoving = true;
+									moveTries = 0;
+								} else if (!isValidWall(nextLoc) || nextLoc.equals(locHQ.add(locHQ.directionTo(locDS)))) {
+									if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+									else doneMoving = true;
+									moveTries = 0;
+								} else {
+									if (isOurRobot(nextLoc)) { /* replace with filled later */
+										moveTries++;
+										if (moveTries >= blockedCap) {
+											if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+											else doneMoving = true;
+											moveTries = 0;
+										}
+									} else if (tryMove(moveDir)) {
+										moveTries = 0;
+										movedOnWall = true;
+									} else {
+										moveTries++;
+										if (moveTries >= moveCap) {
+											if (tryingClockwise && !movedOnWall) tryingClockwise = false;
+											else doneMoving = true;
+											moveTries = 0;
+										}
+									}
+								}
+							}
 						}
 					}
 
-				}else {
-					Direction dir = rc.getLocation().directionTo(locHQ);
 
-					if(canMove(dir)) {
-						rc.move(dir);
-					}else {
-						for(int i=0; i<8; i++) {
-							dir = dir.rotateLeft();
-							if(canMove(dir) && !isLattice(mloc.add(dir))) {
-								rc.move(dir);
-								break;
+					if (doneMoving) {
+						if (rc.canSenseLocation(locHQ.add(locHQ.directionTo(locDS))) && rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
+							++floodTries;
+							if (floodTries == floodCap) status = LandscaperStatus.BUILDING;
+						} else floodTries = 0;
+					//	System.out.println("HUH");
+						if (rc.getDirtCarrying() < 1) {
+							Direction mdir = null;
+							int mdirt = Integer.MIN_VALUE;
+							for (Direction dir : directions) {
+								if (rc.canSenseLocation(mloc.add(dir))) {
+									int ndirt = rc.senseElevation(mloc.add(dir));
+									if (ndirt > mdirt && rc.canDigDirt(dir)) {
+										mdir = dir;
+										mdirt = ndirt;
+									}
+								}
+							}
+							if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+						} else {
+							attackEnemyBuilding();
+							// deposit one dirt to signal to landscaper behind that you're done
+							if (rc.canDepositDirt(Direction.CENTER) && doneMovingDeposited++ < 2) {
+								rc.depositDirt(Direction.CENTER);
 							}
 						}
 					}
 				}
+
 
 				break;
 			case TERRAFORMING:
@@ -422,6 +553,7 @@ public class Landscaper extends Unit {
 	}
 
 	public void reinforceWall(MapLocation mloc, Direction d) throws GameActionException {
+		System.out.println(rc.getDirtCarrying());
 		if (rc.getDirtCarrying() < 1) {
 			/* heal HQ */
 			if (rc.canDigDirt(d)) {
@@ -464,66 +596,6 @@ public class Landscaper extends Unit {
 		}
 	}
 
-	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException {
-		int startIndex = r.nextInt(directions.length);
-		int stopIndex = startIndex;
-		int currentDist = taxicabDistance(mloc, enemyHQ);
-
-		for (int i = 0; i < terraformTries; i++) {
-			int ind = r.nextInt(directions.length);
-			Direction dir = directions[ind];
-			MapLocation nloc = mloc.add(dir);
-
-			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
-				if (tryMove(dir)) return true;
-			}
-		}
-
-		do {
-			Direction dir = directions[startIndex];
-			MapLocation nloc = mloc.add(dir);
-
-			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
-				if (tryMove(dir)) return true;
-			}
-
-			++startIndex;
-			startIndex %= directions.length;
-		} while (startIndex != stopIndex);
-
-		return false;
-	}
-
-	/* pick a random move taking me not closer to the HQ */
-	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException {
-		int startIndex = r.nextInt(directions.length);
-		int stopIndex = startIndex;
-		int currentDist = taxicabDistance(mloc, locHQ);
-
-		for (int i = 0; i < terraformTries; i++) {
-			int ind = r.nextInt(directions.length);
-			Direction dir = directions[ind];
-			MapLocation nloc = mloc.add(dir);
-
-			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
-				if (tryMove(dir)) return true;
-			}
-		}
-
-		do {
-			Direction dir = directions[startIndex];
-			MapLocation nloc = mloc.add(dir);
-
-			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
-				if (tryMove(dir)) return true;
-			}
-
-			++startIndex;
-			startIndex %= directions.length;
-		} while (startIndex != stopIndex);
-
-		return false;
-	}
 	public boolean isOurRobot(MapLocation loc)  throws GameActionException {
 		RobotInfo info = rc.senseRobotAtLocation(loc);
 
@@ -579,6 +651,7 @@ public class Landscaper extends Unit {
 		return dir;
 	}
 	public boolean canTerraform(MapLocation mloc, Direction dir, Direction nearLattice) throws GameActionException{
+		if (nearLattice == null) return false;
 		MapLocation nloc = mloc.add(dir);
 		if(rc.canSenseLocation(nloc) == false) return false;
 		int currentElevation = rc.senseElevation(mloc);
@@ -764,6 +837,27 @@ public class Landscaper extends Unit {
 		return moveDir;
 	}
 
+	public Direction getNextCornerWallDirection(boolean clockwise) {
+		MapLocation mloc = rc.getLocation();
+		Direction moveDir = null, toHQ = mloc.directionTo(locHQ.add(locHQ.directionTo(mloc)));
+
+		if (!clockwise) {
+			if (orthogonal(toHQ)) {
+				moveDir = toHQ.rotateRight().rotateRight();
+			} else {
+				moveDir = toHQ.rotateRight();
+			}
+		} else {
+			if (orthogonal(toHQ)) {
+				moveDir = toHQ.rotateLeft().rotateLeft();
+			} else {
+				moveDir = toHQ.rotateLeft();
+			}
+		}
+
+		return moveDir;
+	}
+
 	public boolean moveOnWall(boolean clockwise) throws GameActionException {
 		Direction moveDir = getNextWallDirection(clockwise);
 
@@ -858,6 +952,9 @@ public class Landscaper extends Unit {
 				MapLocation loc = new MapLocation(message.data[0], message.data[1]);
 				if (loc.isAdjacentTo(rc.getLocation())) {
 					status = LandscaperStatus.BUILDING;
+					return true;
+				} else if (status == LandscaperStatus.CORNER && loc.equals(locHQ)) {
+					buildingCorner = true;
 					return true;
 				}
 				return false;

@@ -26,6 +26,7 @@ public class HQ extends Building {
 	int domesticScapers;
 	boolean isFarFromEdge;
 	HQstatus status;
+	int wallLandscapers;
 
 	public static enum HQstatus{
 		FIRST_MINERS,
@@ -55,7 +56,10 @@ public class HQ extends Building {
 		for (Direction dir: directions) {
 			MapLocation nloc = loc.add(dir);
 
-			if (isValidWall(nloc)) ++wallSquares;
+			if (isValidWall(nloc)) {
+				++wallSquares;
+				if (!orthogonal(dir)) wallSquares++;
+			}
 		}
 		isFarFromEdge = (loc.x >= 2 && loc.y >=2 && loc.x < rc.getMapWidth()-2 && loc.y < rc.getMapHeight()-2);
 		status = HQstatus.FIRST_MINERS;
@@ -79,15 +83,17 @@ public class HQ extends Building {
 		switch(status){
 			case FIRST_MINERS:
 			//Build original miners
-				if (builtMiners < 4) {
-					for (Direction dir : directions) {
-						if (builtMiners < 8 && rc.canBuildRobot(RobotType.MINER, dir)) {
+				if (builtMiners < 6) {
+					int di = r.nextInt(directions.length);
+					for (int i = 0; i < directions.length; i++) {
+						Direction dir = directions[(di+i)%directions.length];
+						if (builtMiners < 6 && rc.canBuildRobot(RobotType.MINER, dir)) {
 							rc.buildRobot(RobotType.MINER, dir);
 							builtMiners++;
 						}
 					}
 					break;
-				}else {
+				} else {
 					status = HQstatus.FIRST_LANDSCAPERS;
 					//No break here
 				}
@@ -95,7 +101,6 @@ public class HQ extends Building {
 
 
 		}
-
 
 		// build wall
 		if (buildingMinerLoc != null) {
@@ -108,7 +113,7 @@ public class HQ extends Building {
 			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
-		if (domesticScapers >= wallSquares && !landscaperWalled) {
+		if (wallLandscapers >= wallSquares && !landscaperWalled) {
 			landscaperWalled = true;
 			writeMessage(Message.buildWall(rc.getLocation()));
 		}
@@ -140,11 +145,9 @@ public class HQ extends Building {
 			hq_sentLoc = true;
 		}
 
-        if (landscaperWalled && units[5 /*fc*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 10 && rc.getTeamSoup() > 200) {
+        if ((landscaperWalled || rc.getRoundNum() > 500) && units[5 /*fc*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 10 && rc.getTeamSoup() > 200) {
             waitingForBuilding = 1;
-            ArrayList<InternalUnit> miners = units[RobotType.MINER.ordinal()];
-            InternalUnit miner = miners.get(r.nextInt(miners.size()));
-            writeMessage(Message.build(RobotType.FULFILLMENT_CENTER, miner.id));
+            writeMessage(Message.build(RobotType.FULFILLMENT_CENTER));
         }
 
 
@@ -185,22 +188,28 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							writeMessage(Message.doSomething(unitID, 2));	//Rush
-							addMessageToQueue();
+							//writeMessage(Message.doSomething(unitID, 2));	//Rush
+							//addMessageToQueue();
 						}else if (status==HQstatus.FIRST_LANDSCAPERS){
 							specialMiner = unitID;
+						} else if (units[RobotType.MINER.ordinal()].size() > 3) {
+							writeMessage(Message.doSomething(unitID, 4)); // go to terraform
+							addMessageToQueue();
 						}
 						break;
 					case LANDSCAPER:
 						if(enemyHQ == null || location.distanceSquaredTo(enemyHQ) > 18){
 							domesticScapers++;
-							if(domesticScapers <= wallSquares){
-								writeMessage(Message.doSomething(unitID, 0));	//Defend
-							}else if(isFarFromEdge && domesticScapers <= wallSquares+12){
-								writeMessage(Message.doSomething(unitID, 3));	//Corner
-							}else{
+							if(domesticScapers < TERRAFORM_LANDSCAPERS){
 								writeMessage(Message.doSomething(unitID, 1));	//Terraform
+							}else if(wallLandscapers >= 8){
+								writeMessage(Message.doSomething(unitID, 3));	//Corner
+								wallLandscapers++;
+							}else{
+								writeMessage(Message.doSomething(unitID, 0));	//Defend
+								wallLandscapers++;
 							}
+							addMessageToQueue();
 						}
 						break;
 					case DELIVERY_DRONE:
