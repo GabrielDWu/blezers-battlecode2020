@@ -19,7 +19,6 @@ public class DeliveryDrone extends Unit {
 		HARASS,
 		DROP_WATER,
 		DEFENDING_HQ,
-		CRUNCH_ENEMY
 	}
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
@@ -32,7 +31,6 @@ public class DeliveryDrone extends Unit {
 	MapLocation waitLocation;
 	MapLocation lastSeen;
 	final int wallThreshold = terraformHeight + 1;
-
 	MapLocation closeWater;
 	int closeWaterDist;	//King distance to closeWater
 
@@ -139,57 +137,14 @@ public class DeliveryDrone extends Unit {
 		if(enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ)<=5 && status == DeliveryDroneStatus.HARASS){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
-		if(rc.getRoundNum()>=2000 && rc.getID()%2 == 0) {
+		if(rc.getRoundNum()>=2000 && numDrones>=40) {
 			status = DeliveryDroneStatus.HARASS;
 			harassCenter = enemyHQ;
 		}
-		if(rc.getRoundNum()>=2100 && rc.getID()%2 == 0) {
-			status = DeliveryDroneStatus.CRUNCH_ENEMY;
+		if(rc.getRoundNum()>=2100 &&numDrones>=40) {
+			status = DeliveryDroneStatus.ATTACKING;
 		}
 		switch(status) {
-			case CRUNCH_ENEMY:
-				if(enemyHQ == null){
-					status = DeliveryDroneStatus.NOTHING;
-					break;
-				}
-				//Update investigate
-				if(investigate != null) {
-					if(rc.canSenseLocation(investigate)) {
-						RobotInfo rob = rc.senseRobotAtLocation(investigate);
-						if (rob == null || rob.getTeam() == rc.getTeam() || rob.getType() == RobotType.DELIVERY_DRONE) {
-							investigate = null;
-						}
-					}else{
-						investigate = null;
-					}
-				}
-				for(RobotInfo enemy: rc.senseNearbyRobots(-1, (rc.getTeam() == Team.B)?Team.A:Team.B)){
-					if(enemy.type != RobotType.DELIVERY_DRONE && !isBuilding(enemy.type)){
-						if(investigate == null || rc.getLocation().distanceSquaredTo(enemy.getLocation()) <
-								rc.getLocation().distanceSquaredTo(investigate)) {
-							investigate = enemy.getLocation();
-							if(enemy.type== RobotType.LANDSCAPER) break;
-						}
-					}
-				}
-
-				if(investigate != null) {
-					if (rc.getLocation().isAdjacentTo(investigate)) {
-						int robID = rc.senseRobotAtLocation(investigate).getID();
-						if (rc.canPickUpUnit(robID)) {
-							holdingTeam = rc.senseRobotAtLocation(investigate).getTeam();
-							rc.pickUpUnit(robID);
-							status = DeliveryDroneStatus.DROP_WATER;
-							prevStatus = DeliveryDroneStatus.CRUNCH_ENEMY;
-						}
-					} else {
-						goToCrunch(investigate);
-					}
-				}
-				else{
-					goToCrunch(enemyHQ);
-				}
-				break;
 			case DEFENDING_HQ:
 				if(locHQ == null){
 					status = DeliveryDroneStatus.NOTHING;
@@ -691,88 +646,6 @@ public class DeliveryDrone extends Unit {
 								rc.getLocation().add(dir).distanceSquaredTo(enemyHQs[enemyHQc]) > 15)));
 	}
 
-	public void goToCrunch(MapLocation loc) throws GameActionException {
-		if(!rc.isReady() || rc.getLocation().equals(loc)) return;
-		if (unitVisited == null) return;
-		if (!loc.equals(dest)) {
-			dest = loc;
-			lastDist = 0;
-			hugging = false;
-			unitVisitedIndex++;
-			if (unitVisitedIndex > 15) {
-				unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
-				unitVisitedIndex = 0;
-			}
-		}
-		MapLocation mloc = rc.getLocation();
-		incUnitVisited(mloc);
-		if (getUnitVisited(mloc) > 4) {
-			randomOrthogonalMove();
-			return;
-		}
-		//Check if still should be hugging (if nothing around you, hugging=false)
-		if(hugging){
-			hugging = false;
-			for(Direction dir : orthogonalDirections){
-				if(!rc.canMove(dir)){
-					hugging = true;
-					break;
-				}
-			}
-		}
-		if (!hugging) {
-			Direction dir;
-			if(Math.abs(mloc.x - loc.x) > Math.abs(mloc.y - loc.y)){
-				if(mloc.x > loc.x){
-					dir = Direction.WEST;
-				}else{
-					dir = Direction.EAST;
-				}
-			}else{
-				if(mloc.y > loc.y){
-					dir = Direction.SOUTH;
-				}else{
-					dir = Direction.NORTH;
-				}
-			}
-
-			if (tryMove(dir)) return;
-
-			//Turn right until you see an empty space
-			facing = dir;
-			int cnt = 0;
-			while(!rc.canMove(facing)){
-				facing = facing.rotateRight().rotateRight();
-				cnt++;
-				if(cnt>4) return;
-			}
-			lastDist = mloc.distanceSquaredTo(loc);
-			hugging = true;
-		}
-		if (mloc.distanceSquaredTo(loc) < lastDist) {
-			hugging = false;
-			goTo(loc);
-			return;
-		}
-		Direction dir = facing.rotateLeft().rotateLeft();
-		//Left turn
-		if(tryMove(dir)){
-			facing=dir;
-			return;
-		}
-		dir = dir.rotateRight().rotateRight();
-
-		//Forward
-		if(tryMove(dir))return;
-
-		dir = dir.rotateRight().rotateRight();
-
-		//Right turn
-		if(tryMove(dir)){
-			facing = dir;
-			return;
-		}
-	}
 	public void goTo(MapLocation loc) throws GameActionException {
 		if(!rc.isReady() || rc.getLocation().equals(loc)) return;
 		if (unitVisited == null) return;
