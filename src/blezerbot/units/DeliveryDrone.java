@@ -3,7 +3,6 @@ package blezerbot.units;
 import battlecode.common.*;
 import java.util.*;
 import blezerbot.*;
-import javafx.beans.binding.IntegerBinding;
 
 import static blezerbot.units.Landscaper.terraformHeight;
 
