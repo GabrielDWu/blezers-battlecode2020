@@ -20,6 +20,7 @@ public class DeliveryDrone extends Unit {
 		DROP_WATER,
 		DEFENDING_HQ,
 	}
+	final static int droneRushThreshold = 40;
 	DeliveryDroneStatus status;
 	boolean findingEnemyHQ;
 	MapLocation[] enemyHQs;
@@ -40,6 +41,7 @@ public class DeliveryDrone extends Unit {
 	ArrayList<MapLocation> waterLocations;
 	int searchID;
 	int enemyHQc;
+	int rushRound = -1;
 	boolean sentFound = false;
 	Team holdingTeam = null;
 	MapLocation prevLoc;
@@ -76,6 +78,7 @@ public class DeliveryDrone extends Unit {
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
+		rushRound = -1;
 		//cornerThreshold = 3;
 	}
 	boolean adjacentToBase() throws GameActionException{
@@ -137,12 +140,18 @@ public class DeliveryDrone extends Unit {
 		if(enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ)<=5 && status == DeliveryDroneStatus.HARASS){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
-		if(rc.getRoundNum()>=2000 && numDrones>=40) {
+		if(numDrones>=droneRushThreshold) {
+			rushRound = rc.getRoundNum();
 			status = DeliveryDroneStatus.HARASS;
 			harassCenter = enemyHQ;
 		}
-		if(rc.getRoundNum()>=2100 &&numDrones>=40) {
+		System.out.println(rushRound + " " + numDrones + " " + status) ;
+		if(rushRound +100<= rc.getRoundNum()  && rushRound != -1 &&numDrones>=droneRushThreshold) {
+			System.out.println("HUH");
 			status = DeliveryDroneStatus.ATTACKING;
+		}
+		if(rushRound + 175<= rc.getRoundNum() && rushRound!=-1){
+			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
 		switch(status) {
 			case DEFENDING_HQ:
