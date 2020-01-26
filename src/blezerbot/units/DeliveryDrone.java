@@ -5,6 +5,8 @@ import java.util.*;
 import blezerbot.*;
 import javafx.beans.binding.IntegerBinding;
 
+import static blezerbot.units.Landscaper.terraformHeight;
+
 public class DeliveryDrone extends Unit {
 	enum DeliveryDroneStatus {
 		PICK_UP,
@@ -28,7 +30,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation dropLocation;
 	MapLocation waitLocation;
 	MapLocation lastSeen;
-	int wallThreshold = 10;
+	int wallThreshold = terraformHeight + 1;
 
 	MapLocation closeWater;
 	int closeWaterDist;	//King distance to closeWater
