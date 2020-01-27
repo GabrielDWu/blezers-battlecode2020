@@ -213,13 +213,21 @@ public class HQ extends Building {
 						}
 						break;
 					case DELIVERY_DRONE:
-						if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 2  && (units[RobotType.DELIVERY_DRONE.ordinal()].size() <= 4
+						int droneCount = units[RobotType.DELIVERY_DRONE.ordinal()].size();
+						/*if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 2  && (units[RobotType.DELIVERY_DRONE.ordinal()].size() <= 4
 							|| enemyHQ == null)){
 							//Harass own hq location for defense
 							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
-						}else if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 5){
+						}
+						else if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 5){
 							//Harass opponent's hq to be annoying
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
+						}*/
+						if(droneCount%7<=1 || enemyHQ == null){
+							writeMessage(Message.tellHarass(unitID, enemyHQ));
+						}
+						else{
+							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
 						}
 						break;
 					case DESIGN_SCHOOL:

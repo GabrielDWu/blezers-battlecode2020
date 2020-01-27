@@ -55,6 +55,9 @@ public class DeliveryDrone extends Unit {
 
 	final static int cornerThreshold = 3;
 	final static int waterSenseRadius = 8;
+
+	int droneType = 0; // 0 nothing 1 defending 2 attacking
+
 	public DeliveryDrone(RobotController rc) throws GameActionException {
 		super(rc);
 	}
@@ -153,9 +156,24 @@ public class DeliveryDrone extends Unit {
 			status = DeliveryDroneStatus.DROP_WATER;
 		}
 
+		if(harassCenter == enemyHQ || (harassCenter != locHQ && locHQ != null)) {
+			droneType = 2;
+		}
+		if(harassCenter == locHQ || (harassCenter != enemyHQ && enemyHQ != null)){
+			droneType = 1;
+		}
+		if(droneType == 0){
+			status = DeliveryDroneStatus.FIND_ENEMY_HQ;
+		}
+		else if (droneType == 2){
+			status = DeliveryDroneStatus.HARASS;
+		}
+		else{
+			status = DeliveryDroneStatus.DEFENDING_HQ;
+		}
 		// assuming we will only harass their hq or ours
 		// start the bad hardcoding of conditions
-		int random = r.nextInt(100);
+		/*int random = r.nextInt(100);
 		if(random>10 && enemyHQ != null && harassCenter!= null &&
 				harassCenter.distanceSquaredTo(enemyHQ) <= harassCenter.distanceSquaredTo(locHQ)
 				&& status == DeliveryDroneStatus.HARASS){
@@ -167,7 +185,7 @@ public class DeliveryDrone extends Unit {
 				status = DeliveryDroneStatus.HARASS;
 			}
 			else status = DeliveryDroneStatus.DEFENDING_HQ;
-		}
+		}*/
 
 		// should i rush or not
 		if(rushRound != -1){
@@ -296,14 +314,17 @@ public class DeliveryDrone extends Unit {
 
 			case FIND_ENEMY_HQ:
 				if (enemyHQ != null) {
-					status = DeliveryDroneStatus.HARASS;
-					harassCenter = enemyHQ;
+				//	status = DeliveryDroneStatus.HARASS;
+				//	harassCenter = enemyHQ;
 					break;
 				}
 
 				MapLocation loc = findEnemyHQ();
 				if (loc != null && !sentFound) {
 					enemyHQ = loc;
+					status = DeliveryDroneStatus.HARASS;
+					droneType = 2;
+					harassCenter = enemyHQ;
 					writeMessage(Message.enemyHqLocation(enemyHQ));
 					sentFound = true;
 				}
