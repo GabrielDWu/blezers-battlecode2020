@@ -319,7 +319,7 @@ public abstract class Robot {
 	 */
 	  	int totalSize = 0;
 	  	for (int i = 0; i < message.sizes.length; i++) totalSize += message.sizes[i];
-	  	if(rc.getType() == RobotType.DELIVERY_DRONE) System.out.println(totalSize + " BIGFAIL SIZE " + messagePtr);
+	  	// if(rc.getType() == RobotType.DELIVERY_DRONE) System.out.println(totalSize + " BIGFAIL SIZE " + messagePtr);
 	  	if (messagePtr >= 192 - totalSize) addMessageToQueue(base_wager);
 	  	writeInt(message.type.ordinal(), 4);
 	  	for (int i = 0; i < message.data.length; i++) {

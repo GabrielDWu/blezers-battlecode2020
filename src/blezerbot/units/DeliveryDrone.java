@@ -126,7 +126,7 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public void run() throws GameActionException {
-		System.out.println(status + " " + droneType);
+		// System.out.println(status + " " + droneType);
 		super.run();
 
 		//Update closest water

@@ -112,6 +112,7 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
+		
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -312,6 +313,7 @@ public class Landscaper extends Unit {
 			case CORNER:
 				if(locHQ == null || locDS == null) return;
 				boolean inPlace = (kingDistance(locHQ, rc.getLocation())==2) && !isLattice(rc.getLocation());
+				if (inPlace) buildingCorner = true;
 				if (buildingCorner) {
 					if (inPlace) {
 						if (rc.getDirtCarrying() < 1) {
@@ -329,7 +331,6 @@ public class Landscaper extends Unit {
 							if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
 						} else {
 							//Make sure it won't flood soon
-							// System.out.println(rc.senseElevation(rc.getLocation()) + " " + (GameConstants.getWaterLevel(rc.getRoundNum()) + 5));
 							if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()) + 10) {
 								if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
 							}else {
@@ -357,8 +358,7 @@ public class Landscaper extends Unit {
 							Direction moveDir = getNextCornerWallDirection(tryingClockwise);
 							if (!inPlace) {
 								if (!tryMove(moveDir)) {
-									if (tryingClockwise) tryingClockwise = false;
-									else buildingCorner = true;
+									tryingClockwise = !tryingClockwise;
 								}
 								break;
 							}
@@ -582,6 +582,8 @@ public class Landscaper extends Unit {
 				}
 				break;
 		}
+
+
 	}
 
 	public void reinforceWall(MapLocation mloc, Direction d) throws GameActionException {
@@ -721,6 +723,7 @@ public class Landscaper extends Unit {
 		MapLocation nloc = mloc.add(dir);
 		int currentElevation = rc.senseElevation(mloc);
 		int newElevation = rc.senseElevation(nloc);
+		if (nearLattice == null) return false;
 
 		/* either too high, too low, or already good */
 		if (mloc != nloc && Math.abs(newElevation - currentElevation) > terraformThreshold) return false;
@@ -814,6 +817,7 @@ public class Landscaper extends Unit {
 
 	/* clockwise gap between this and another landscaper on the wall */
 	public int getClockwiseGap(boolean[][] occupied) {
+		if (locHQ == null) return -1;
 		MapLocation mloc = rc.getLocation();
 
 		int ind;
@@ -826,19 +830,21 @@ public class Landscaper extends Unit {
 		int orig = ind;
 
 		while (true) {
-			ind = (ind + 1) % 8;
+			ind = (ind + 1) % directions.length;
 			int curX = 1 + directions[ind].dx;
 			int curY = 1 + directions[ind].dy;
 
 			if (occupied[curX][curY]) break;
+			if (ind == orig) break;
 		}
 
-		if (ind < orig) ind += 8;
+		if (ind < orig) ind += directions.length;
 
 		return ind - orig - 1;
 	}
 
 	public int getCounterclockwiseGap(boolean[][] occupied) {
+		if (locHQ == null) return -1;
 		MapLocation mloc = rc.getLocation();
 
 		int ind;
@@ -851,14 +857,15 @@ public class Landscaper extends Unit {
 		int orig = ind;
 
 		while (true) {
-			ind = (ind + 7) % 8;
+			ind = (ind + 7) % directions.length;
 			int curX = 1 + directions[ind].dx;
 			int curY = 1 + directions[ind].dy;
 
 			if (occupied[curX][curY]) break;
+			if (ind == orig) break;
 		}
 
-		if (ind > orig) orig += 8;
+		if (ind > orig) orig += directions.length;
 
 		return orig - ind - 1;
 	}
@@ -931,6 +938,8 @@ public class Landscaper extends Unit {
 
 		/* clockwise */
 		int gap = getClockwiseGap(occupied);
+		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cgap");
+
 
 		if (count == 1) {
 			if (moveOnWall(true)) return true;
@@ -948,6 +957,7 @@ public class Landscaper extends Unit {
 
 		// /* counterclockwise */
 		gap = getCounterclockwiseGap(occupied);
+		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cwgap");
 
 		if (count == 1) {
 			if (moveOnWall(false)) return true;
@@ -962,6 +972,8 @@ public class Landscaper extends Unit {
 		} else {
 			if (gap > 1) if (moveOnWall(false)) return true;
 		}
+
+		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done correctWall");
 
 		return false;
 	}

@@ -40,7 +40,7 @@ public class DesignSchool extends Building {
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
-		System.out.println(status + " " + builtLandscapers);
+		// System.out.println(status + " " + builtLandscapers);
 		switch (status){
 			case RUSH_ENEMY_HQ:
 				/// don't want to waste resources
@@ -110,13 +110,14 @@ public class DesignSchool extends Building {
 						
 				break;
 			case TURTLING_CORNER:
+			if (builtLandscapers >= 20) break;
 				for (Direction dir : directions) {
 					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
 						rc.buildRobot(RobotType.LANDSCAPER, dir);
 						builtLandscapers++;
 					}
 				}	
-					
+				
 			break;
 		}
 
