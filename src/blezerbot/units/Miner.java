@@ -147,7 +147,9 @@ public class Miner extends Unit {
 				if (/*r.nextInt(20) == 0 && */numVaporators > 0 && !builtDS && (buildingDSTries == 0 || buildingDSTries > 50)) {
 					buildingDSTries = 1;
 					System.out.println("trying newDS");
-					while(newDS == null || isLattice(newDS)) newDS = locHQ.translate((r.nextInt(3)-1)*3, (r.nextInt(3)-1)*3);
+					while(newDS == null || isLattice(newDS)) {
+						newDS = locHQ.translate((r.nextInt(3)-1)*3, (r.nextInt(3)-1)*3);
+					}
 					System.out.println(newDS.x + " " + newDS.y);
 
 					status = MinerStatus.BUILDING_DS;
@@ -191,7 +193,7 @@ public class Miner extends Unit {
 							rc.buildRobot(RobotType.DESIGN_SCHOOL, mloc.directionTo(newDS));
 							buildingDSTries = 0;
 							builtDS = true;
-						}
+						} else ++buildingDSTries;
 					}
 					break;
 				case BUILD_VAPORATOR:
