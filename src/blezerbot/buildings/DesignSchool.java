@@ -106,6 +106,7 @@ public class DesignSchool extends Building {
 					}	
 				}
 				if (builtLandscapers >= 8) status = DesignSchoolStatus.TURTLING_CORNER;
+				if (builtLandscapers > 30) /*just in case */ rc.disintegrate();
 						
 				break;
 			case TURTLING_CORNER:
