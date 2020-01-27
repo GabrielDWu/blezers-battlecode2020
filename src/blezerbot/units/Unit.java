@@ -16,8 +16,10 @@ public abstract class Unit extends Robot {
 	public int[][] visited;
 	public boolean[] safeFromFlood;
 	public boolean[][] _notFlooded;
-	final static int DRONE_RUN_RADIUS = 15;
-	public static int terraformDist = 1; /* how far should I be from the hq before starting? */
+	final static int DRONE_RUN_RADIUS = 9;
+	boolean reducedRunRadius;
+	boolean noRunRadius;
+	public final static int terraformDist = 1; /* how far should I be from the hq before starting? */
 	public final static int terraformTries = 20; /* how many random moves away from hq to try? */
 	public final static int terraformHeight = 15; /* how high should I make the land? */
 
@@ -34,6 +36,23 @@ public abstract class Unit extends Robot {
 			if (seen == null) seen = new boolean[rc.getMapWidth()][rc.getMapHeight()];
 			if (visited == null) visited = new int[rc.getMapWidth()][rc.getMapHeight()];
 			if (rc.getType() != RobotType.DELIVERY_DRONE) {
+				// run away from drones
+				RobotInfo[] info = rc.senseNearbyRobots((noRunRadius ? 0 : (reducedRunRadius ? 2 : DRONE_RUN_RADIUS)), rc.getTeam() == Team.A ? Team.B : Team.A);
+				boolean moved = false;
+				for (RobotInfo r : info) {
+					if (r.getType() == RobotType.DELIVERY_DRONE) {
+						for (Direction dir : directions) {
+							int newDist = rc.getLocation().add(dir).distanceSquaredTo(r.getLocation());
+							if (newDist > rc.getLocation().distanceSquaredTo(r.getLocation()) && newDist > 2) {
+								if (tryMove(dir)) {
+									moved = true;
+									break;
+								}
+							}
+						}
+						if (moved) break;
+					}
+				}
 				// which tiles will flood next turn?
 				if (_notFlooded == null) _notFlooded = new boolean[5][5];
 				MapLocation mloc = rc.getLocation();
@@ -434,7 +453,7 @@ public abstract class Unit extends Robot {
 			++startIndex;
 			startIndex %= directions.length;
 		} while (startIndex != stopIndex);
-
+		
 		return false;
 	}
 

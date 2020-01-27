@@ -52,6 +52,8 @@ public class Miner extends Unit {
 
 	int returnTries;
 
+	static int minerTerraformDist = 3;
+
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
 	}
@@ -90,26 +92,12 @@ public class Miner extends Unit {
 		return null;
 	}
 	public void run() throws GameActionException {
+		System.out.println(status);
+		if (status == MinerStatus.GO_TO_TERRAFORM) reducedRunRadius = true;
+		else reducedRunRadius = false;
 		super.run();
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
-			// run away from drones
-			RobotInfo[] info = rc.senseNearbyRobots(DRONE_RUN_RADIUS, rc.getTeam() == Team.A ? Team.B : Team.A);
-			boolean moved = false;
-			for (RobotInfo r : info) {
-				if (r.getType() == RobotType.DELIVERY_DRONE) {
-					for (Direction dir : directions) {
-						int newDist = rc.getLocation().add(dir).distanceSquaredTo(r.getLocation());
-						if (newDist > rc.getLocation().distanceSquaredTo(r.getLocation()) && newDist > 2) {
-							if (tryMove(dir)) {
-								moved = true;
-								break;
-							}
-						}
-					}
-					if (moved) break;
-				}
-			}
 			if (status == MinerStatus.NOTHING) {
 				if (!safeFromFlood[Direction.CENTER.ordinal()]) {
 					randomMove();
@@ -347,7 +335,7 @@ public class Miner extends Unit {
 					}
 					break;
 				case GO_TO_TERRAFORM:
-					if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+					if (kingDistance(mloc, locHQ) < minerTerraformDist || isLattice(mloc)) {
 						/* if we're too close to HQ, move */
 						/* also if we're in a lattice square, move */
 						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
