@@ -118,6 +118,7 @@ public class Miner extends Unit {
 		return null;
 	}
 	public void run() throws GameActionException {
+		System.out.println(status);
 		if (status == MinerStatus.GO_TO_TERRAFORM) reducedRunRadius = true;
 		else reducedRunRadius = false;
 		super.run();
@@ -139,7 +140,7 @@ public class Miner extends Unit {
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
 			Direction buildVaporatorDirection = buildVaporator();
-			System.out.println(onTerraform + " Onterraform");
+			System.out.println(onTerraform + " Onterraform" + " " + buildVaporatorDirection);
 			if (onTerraform) {
 				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
 				if(numVaporators<= 4 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER) && rc.getTeamSoup() < 500){
