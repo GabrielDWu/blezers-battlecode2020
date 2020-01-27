@@ -124,7 +124,7 @@ public class Miner extends Unit {
 						status = MinerStatus.BUILD_VAPORATOR;
 					}
 				}
-				if (r.nextInt(20) == 0 && numVaporators > 0 && !builtDS && (buildingDSTries == 0 || buildingDSTries > 50)) {
+				if (/*r.nextInt(20) == 0 && */numVaporators > 0 && !builtDS && (buildingDSTries == 0 || buildingDSTries > 50)) {
 					buildingDSTries = 1;
 					while(newDS == null || isLattice(newDS)) newDS = locHQ.translate((r.nextInt(3)-1)*3, (r.nextInt(3)-1)*3);
 

@@ -112,7 +112,7 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
-		
+		if (rc.getTeam() == Team.A) System.out.println(status);
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -553,6 +553,7 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BURY_ENEMY_BUILDING:
+				status = LandscaperStatus.TERRAFORMING;
 				if(buryTarget == null || surroundedLocation(buryTarget)){
 					status = lastStatus;
 					break;

@@ -40,10 +40,6 @@ public class DesignSchool extends Building {
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
-<<<<<<< HEAD
-		// System.out.println(status + " " + builtLandscapers);
-=======
->>>>>>> 8c5ec254262098f66608cdbde49a043753c72d50
 		switch (status){
 			case RUSH_ENEMY_HQ:
 				/// don't want to waste resources
