@@ -228,7 +228,9 @@ public class HQ extends Building {
 							//Harass opponent's hq to be annoying
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}*/
-						if(droneCount%7<=1 || enemyHQ == null){
+
+						if(droneCount%100<=14 || enemyHQ == null){
+							System.out.println("ATTAKC");
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}
 						else{
