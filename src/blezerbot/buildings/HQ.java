@@ -158,7 +158,6 @@ public class HQ extends Building {
         if(attackTimer == 0 && numDrones>=18) {
         	attackTimer = 400;
         	writeMessage(Message.droneAttack());
-        	System.out.println("EXECUTE");
 		}
         if(attackTimer<= 0) attackTimer = 400;
 
@@ -231,11 +230,9 @@ public class HQ extends Building {
 						}*/
 
 						if((droneCount*67)%100<=14 || enemyHQ == null){
-							System.out.println("ATTACK");
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}
 						else{
-							System.out.println("DEFEND");
 							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
 						}
 						break;

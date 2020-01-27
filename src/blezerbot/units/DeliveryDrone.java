@@ -126,7 +126,6 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public void run() throws GameActionException {
-		System.out.println(status + " " + droneType);
 		super.run();
 		if(harassCenter == enemyHQ || (harassCenter != locHQ && locHQ != null)) {
 			droneType = 2;
@@ -134,7 +133,6 @@ public class DeliveryDrone extends Unit {
 		if(harassCenter == locHQ || (harassCenter != enemyHQ && enemyHQ != null)){
 			droneType = 1;
 		}
-		System.out.println(droneType + " I AM");
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 
