@@ -620,7 +620,6 @@ public class Miner extends Unit {
 						return true;
 					case 4:
 						status = MinerStatus.GO_TO_TERRAFORM;
-						System.out.println(status);
 						return true;
 				}
 				return false;

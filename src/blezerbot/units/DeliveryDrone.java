@@ -127,7 +127,6 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public void run() throws GameActionException {
-		System.out.println(status + " " + droneType);
 		super.run();
 		if(harassCenter.equals(enemyHQ) || (!harassCenter.equals(locHQ) && locHQ != null)) {
 			droneType = 2;
