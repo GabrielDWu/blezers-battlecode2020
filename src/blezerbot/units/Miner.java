@@ -90,6 +90,7 @@ public class Miner extends Unit {
 		return null;
 	}
 	public void run() throws GameActionException {
+		//System.out.println(status);
 		super.run();
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
@@ -139,12 +140,16 @@ public class Miner extends Unit {
 				}
 				if (numVaporators > 0 && !builtDS && (buildingDSTries == 0 || buildingDSTries > 50)) {
 					buildingDSTries = 1;
-					newDS = locHQ.translate((r.nextInt(3)-1)*3, (r.nextInt(3)-1)*3);
+					while(newDS == null || isLattice(newDS)) newDS = locHQ.translate((r.nextInt(3)-1)*3, (r.nextInt(3)-1)*3);
+
 					status = MinerStatus.BUILDING_DS;
 				}
 			}
 			switch (status) {
 				case BUILDING_DS:
+					//if(newDS == null) System.out.println("NULLL DS");
+					else System.out.println(newDS.x + " " + newDS.y + " DES");
+					//System.out.println(builtDS);
 					if (builtDS) {
 						status = MinerStatus.MINING;
 						break;
