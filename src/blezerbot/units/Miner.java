@@ -403,7 +403,7 @@ public class Miner extends Unit {
 					}
 					break;
 				case GO_TO_TERRAFORM:
-					if (isLattice(mloc) || kingDistance(mloc, locHQ) != 2) {
+					if (locHQ != null && (isLattice(mloc) || kingDistance(mloc, locHQ) != 2)) {
 						/* if we're too close to HQ, move */
 						/* also if we're in a lattice square, move */
 						if (!moveToward(mloc, locHQ)) moveAway(mloc, locHQ);
