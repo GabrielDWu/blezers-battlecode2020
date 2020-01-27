@@ -241,10 +241,14 @@ public class HQ extends Building {
 						}
 						break;
 					case DESIGN_SCHOOL:
-						if (units[RobotType.DESIGN_SCHOOL.ordinal()].size() == 1) {
-							writeMessage(Message.doSomething(unitID, 7)); // initial design school
+						if(enemyHQ != null && location.distanceSquaredTo(enemyHQ)<= 8){
+							// rush design school
 						} else {
-							wallDesignSchoolID = unitID;
+							if (units[RobotType.DESIGN_SCHOOL.ordinal()].size() == 1) {
+								writeMessage(Message.doSomething(unitID, 7)); // initial design school
+							} else {
+								wallDesignSchoolID = unitID;
+							}
 						}
 				}
 				return true;
