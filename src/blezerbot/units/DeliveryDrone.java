@@ -718,7 +718,7 @@ public class DeliveryDrone extends Unit {
 			case DRONE_ATTACK:
 				System.out.println("RECEIVED ORDER");
 				int ri = r.nextInt(5);
-				if(ri%5<=1) return true;
+				if(ri%5<=1	) return true;
 				if(!adjacentToBase() &&
 						(status != DeliveryDroneStatus.HARASS) &&
 						status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING &&

@@ -79,7 +79,7 @@ public class Miner extends Unit {
 		if(rc.canSenseLocation(a) == false) return false;
 		if(rc.senseElevation(a) < vaporatorHeight) return false;
 		boolean ok = false;
-		if(isLattice(a) || a.distanceSquaredTo(locHQ) <= 16) return false;
+		if(isLattice(a)  && !isForBuilding(a)|| a.distanceSquaredTo(locHQ) <= 16) return false;
 		for(MapLocation refine: locREFINERY){
 			if(refine.distanceSquaredTo(a) <= RobotType.VAPORATOR.pollutionRadiusSquared){
 				ok = true;
@@ -93,7 +93,7 @@ public class Miner extends Unit {
 	}
 	public boolean canBuildDefensiveNetGun(MapLocation a) throws GameActionException {
 		if(rc.canSenseLocation(a) == false) return false;
-		if(isLattice(a)) return false;
+		if(isLattice(a)&&!isForBuilding(a)) return false;
 		if(rc.senseFlooding(a)) return false;
 		if(rc.isLocationOccupied(a)) return false;
 		int dist = a.distanceSquaredTo(locHQ);
@@ -263,7 +263,8 @@ public class Miner extends Unit {
 							if (status == MinerStatus.RETURNING) returnTries = 0;
 						}
 						for (Direction dir : directions) {
-							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 && buildingType != null && !isLattice(rc.getLocation().add(dir)) &&
+							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 && buildingType != null &&isForBuilding(rc.getLocation().add(dir)) &&
+									!isLattice(rc.getLocation().add(dir)) &&
 									canBuildRobot(buildingType, dir)) {
 								rc.buildRobot(buildingType, dir);
 								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
@@ -408,7 +409,7 @@ public class Miner extends Unit {
 					}
 					if (Math.abs(rc.senseElevation(rc.getLocation()) - terraformHeight) <= 1) {
 						onTerraform = true;
-						status = MinerStatus.MINING;
+						status = MinerStatus.MINING;	
 					}
 					break;
 			}

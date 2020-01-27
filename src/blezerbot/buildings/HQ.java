@@ -90,11 +90,11 @@ public class HQ extends Building {
 		switch(status){
 			case FIRST_MINERS:
 			//Build original miners
-				if (builtMiners < 6) {
+				if (builtMiners < TOTAL_MINERS) {
 					int di = r.nextInt(directions.length);
 					for (int i = 0; i < directions.length; i++) {
 						Direction dir = directions[(di+i)%directions.length];
-						if (builtMiners < 6 && rc.canBuildRobot(RobotType.MINER, dir)) {
+						if (builtMiners < TOTAL_MINERS && rc.canBuildRobot(RobotType.MINER, dir)) {
 							rc.buildRobot(RobotType.MINER, dir);
 							builtMiners++;
 						}

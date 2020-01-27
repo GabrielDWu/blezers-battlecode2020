@@ -40,6 +40,7 @@ public abstract class Robot {
 	public HashSet<Integer> nonces_seen;
 
 	public final static int TERRAFORM_LANDSCAPERS = 6;
+	public final static int TOTAL_MINERS = 8;
 
 
 	public RobotType[] robot_types = {RobotType.HQ, //0
