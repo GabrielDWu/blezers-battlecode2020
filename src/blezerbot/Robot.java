@@ -96,6 +96,7 @@ public abstract class Robot {
 	    debug("Got created.");
 
 	    type = rc.getType();
+	    System.out.println(type);
 
 	    birthRound = rc.getRoundNum();
 	    nonces_seen = new HashSet<Integer>();
@@ -121,7 +122,6 @@ public abstract class Robot {
 	        }
 	        base_wager = Math.max(base_wager, 1);
 	    }
-
 	    if(!sentInfo && !queuedInfo){
 	    	writeMessage(Message.birthInfo(type, rc.getID(), rc.getLocation()));
 	        queuedInfo = true;
@@ -319,10 +319,12 @@ public abstract class Robot {
 	 */
 	  	int totalSize = 0;
 	  	for (int i = 0; i < message.sizes.length; i++) totalSize += message.sizes[i];
+	  	if(rc.getType() == RobotType.DELIVERY_DRONE) System.out.println(totalSize + " BIGFAIL SIZE " + messagePtr);
 	  	if (messagePtr >= 192 - totalSize) addMessageToQueue(base_wager);
 	  	writeInt(message.type.ordinal(), 4);
 	  	for (int i = 0; i < message.data.length; i++) {
 	  		writeInt(message.data[i], message.sizes[i]);
+
 	  	}
 	}
 

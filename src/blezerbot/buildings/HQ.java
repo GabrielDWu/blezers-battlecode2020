@@ -229,11 +229,12 @@ public class HQ extends Building {
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}*/
 
-						if(droneCount%100<=14 || enemyHQ == null){
+						if((droneCount*67)%100<=14 || enemyHQ == null){
 							System.out.println("ATTAKC");
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}
 						else{
+							System.out.println("DEFEND");
 							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
 						}
 						break;
