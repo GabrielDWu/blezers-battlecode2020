@@ -40,7 +40,7 @@ public class DesignSchool extends Building {
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
-		// System.out.println(status);
+		System.out.println(status + " " + builtLandscapers);
 		switch (status){
 			case RUSH_ENEMY_HQ:
 				/// don't want to waste resources
@@ -68,6 +68,17 @@ public class DesignSchool extends Building {
 				if (builtLandscapers >= TERRAFORM_LANDSCAPERS) {
 					rc.disintegrate();
 				}
+
+				/* are we surrounded by terraform squares and not on one, if so, die */
+				boolean surrounded = true;
+				for (Direction dir : directions) {
+					if (rc.canSenseLocation(rc.getLocation().add(dir)) && rc.senseElevation(rc.getLocation().add(dir)) != blezerbot.units.Unit.terraformHeight) {
+						surrounded = false;
+						break;
+					}
+				}
+				if (surrounded && rc.senseElevation(rc.getLocation()) != blezerbot.units.Unit.terraformHeight) rc.disintegrate();
+				
 				break;
 			case TURTLING:
 				if (turtleDir != null) {
@@ -79,6 +90,7 @@ public class DesignSchool extends Building {
 						for (Direction dir : directions) {
 							if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
 								if (rc.getRoundNum() - lastBuildTurn >= cooldown) {
+									rc.buildRobot(RobotType.LANDSCAPER, dir);
 									lastBuildTurn = rc.getRoundNum();
 									builtLandscapers++;
 								}
@@ -93,32 +105,16 @@ public class DesignSchool extends Building {
 						}
 					}	
 				}
+				if (builtLandscapers >= 8) status = DesignSchoolStatus.TURTLING_CORNER;
 						
 				break;
 			case TURTLING_CORNER:
-			if (turtleDir != null) {
-				if (rc.canBuildRobot(RobotType.LANDSCAPER, turtleDir)) {
-					rc.buildRobot(RobotType.LANDSCAPER, turtleDir);
-					lastBuildTurn = rc.getRoundNum();
-					builtLandscapers++;
-				} else {
-					for (Direction dir : directions) {
-						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-							if (rc.getRoundNum() - lastBuildTurn >= cooldown) {
-								lastBuildTurn = rc.getRoundNum();
-								builtLandscapers++;
-							}
-						}
-					}	
-				}
-			} else {
 				for (Direction dir : directions) {
 					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-						turtleDir = dir;
-						break;
+						rc.buildRobot(RobotType.LANDSCAPER, dir);
+						builtLandscapers++;
 					}
 				}	
-			}
 					
 			break;
 		}
@@ -169,6 +165,7 @@ public class DesignSchool extends Building {
 					status = DesignSchoolStatus.TURTLING_CORNER;
 					return true;
 				}
+				break;
 		}
 		return false;
 	}

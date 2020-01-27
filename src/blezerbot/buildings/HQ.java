@@ -27,7 +27,7 @@ public class HQ extends Building {
 	HQstatus status;
 	int wallLandscapers;
 	int buildWallTurns;
-	public final static int wallMessageDelay = 200; /* short cooldown before sending build wall message */
+	public final static int wallMessageDelay = 250; /* short cooldown before sending build wall message */
 
 	public static enum HQstatus{
 		FIRST_MINERS,
@@ -114,9 +114,12 @@ public class HQ extends Building {
 			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
+		if (wallLandscapers >= wallSquares) {
+			buildWallTurns = Math.max(buildWallTurns, wallMessageDelay - 10);
+		}
 		if (wallLandscapers >= adjacentWallSquares && !landscaperWalled) {
 			++buildWallTurns;
-			if (buildWallTurns == wallMessageDelay) {
+			if (buildWallTurns >= wallMessageDelay) {
 				landscaperWalled = true;
 				writeMessage(Message.buildWall(rc.getLocation()));
 			}

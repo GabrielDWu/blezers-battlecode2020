@@ -446,7 +446,7 @@ public class Landscaper extends Unit {
 						if (doneMoving) {
 							if (rc.canSenseLocation(locHQ.add(locHQ.directionTo(locDS))) && rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
 								++floodTries;
-								if (floodTries == floodCap) status = LandscaperStatus.BUILDING;
+								if (floodTries == floodCap) buildingCorner = true;
 							} else floodTries = 0;
 							if (rc.getDirtCarrying() < 1) {
 								Direction mdir = null;
@@ -992,6 +992,7 @@ public class Landscaper extends Unit {
 
 				return true;
 			case BUILD_WALL:
+				terraformDist = 3;
 				MapLocation loc = new MapLocation(message.data[0], message.data[1]);
 				if (loc.isAdjacentTo(rc.getLocation())) {
 					status = LandscaperStatus.BUILDING;
