@@ -55,6 +55,8 @@ public class DeliveryDrone extends Unit {
 	final static int circleThreshold = 12;
 	boolean sentFound = false;
 	Team holdingTeam = null;
+	int birthRound = 0;
+	final static int giveUpHQ = 300;
 
 	final static int cornerThreshold = 3;
 	final static int waterSenseRadius = 8;
@@ -91,6 +93,7 @@ public class DeliveryDrone extends Unit {
 		status = DeliveryDroneStatus.FIND_ENEMY_HQ;
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
+		birthRound = rc.getRoundNum();
 		enemyHQc = -1;
 		rushRound = -1;
 	}
@@ -218,7 +221,7 @@ public class DeliveryDrone extends Unit {
 			rushRound = -1;
 		}
 
-		if(enemyHQ == null) status = DeliveryDroneStatus.FIND_ENEMY_HQ;
+		if(enemyHQ == null && birthRound + giveUpHQ >= rc.getRoundNum()) status = DeliveryDroneStatus.FIND_ENEMY_HQ;
 		switch(status) {
 			case DEFENDING_HQ:
 				if(locHQ == null){
