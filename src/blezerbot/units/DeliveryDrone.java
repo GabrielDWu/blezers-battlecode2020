@@ -128,7 +128,13 @@ public class DeliveryDrone extends Unit {
 	public void run() throws GameActionException {
 		System.out.println(status + " " + droneType);
 		super.run();
-
+		if(harassCenter == enemyHQ || (harassCenter != locHQ && locHQ != null)) {
+			droneType = 2;
+		}
+		if(harassCenter == locHQ || (harassCenter != enemyHQ && enemyHQ != null)){
+			droneType = 1;
+		}
+		System.out.println(droneType + " I AM");
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
 
@@ -161,12 +167,7 @@ public class DeliveryDrone extends Unit {
 			status = DeliveryDroneStatus.DROP_WATER;
 		}
 
-		if(harassCenter == enemyHQ || (harassCenter != locHQ && locHQ != null)) {
-			droneType = 2;
-		}
-		if(harassCenter == locHQ || (harassCenter != enemyHQ && enemyHQ != null)){
-			droneType = 1;
-		}
+
 
 		if(status!= DeliveryDroneStatus.DROP_WATER){
 			if(droneType == 0){
@@ -686,7 +687,6 @@ public class DeliveryDrone extends Unit {
 				if(ri<=2) return false;
 				if(!adjacentToBase() && (status != DeliveryDroneStatus.HARASS && enemyHQ==harassCenter) && status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) rushRound = rc.getRoundNum();
 				if(!adjacentToBase() &&  (status != DeliveryDroneStatus.HARASS && enemyHQ==harassCenter) && status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) status = DeliveryDroneStatus.CIRCLING;
-
 			/*	if(status == DeliveryDroneStatus.CIRCLING && rc.getLocation().distanceSquaredTo(enemyHQ)<40){
 					status = DeliveryDroneStatus.ATTACKING;
 				}*/
