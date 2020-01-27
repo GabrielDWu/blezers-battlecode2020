@@ -96,19 +96,21 @@ public class HQ extends Building {
 		switch(status){
 			case FIRST_MINERS:
 			//Build original miners
-				if (builtMiners < TOTAL_MINERS && (rushTurns == 0 || rushTurns++ > 40)) {
-					int di = r.nextInt(directions.length);
-					for (int i = 0; i < directions.length; i++) {
-						Direction dir = directions[(di+i)%directions.length];
-						if (builtMiners < TOTAL_MINERS && rc.canBuildRobot(RobotType.MINER, dir)) {
-							rc.buildRobot(RobotType.MINER, dir);
-							builtMiners++;
+				if (rushTurns == 0 || rushTurns++ > 40) {
+					if (builtMiners < TOTAL_MINERS) {
+						int di = r.nextInt(directions.length);
+						for (int i = 0; i < directions.length; i++) {
+							Direction dir = directions[(di+i)%directions.length];
+							if (builtMiners < TOTAL_MINERS && rc.canBuildRobot(RobotType.MINER, dir)) {
+								rc.buildRobot(RobotType.MINER, dir);
+								builtMiners++;
+							}
 						}
+						break;
+					} else {
+						status = HQstatus.FIRST_LANDSCAPERS;
+						//No break here
 					}
-					break;
-				} else {
-					status = HQstatus.FIRST_LANDSCAPERS;
-					//No break here
 				}
 
 		}
@@ -201,8 +203,8 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							// writeMessage(Message.doSomething(unitID, 2));	//Rush
-							// addMessageToQueue();
+							writeMessage(Message.doSomething(unitID, 2));	//Rush
+							addMessageToQueue();
 						}else if (status==HQstatus.FIRST_LANDSCAPERS){
 							specialMiner = unitID;
 						} else if (units[RobotType.MINER.ordinal()].size() > 3) {

@@ -110,6 +110,7 @@ public class DesignSchool extends Building {
 									rc.buildRobot(RobotType.LANDSCAPER, dir);
 									lastBuildTurn = rc.getRoundNum();
 									builtLandscapers++;
+									turtleDir = dir;
 								}
 							}
 						}	
