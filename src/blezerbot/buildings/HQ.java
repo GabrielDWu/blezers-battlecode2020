@@ -14,7 +14,7 @@ public class HQ extends Building {
 
 	/* turtling stuff */
 	int waitingForBuilding;
-	int wallSquares; /* should be 8, unless we're in a corner or edge */
+	int wallSquares, adjacentWallSquares; /* should be 8, unless we're in a corner or edge */
 	int specialMiner;
 	boolean builtDesignSchool;
 	boolean landscaperWalled;
@@ -26,6 +26,8 @@ public class HQ extends Building {
 	boolean isFarFromEdge;
 	HQstatus status;
 	int wallLandscapers;
+	int buildWallTurns;
+	public final static int wallMessageDelay = 200; /* short cooldown before sending build wall message */
 
 	public static enum HQstatus{
 		FIRST_MINERS,
@@ -51,17 +53,20 @@ public class HQ extends Building {
 		}
 
 		wallSquares = 0;
+		adjacentWallSquares = 0;
 		MapLocation loc = rc.getLocation();
 		for (Direction dir: directions) {
 			MapLocation nloc = loc.add(dir);
 
 			if (isValidWall(nloc)) {
 				++wallSquares;
+				++adjacentWallSquares;
 				if (!orthogonal(dir)) wallSquares += 3;
 			}
 		}
 		isFarFromEdge = (loc.x >= 2 && loc.y >=2 && loc.x < rc.getMapWidth()-2 && loc.y < rc.getMapHeight()-2);
 		status = HQstatus.FIRST_MINERS;
+		buildWallTurns = 0;
 	}
 
 	public void run() throws GameActionException {
@@ -109,9 +114,12 @@ public class HQ extends Building {
 			if (buildingDesignSchool-1 > 11) builtDesignSchool = true;
 			else if (buildingDesignSchool > 0) buildingDesignSchool++;
 		}
-		if (wallLandscapers >= wallSquares && !landscaperWalled) {
-			landscaperWalled = true;
-			writeMessage(Message.buildWall(rc.getLocation()));
+		if (wallLandscapers >= adjacentWallSquares && !landscaperWalled) {
+			++buildWallTurns;
+			if (buildWallTurns == wallMessageDelay) {
+				landscaperWalled = true;
+				writeMessage(Message.buildWall(rc.getLocation()));
+			}
 		}
 		if (buildingDesignSchool == 0 && units[2 /*refinery*/].size() > 0 && rc.getTeamSoup() > 70 && rc.isReady()) {
 			for (Direction dir : orthogonalDirections) {
@@ -191,7 +199,7 @@ public class HQ extends Building {
 							domesticScapers++;
 							if(domesticScapers <= TERRAFORM_LANDSCAPERS){
 								writeMessage(Message.doSomething(unitID, 1));	//Terraform
-							}else if(wallLandscapers >= 8){
+							}else if(wallLandscapers >= adjacentWallSquares){
 								writeMessage(Message.doSomething(unitID, 3));	//Corner
 								wallLandscapers++;
 							}else{

@@ -65,7 +65,8 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
-
+		if (status == LandscaperStatus.DEFENDING || status == LandscaperStatus.BUILDING || status == LandscaperStatus.CORNER) noRunRadius = true;
+		else noRunRadius = false;
 		super.run();
 		if(status==LandscaperStatus.NOTHING)debug("NOTHING");
 		visited[rc.getLocation().x][rc.getLocation().y]++;
@@ -326,7 +327,8 @@ public class Landscaper extends Unit {
 							if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
 						} else {
 							//Make sure it won't flood soon
-							if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()+5)) {
+							// System.out.println(rc.senseElevation(rc.getLocation()) + " " + (GameConstants.getWaterLevel(rc.getRoundNum()) + 5));
+							if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()) + 10) {
 								if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
 							}else {
 								attackEnemyBuilding();
@@ -353,7 +355,8 @@ public class Landscaper extends Unit {
 							Direction moveDir = getNextCornerWallDirection(tryingClockwise);
 							if (!inPlace) {
 								if (!tryMove(moveDir)) {
-									tryingClockwise = !tryingClockwise;
+									if (tryingClockwise) tryingClockwise = false;
+									else buildingCorner = true;
 								}
 								break;
 							}
