@@ -65,7 +65,8 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
-
+		if (status == LandscaperStatus.DEFENDING || status == LandscaperStatus.BUILDING || status == LandscaperStatus.CORNER) noRunRadius = true;
+		else noRunRadius = false;
 		super.run();
 		if(status==LandscaperStatus.NOTHING)debug("NOTHING");
 		visited[rc.getLocation().x][rc.getLocation().y]++;

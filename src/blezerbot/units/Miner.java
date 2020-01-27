@@ -90,26 +90,11 @@ public class Miner extends Unit {
 		return null;
 	}
 	public void run() throws GameActionException {
+		if (status == MinerStatus.GO_TO_TERRAFORM) reducedRunRadius = true;
+		else reducedRunRadius = false;
 		super.run();
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
-			// run away from drones
-			RobotInfo[] info = rc.senseNearbyRobots(DRONE_RUN_RADIUS, rc.getTeam() == Team.A ? Team.B : Team.A);
-			boolean moved = false;
-			for (RobotInfo r : info) {
-				if (r.getType() == RobotType.DELIVERY_DRONE) {
-					for (Direction dir : directions) {
-						int newDist = rc.getLocation().add(dir).distanceSquaredTo(r.getLocation());
-						if (newDist > rc.getLocation().distanceSquaredTo(r.getLocation()) && newDist > 2) {
-							if (tryMove(dir)) {
-								moved = true;
-								break;
-							}
-						}
-					}
-					if (moved) break;
-				}
-			}
 			if (status == MinerStatus.NOTHING) {
 				if (!safeFromFlood[Direction.CENTER.ordinal()]) {
 					randomMove();
