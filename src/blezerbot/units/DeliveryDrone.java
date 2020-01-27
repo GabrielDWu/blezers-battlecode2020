@@ -34,6 +34,8 @@ public class DeliveryDrone extends Unit {
 	final static int harassInnerRadius = 36;
 	final static int defenseRadius = 36;
 	final static int valleyDrop = -20;
+	int birthRound = 0;
+	final static int giveUpHQ = 300;
 	MapLocation dropLocation;
 	MapLocation waitLocation;
 	MapLocation lastSeen;
@@ -92,6 +94,7 @@ public class DeliveryDrone extends Unit {
 		flooded = new int[rc.getMapHeight()][rc.getMapWidth()];
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
+		birthRound = rc.getRoundNum();
 		rushRound = -1;
 	}
 
@@ -218,7 +221,7 @@ public class DeliveryDrone extends Unit {
 			rushRound = -1;
 		}
 
-		if(enemyHQ == null) status = DeliveryDroneStatus.FIND_ENEMY_HQ;
+		if(enemyHQ == null && birthRound + giveUpHQ >= rc.getRoundNum())  status = DeliveryDroneStatus.FIND_ENEMY_HQ;
 		switch(status) {
 			case DEFENDING_HQ:
 				if(locHQ == null){
