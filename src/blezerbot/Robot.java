@@ -36,7 +36,7 @@ public abstract class Robot {
 	public Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	public Direction[] directionswcenter = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST,Direction.CENTER};
 	public Direction[] orthogonalDirections = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-	public int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
+	public int[] PADS = {-1016596230, -110260579, -1608604611, 1994286809, 1665065435, 424836453, 325111185};
 	public HashSet<Integer> nonces_seen;
 
 	public final static int TERRAFORM_LANDSCAPERS = 6;
