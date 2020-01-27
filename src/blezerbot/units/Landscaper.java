@@ -33,6 +33,7 @@ public class Landscaper extends Unit {
 	boolean doneMovingDeposited;
 	int floodTries;
 	int terraformMoveTries;
+	int localTerraformDist;
 	public final static int terraformMoveCap = 5; /* how many tries to move on terraform, before retargeting */
 	public final static int moveCap = 15; /* how many tries to move into a position without our robot */
 	public final static int floodCap = 50; /* when the design school's build location is flooded for x turns, go into building mode */
@@ -54,6 +55,7 @@ public class Landscaper extends Unit {
 		lastStatus = LandscaperStatus.NOTHING;
 		floodTries = 0;
 		terraformMoveTries = 0;
+		localTerraformDist = terraformDist;
 	}
 	public int buryPriority(RobotType r){
 		if(r == RobotType.NET_GUN) return 0;
@@ -492,7 +494,7 @@ public class Landscaper extends Unit {
 
 				break;
 			case TERRAFORMING:
-				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+				if (kingDistance(mloc, locHQ) < localTerraformDist || isLattice(mloc)) {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
 
@@ -513,7 +515,7 @@ public class Landscaper extends Unit {
 
 				break;
 			case HQ_TERRAFORM:
-				if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+				if (kingDistance(mloc, locHQ) < localTerraformDist || isLattice(mloc)) {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
 
@@ -665,7 +667,7 @@ public class Landscaper extends Unit {
 		for(Direction d: directions){
 			MapLocation nloc = rc.getLocation().add(d);
 			if(isLattice(nloc) || rc.onTheMap(nloc) == false) continue;
-			if(kingDistance(nloc, locHQ) < terraformDist){
+			if(kingDistance(nloc, locHQ) < localTerraformDist){
 				continue;
 			}
 			int hqDist = kingDistance(nloc, locHQ);
@@ -763,7 +765,7 @@ public class Landscaper extends Unit {
 		for (Direction dir: directions) {
 			MapLocation nloc = mloc.add(dir);
 
-			if (isLattice(nloc) && kingDistance(nloc, locHQ) >= terraformDist && rc.canSenseLocation(nloc)) {
+			if (isLattice(nloc) && kingDistance(nloc, locHQ) >= localTerraformDist && rc.canSenseLocation(nloc)) {
 				int height = rc.senseElevation(nloc);
 				if (height < lowest) {
 					best = dir;
@@ -995,7 +997,7 @@ public class Landscaper extends Unit {
 
 				return true;
 			case BUILD_WALL:
-				terraformDist = 3;
+				localTerraformDist = 3;
 				MapLocation loc = new MapLocation(message.data[0], message.data[1]);
 				if (loc.isAdjacentTo(rc.getLocation())) {
 					status = LandscaperStatus.BUILDING;
