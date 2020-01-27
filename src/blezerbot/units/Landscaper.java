@@ -33,11 +33,11 @@ public class Landscaper extends Unit {
 	int doneMovingDeposited;
 	int floodTries;
 	int terraformMoveTries;
-	public final static int terraformMoveCap = 5;
+	public final static int terraformMoveCap = 5; /* how many tries to move on terraform, before retargeting */
 	public final static int moveCap = 15; /* how many tries to move into a position without our robot */
 	public final static int floodCap = 50; /* when the design school's build location is flooded for x turns, go into building mode */
 	public final static int blockedCap = 250; /* how many tries to move into a position with our robot */
-	public final static int terraformThreshold = 25; /* what height is too high/low to terraform? */
+	public final static int terraformThreshold = 75; /* what height is too high/low to terraform? */
 	LandscaperStatus lastStatus;
 	public Landscaper(RobotController rc) throws GameActionException {
 		super(rc);
