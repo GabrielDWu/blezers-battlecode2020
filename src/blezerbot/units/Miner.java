@@ -386,7 +386,7 @@ public class Miner extends Unit {
 						/* also if we're in a lattice square, move */
 						if (!moveToward(mloc, locHQ)) moveAway(mloc, locHQ);
 					}
-					if (rc.canSenseLocation(rc.getLocation()) && rc.senseElevation(rc.getLocation()) >= terraformHeight) {
+					if (Math.abs(rc.senseElevation(rc.getLocation()) - terraformHeight) <= 1) {
 						onTerraform = true;
 						status = MinerStatus.MINING;
 					}
@@ -714,7 +714,7 @@ public class Miner extends Unit {
 	public boolean canMove(Direction dir) throws GameActionException {
 		return dir != null && super.canMove(dir)
 				&& (!onTerraform || (rc.canSenseLocation(rc.getLocation().add(dir))
-				&& rc.senseElevation(rc.getLocation().add(dir)) >= terraformHeight-1))
+				&& Math.abs(rc.senseElevation(rc.getLocation().add(dir)) - terraformHeight) <= 1))
 				&&  !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ)
 					&& !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING)
 						&& locHQ.equals(chosenRefinery))
