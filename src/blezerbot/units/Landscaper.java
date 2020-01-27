@@ -67,7 +67,6 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
-		System.out.println(status);
 		if (status == LandscaperStatus.DEFENDING || status == LandscaperStatus.BUILDING || status == LandscaperStatus.CORNER) noRunRadius = true;
 		else noRunRadius = false;
 		super.run();
@@ -448,31 +447,32 @@ public class Landscaper extends Unit {
 
 
 						if (doneMoving) {
-							if (rc.canSenseLocation(locHQ.add(locHQ.directionTo(locDS))) && rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
-								++floodTries;
-								if (floodTries == floodCap) buildingCorner = true;
-							} else floodTries = 0;
-							if (rc.getDirtCarrying() < 1) {
-								Direction mdir = null;
-								int mdirt = Integer.MIN_VALUE;
-								for (Direction dir : directions) {
-									if (rc.canSenseLocation(mloc.add(dir))) {
-										int ndirt = rc.senseElevation(mloc.add(dir));
-										if (ndirt > mdirt && rc.canDigDirt(dir)) {
-											mdir = dir;
-											mdirt = ndirt;
-										}
-									}
-								}
-								if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
-							} else {
-								attackEnemyBuilding();
-								// deposit one dirt to signal to landscaper behind that you're done
-								if (rc.canDepositDirt(Direction.CENTER) && doneMovingDeposited) {
-									doneMovingDeposited = true;
-									rc.depositDirt(Direction.CENTER);
-								}
-							}
+							// if (rc.canSenseLocation(locHQ.add(locHQ.directionTo(locDS))) && rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
+							// 	++floodTries;
+							// 	if (floodTries == floodCap) buildingCorner = true;
+							// } else floodTries = 0;
+							// if (rc.getDirtCarrying() < 1) {
+							// 	Direction mdir = null;
+							// 	int mdirt = Integer.MIN_VALUE;
+							// 	for (Direction dir : directions) {
+							// 		if (rc.canSenseLocation(mloc.add(dir))) {
+							// 			int ndirt = rc.senseElevation(mloc.add(dir));
+							// 			if (ndirt > mdirt && rc.canDigDirt(dir)) {
+							// 				mdir = dir;
+							// 				mdirt = ndirt;
+							// 			}
+							// 		}
+							// 	}
+							// 	if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+							// } else {
+							// 	attackEnemyBuilding();
+							// 	// deposit one dirt to signal to landscaper behind that you're done
+							// 	if (rc.canDepositDirt(Direction.CENTER) && doneMovingDeposited) {
+							// 		doneMovingDeposited = true;
+							// 		rc.depositDirt(Direction.CENTER);
+							// 	}
+							// }
+							buildingCorner = true;
 						}
 					} else {
 						Direction dir = rc.getLocation().directionTo(locHQ);
@@ -543,7 +543,6 @@ public class Landscaper extends Unit {
 							Direction dir = bestTerraform(nearLattice);
 	
 							if (dir == null) {
-								System.out.println(enemyHQ == null);
 								if (enemyHQ != null) moveTowardEnemyHQ(mloc);
 								else moveAwayFromHQ(mloc);
 							} else {
@@ -1012,14 +1011,12 @@ public class Landscaper extends Unit {
                 switch(message.data[1]) {
                     case 0:
                         if (status != LandscaperStatus.BUILDING) status = LandscaperStatus.DEFENDING;
-                        System.out.println(status);
                         return true;
 					case 1:
 						status = LandscaperStatus.TERRAFORMING;
 						return true;
 					case 3:
 						status = LandscaperStatus.CORNER;
-						System.out.println(status);
 						return true;
                 }
                 return false;

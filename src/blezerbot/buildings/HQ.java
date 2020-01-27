@@ -27,7 +27,8 @@ public class HQ extends Building {
 	HQstatus status;
 	int wallLandscapers;
 	int buildWallTurns;
-	public final static int wallMessageDelay = 250; /* short cooldown before sending build wall message */
+	int wallDesignSchoolID;
+	public final static int wallMessageDelay = 10; /* short cooldown before sending build wall message */
 
 	public static enum HQstatus{
 		FIRST_MINERS,
@@ -45,6 +46,7 @@ public class HQ extends Building {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
+		wallDesignSchoolID = -1;
 		attackTimer = 300;
 		waitingForBuilding = Integer.MAX_VALUE;
 		units = new ArrayList[10];
@@ -209,22 +211,35 @@ public class HQ extends Building {
 								writeMessage(Message.doSomething(unitID, 0));	//Defend
 								wallLandscapers++;
 							}
+							if (wallLandscapers > wallSquares+2 /*2 extra because it tends to be missing a couple*/ && wallDesignSchoolID != -1) {
+								writeMessage(Message.doSomething(wallDesignSchoolID, 12));
+							}
 							addMessageToQueue();
 						}
 						break;
 					case DELIVERY_DRONE:
-						if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 2  && (units[RobotType.DELIVERY_DRONE.ordinal()].size() <= 4
+						int droneCount = units[RobotType.DELIVERY_DRONE.ordinal()].size();
+						/*if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 2  && (units[RobotType.DELIVERY_DRONE.ordinal()].size() <= 4
 							|| enemyHQ == null)){
 							//Harass own hq location for defense
 							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
-						}else if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 5){
+						}
+						else if(units[RobotType.DELIVERY_DRONE.ordinal()].size() >= 5){
 							//Harass opponent's hq to be annoying
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
+						}*/
+						if(droneCount%7<=1 || enemyHQ == null){
+							writeMessage(Message.tellHarass(unitID, enemyHQ));
+						}
+						else{
+							writeMessage(Message.tellHarass(unitID, rc.getLocation()));
 						}
 						break;
 					case DESIGN_SCHOOL:
 						if (units[RobotType.DESIGN_SCHOOL.ordinal()].size() == 1) {
-							writeMessage(Message.doSomething(unitID, 7)); // kill itself
+							writeMessage(Message.doSomething(unitID, 7)); // initial design school
+						} else {
+							wallDesignSchoolID = unitID;
 						}
 				}
 				return true;

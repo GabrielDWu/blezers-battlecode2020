@@ -92,7 +92,6 @@ public class Miner extends Unit {
 		return null;
 	}
 	public void run() throws GameActionException {
-		System.out.println(status);
 		if (status == MinerStatus.GO_TO_TERRAFORM) reducedRunRadius = true;
 		else reducedRunRadius = false;
 		super.run();
@@ -125,7 +124,7 @@ public class Miner extends Unit {
 						status = MinerStatus.BUILD_VAPORATOR;
 					}
 				}
-				if (numVaporators > 0 && !builtDS && (buildingDSTries == 0 || buildingDSTries > 50)) {
+				if (r.nextInt(20) == 0 && numVaporators > 0 && !builtDS && (buildingDSTries == 0 || buildingDSTries > 50)) {
 					buildingDSTries = 1;
 					while(newDS == null || isLattice(newDS)) newDS = locHQ.translate((r.nextInt(3)-1)*3, (r.nextInt(3)-1)*3);
 
@@ -621,6 +620,7 @@ public class Miner extends Unit {
 						return true;
 					case 4:
 						status = MinerStatus.GO_TO_TERRAFORM;
+						System.out.println(status);
 						return true;
 				}
 				return false;
@@ -657,8 +657,8 @@ public class Miner extends Unit {
 
 	public boolean canMove(Direction dir) throws GameActionException {
 		return dir != null && super.canMove(dir)
-				&& (!onTerraform || rc.canSenseLocation(rc.getLocation())
-				&& rc.senseElevation(rc.getLocation()) >= terraformHeight-1)
+				&& (!onTerraform || (rc.canSenseLocation(rc.getLocation().add(dir))
+				&& rc.senseElevation(rc.getLocation().add(dir)) >= terraformHeight-1))
 				&&  !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ)
 					&& !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING)
 						&& locHQ.equals(chosenRefinery))

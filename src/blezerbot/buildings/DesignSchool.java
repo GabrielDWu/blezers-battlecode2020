@@ -159,6 +159,9 @@ public class DesignSchool extends Building {
 				if (message.data[1] == 7) {
 					initialDS = true;
 				}
+				if (message.data[1] == 12) {
+					rc.disintegrate();
+				}
 				return true;
 			case BUILD_WALL:
 				if (status == DesignSchoolStatus.TURTLING) {
