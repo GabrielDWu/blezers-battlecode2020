@@ -167,7 +167,7 @@ public class Miner extends Unit {
 				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
 				RobotInfo[] robo = rc.senseNearbyRobots();
 				int close = Integer.MAX_VALUE;
-				if((numDefensiveNetGuns >=1 && numVaporators <=4) ||!(numVaporators == 1 || numVaporators == 3 || rc.getRoundNum()%netGunModulus == 0)){
+				if((numDefensiveNetGuns>=1 &&fulfillmentCenterBuilt == false) || (numDefensiveNetGuns >=1 && numVaporators <=4) ||!(numVaporators == 1 || numVaporators == 3 || rc.getRoundNum()%netGunModulus == 0)){
 					// do nothing
 				}
 				else{
