@@ -582,9 +582,13 @@ public class Miner extends Unit {
 					return true;
 				}
 				if (unit_type == RobotType.DESIGN_SCHOOL) {
-					if (!builtFirstDS) builtFirstDS = true;
-					else builtDS = true;
-					return true;
+					if(enemyHQ != null && (new MapLocation(message.data[2], message.data[3])).distanceSquaredTo(enemyHQ)<= 8){
+						// rush design school
+					} else {
+						if (!builtFirstDS) builtFirstDS = true;
+						else builtDS = true;
+						return true;
+					}
 				}
 				if(unit_type != RobotType.REFINERY){
 					return false;
