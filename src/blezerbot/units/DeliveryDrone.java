@@ -31,6 +31,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation investigate;
 	MapLocation harassCenter;
 	final static int harassRadius = 100; // Radius of circle about which you circle
+	final static int defenseRadius = 36;
 	MapLocation dropLocation;
 	MapLocation waitLocation;
 	MapLocation lastSeen;
@@ -125,6 +126,7 @@ public class DeliveryDrone extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		System.out.println(status + " " + droneType);
 		super.run();
 
 		//Update closest water
@@ -151,7 +153,10 @@ public class DeliveryDrone extends Unit {
 
 		//if (locHQ == null) return;
 
-		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DEFENDING_HQ && holdingTeam != rc.getTeam()){
+		if(rc.isCurrentlyHoldingUnit() &&
+				(status != DeliveryDroneStatus.DEFENDING_HQ||
+					enemyHQ!=null&rc.getLocation().distanceSquaredTo(enemyHQ)<=rc.getLocation().distanceSquaredTo(locHQ)) &&
+				holdingTeam != rc.getTeam()){
 			if(status != DeliveryDroneStatus.DROP_WATER) prevStatus = status;
 			status = DeliveryDroneStatus.DROP_WATER;
 		}
@@ -162,15 +167,19 @@ public class DeliveryDrone extends Unit {
 		if(harassCenter == locHQ || (harassCenter != enemyHQ && enemyHQ != null)){
 			droneType = 1;
 		}
-		if(droneType == 0){
-			status = DeliveryDroneStatus.FIND_ENEMY_HQ;
+
+		if(status!= DeliveryDroneStatus.DROP_WATER){
+			if(droneType == 0){
+				status = DeliveryDroneStatus.FIND_ENEMY_HQ;
+			}
+			else if (droneType == 2){
+				status = DeliveryDroneStatus.HARASS;
+			}
+			else{
+				status = DeliveryDroneStatus.DEFENDING_HQ;
+			}
 		}
-		else if (droneType == 2){
-			status = DeliveryDroneStatus.HARASS;
-		}
-		else{
-			status = DeliveryDroneStatus.DEFENDING_HQ;
-		}
+
 		// assuming we will only harass their hq or ours
 		// start the bad hardcoding of conditions
 		/*int random = r.nextInt(100);
@@ -195,12 +204,13 @@ public class DeliveryDrone extends Unit {
 			status = DeliveryDroneStatus.ATTACKING;
 		}
 		if(rushRound + 175<= rc.getRoundNum() && rushRound!=-1){
-			status = DeliveryDroneStatus.DEFENDING_HQ;
+			if(droneType == 1) status = DeliveryDroneStatus.DEFENDING_HQ;
+			else status = DeliveryDroneStatus.HARASS;
 			rushRound = -1;
 		}
 
 		if(enemyHQ == null) status = DeliveryDroneStatus.FIND_ENEMY_HQ;
-
+		System.out.println(status);
 		switch(status) {
 			case DEFENDING_HQ:
 				if(locHQ == null){
@@ -270,6 +280,22 @@ public class DeliveryDrone extends Unit {
 					Direction bestDir = null;
 					int dist = rc.getLocation().distanceSquaredTo(locHQ);
 					Direction dir = rc.getLocation().directionTo(locHQ);
+					if(rc.getLocation().distanceSquaredTo(locHQ) >= defenseRadius){
+						goToReturn(locHQ);
+						Direction bestDirs = null;
+						int best = Integer.MAX_VALUE;
+						for(Direction di: directions){
+							System.out.println(di  +" di "+ canMoveReturn(di) +  " " + rc.canMove(di));
+							if(canMoveReturn(di)){
+								if(bestDirs == null || best> rc.getLocation().add(di).distanceSquaredTo(locHQ)){
+									bestDirs = di;
+									best = rc.getLocation().add(di).distanceSquaredTo(locHQ);
+								}
+							}
+						}
+						if(bestDirs != null) rc.move(bestDirs);
+						System.out.println(bestDirs + " HUHUHUH");
+					}
 					if (!badMap()){
 						for (int i = 0; i < 4; i++) {
 							Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
@@ -279,6 +305,7 @@ public class DeliveryDrone extends Unit {
 								dist = rc.getLocation().add(nxt).distanceSquaredTo(locHQ);
 							}
 						}
+						System.out.println("HUH" + bestDir);
 						if (bestDir != null) {
 							rc.move(bestDir);
 						}
@@ -698,6 +725,16 @@ public class DeliveryDrone extends Unit {
 		}
 		return false;
 	}
+	public boolean canMoveReturn(Direction dir) throws GameActionException {
+		switch (dir) {
+			case NORTHEAST:
+			case NORTHWEST:
+			case SOUTHEAST:
+			case SOUTHWEST:
+				return false;
+		}
+		return rc.canMove(dir);
+	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
 		switch (dir) {
@@ -877,5 +914,103 @@ public class DeliveryDrone extends Unit {
 		}
 		return false;
 	}
+	public void goToReturn(MapLocation loc) throws GameActionException {
+		if(!rc.isReady() || rc.getLocation().equals(loc)) return;
+		if (unitVisited == null) return;
+		if (!loc.equals(dest)) {
+			dest = loc;
+			lastDist = 0;
+			hugging = false;
+			unitVisitedIndex++;
+			if (unitVisitedIndex > 15) {
+				unitVisited = new long[rc.getMapWidth()][rc.getMapHeight()];
+				unitVisitedIndex = 0;
+			}
+		}
+		MapLocation mloc = rc.getLocation();
+		incUnitVisited(mloc);
+		if (getUnitVisited(mloc) > 4) {
+			randomOrthogonalMove();
+			return;
+		}
+		//Check if still should be hugging (if nothing around you, hugging=false)
+		if(hugging){
+			hugging = false;
+			for(Direction dir : orthogonalDirections){
+				if(!canMove(dir)){
+					hugging = true;
+					break;
+				}
+			}
+		}
+		if (!hugging) {
+			Direction dir;
+			if(Math.abs(mloc.x - loc.x) > Math.abs(mloc.y - loc.y)){
+				if(mloc.x > loc.x){
+					dir = Direction.WEST;
+				}else{
+					dir = Direction.EAST;
+				}
+			}else{
+				if(mloc.y > loc.y){
+					dir = Direction.SOUTH;
+				}else{
+					dir = Direction.NORTH;
+				}
+			}
 
+			if (tryMoveReturn(dir)) return;
+
+			//Turn right until you see an empty space
+			facing = dir;
+			int cnt = 0;
+			while(!canMove(facing)){
+				facing = facing.rotateRight().rotateRight();
+				cnt++;
+				if(cnt>4) return;
+			}
+			lastDist = mloc.distanceSquaredTo(loc);
+			hugging = true;
+		}
+		if (mloc.distanceSquaredTo(loc) < lastDist) {
+			hugging = false;
+			goTo(loc);
+			return;
+		}
+		Direction dir = facing.rotateLeft().rotateLeft();
+		//Left turn
+		if(tryMoveReturn(dir)){
+			facing=dir;
+			return;
+		}
+		dir = dir.rotateRight().rotateRight();
+
+		//Forward
+		if(tryMoveReturn(dir))return;
+
+		dir = dir.rotateRight().rotateRight();
+
+		//Right turn
+		if(tryMoveReturn(dir)){
+			facing = dir;
+			return;
+		}
+		Direction bestDir = null;
+		int best = Integer.MAX_VALUE;
+		for(Direction di: directions){
+			if(canMoveReturn(di)){
+				if(bestDir == null || best> rc.getLocation().add(di).distanceSquaredTo(loc)){
+					bestDir = di;
+					best = rc.getLocation().add(di).distanceSquaredTo(loc);
+				}
+			}
+		}
+		if(bestDir != null) tryMoveReturn(bestDir);
+	}
+	public boolean tryMoveReturn(Direction dir) throws GameActionException {
+		if (rc.isReady() && canMoveReturn(dir)) {
+			rc.move(dir);
+			return true;
+		} else return false;
+	}
 }
