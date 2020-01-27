@@ -1,9 +1,9 @@
-package blezerbot.units;
+package testbot.units;
 
 import battlecode.common.*;
 import java.util.*;
 import java.lang.*;
-import blezerbot.*;
+import testbot.*;
 
 public class Miner extends Unit {
 
