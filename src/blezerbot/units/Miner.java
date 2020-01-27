@@ -52,6 +52,8 @@ public class Miner extends Unit {
 
 	int returnTries;
 
+	static int minerTerraformDist = 3;
+
 	public Miner(RobotController rc) throws GameActionException {
 		super(rc);
 	}
@@ -332,7 +334,7 @@ public class Miner extends Unit {
 					}
 					break;
 				case GO_TO_TERRAFORM:
-					if (kingDistance(mloc, locHQ) < terraformDist || isLattice(mloc)) {
+					if (kingDistance(mloc, locHQ) < minerTerraformDist || isLattice(mloc)) {
 						/* if we're too close to HQ, move */
 						/* also if we're in a lattice square, move */
 						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
