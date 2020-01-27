@@ -628,20 +628,27 @@ public class Landscaper extends Unit {
 	public Direction bestTerraform(Direction nearLattice) throws GameActionException {
 		Direction dir = null;
 		int best = Integer.MAX_VALUE;
+		int mdist = Integer.MAX_VALUE;
 		for(Direction d: directions){
 			MapLocation nloc = rc.getLocation().add(d);
 			if(isLattice(nloc) || rc.onTheMap(nloc) == false) continue;
 			if(kingDistance(nloc, locHQ) < terraformDist){
 				continue;
 			}
+			int hqDist = kingDistance(nloc, locHQ);
+			int relDist = nloc.distanceSquaredTo(rc.getLocation());
 			if(canTerraform(rc.getLocation(), d, nearLattice)){
 				if(dir == null){
 					dir = d;
-					best = nloc.distanceSquaredTo(locHQ);
-				}
-				else if(best >= nloc.distanceSquaredTo(locHQ)){
-					best = nloc.distanceSquaredTo(locHQ);
+					best = hqDist;
+					mdist = relDist;
+				} else if (hqDist < best){
+					best = hqDist;
 					dir = d;
+					mdist = relDist;
+				} else if (hqDist == best && relDist < mdist) {
+					dir = d;
+					mdist = relDist;
 				}
 			}
 		}
