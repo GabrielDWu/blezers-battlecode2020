@@ -6,7 +6,7 @@ import java.lang.Math;
 import testbot.units.*;
 import testbot.buildings.*;
 
-import static blezerbot.Message.MessageType;
+import static testbot.Message.MessageType;
 
 public abstract class Robot {
 
