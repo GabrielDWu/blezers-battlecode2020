@@ -46,7 +46,7 @@ public class Miner extends Unit {
 
 	boolean fulfillmentCenterBuilt;
 
-	int vaporatorHeight = 0;
+	int vaporatorHeight;
 	boolean sentFound = false;
 	int enemyHQc;
 	final static int minNetGunRadius = 36;
@@ -73,6 +73,7 @@ public class Miner extends Unit {
 		buildableTiles = -1;
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
+		vaporatorHeight = Landscaper.terraformHeight;
 	}
 	public boolean canBuildVaporator(MapLocation a) throws GameActionException {
 		if(rc.canSenseLocation(a) == false) return false;
