@@ -253,6 +253,8 @@ public class DeliveryDrone extends Unit {
 						if(rc.canPickUpUnit(rinfo.getID())){
 							rc.pickUpUnit(rinfo.getID());
 							pickedUp = true;
+							prevStatus = DeliveryDroneStatus.DEFENDING_HQ;
+							status = DeliveryDroneStatus.DROP_WATER;
 							break;
 						}
 					}
