@@ -722,14 +722,23 @@ public class Landscaper extends Unit {
 
 	/* find any corner-adjacent lattice point */
 	/* as a note, this can probably be made more efficient if bytecode is an issue */
-	public Direction findLattice(MapLocation mloc) {
+	public Direction findLattice(MapLocation mloc) throws GameActionException {
+		Direction best = null;
+		int lowest = Integer.MAX_VALUE;
 		for (Direction dir: directions) {
 			MapLocation nloc = mloc.add(dir);
 
-			if (isLattice(nloc) && kingDistance(nloc, locHQ) >= terraformDist) return dir;
+			if (isLattice(nloc) && kingDistance(nloc, locHQ) >= terraformDist && rc.canSenseLocation(nloc)) {
+				int height = rc.senseElevation(nloc);
+				if (height < lowest) {
+					best = dir;
+					lowest = height;
+				}
+				
+			}
 		}
 
-		return null; /* should only happen if between wall and HQ */
+		return best;
 	}
 
 	public Direction findWallLattice(MapLocation mloc) {

@@ -87,23 +87,42 @@ public class DesignSchool extends Building {
 				}
 				//System.out.println(rc.getTeamSoup() + " SOUP");
 			case MAKING:
-				if (builtLandscapers > 0 && rc.getRoundNum() < 400) break;
 				if (numVaporators < 2 && builtLandscapers > 5) break;
-				if(numVaporators<maxVaporators/2 && builtLandscapers > 10) break;
-				/* for convenience of landscapers, try this specific location first */
-				Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
-				//System.out.println(adj +  " ADJ");
-				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
-					rc.buildRobot(RobotType.LANDSCAPER, adj);
-					builtLandscapers++;
-				} else {
-					for (Direction dir : directions) {
-						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-							rc.buildRobot(RobotType.LANDSCAPER, dir);
-							builtLandscapers++;
+				if (numVaporators<maxVaporators/2 && builtLandscapers > 10) break;
+
+				if (rc.getLocation().distanceSquaredTo(locHQ) >= 8) { /* is this the first design school */
+					/* for convenience of landscapers, try this specific location first */
+					Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
+					if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
+						rc.buildRobot(RobotType.LANDSCAPER, adj);
+						builtLandscapers++;
+					} else {
+						for (Direction dir : directions) {
+							if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+								rc.buildRobot(RobotType.LANDSCAPER, dir);
+								builtLandscapers++;
+							}
 						}
 					}
+				} else {
+					Direction bestDir = null;
+					int mdist = Integer.MAX_VALUE;
+					for (Direction dir : directions) {
+						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+							int ndist = rc.getLocation().add(dir).distanceSquaredTo(locHQ);
+							if (ndist < mdist) {
+								mdist = ndist;
+								bestDir = dir;
+							}
+						}
+					}
+
+					if (bestDir != null) {
+						rc.buildRobot(RobotType.LANDSCAPER, bestDir);
+						builtLandscapers++;
+					}
 				}
+				
 				break;
 		}
 
