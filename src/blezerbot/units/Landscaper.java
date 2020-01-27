@@ -331,7 +331,7 @@ public class Landscaper extends Unit {
 							if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
 						} else {
 							//Make sure it won't flood soon
-							if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()) + 10) {
+							if(rc.senseElevation(rc.getLocation()) <= GameConstants.getWaterLevel(rc.getRoundNum()) + terraformHeight + 1) {
 								if (rc.canDepositDirt(Direction.CENTER)) rc.depositDirt(Direction.CENTER);
 							}else {
 								attackEnemyBuilding();
@@ -553,6 +553,7 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BURY_ENEMY_BUILDING:
+				status = LandscaperStatus.HQ_TERRAFORM;
 				if(buryTarget == null || surroundedLocation(buryTarget)){
 					status = lastStatus;
 					break;
