@@ -198,7 +198,7 @@ public class DeliveryDrone extends Unit {
 						investigate = null;
 					}
 				}
-				boolean closeToHQ = adjacentToBase();
+				boolean closeToHQ = kingDistance(locHQ, rc.getLocation()) <= 2;
 				boolean pickedUp = false;
 				for(Direction dir: directionswcenter){
 					MapLocation nloc = rc.getLocation().add(dir);
@@ -238,7 +238,7 @@ public class DeliveryDrone extends Unit {
 					if (!badMap()){
 						for (int i = 0; i < 4; i++) {
 							Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
-							if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(locHQ) < dist) {
+							if (rc.canMove(nxt) && rc.getLocation().add(nxt).distanceSquaredTo(locHQ) < dist && kingDistance(rc.getLocation().add(nxt), locHQ) >= 2) {
 								bestDir = nxt;
 								dist = rc.getLocation().add(nxt).distanceSquaredTo(locHQ);
 							}
