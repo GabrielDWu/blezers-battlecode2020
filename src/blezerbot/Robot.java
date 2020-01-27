@@ -26,7 +26,7 @@ public abstract class Robot {
 	public int enemy_msg_cnt;   //How many enemy messages went through last round?
 	public int enemy_msg_sum;   //Total wagers of enemy messages last round.
 	public int numVaporators = 0;
-	final static public int maxVaporators = 8;
+	final static public int maxVaporators = 15;
 	public int numDrones = 0;
 	public int numDefensiveNetGuns = 0;
 	final static public int maxDefensiveNetGuns = 4;
