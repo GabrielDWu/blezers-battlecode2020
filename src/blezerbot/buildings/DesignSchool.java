@@ -20,6 +20,7 @@ public class DesignSchool extends Building {
 	boolean suicideTimer;
 	boolean initialDS;
 	int suicideTurns;
+	int vapes;
 	Direction turtleDir;
 
 	public DesignSchool(RobotController rc) throws GameActionException {
@@ -35,8 +36,10 @@ public class DesignSchool extends Building {
 	public void run() throws GameActionException {
 		super.run();
 		if (locHQ == null) return;
-		if (initialDS) status = DesignSchoolStatus.MAKING;
-		else status = DesignSchoolStatus.TURTLING;
+		if (status == null) {
+			if (initialDS) status = DesignSchoolStatus.MAKING;
+			else status = DesignSchoolStatus.TURTLING;
+		}
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
@@ -58,11 +61,20 @@ public class DesignSchool extends Building {
 				}
 				//System.out.println(rc.getTeamSoup() + " SOUP");
 			case MAKING:
+				int mdist = Integer.MAX_VALUE;
+				Direction mdir = null;
 				for (Direction dir : directions) {
 					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir) && builtLandscapers < TERRAFORM_LANDSCAPERS) {
-						rc.buildRobot(RobotType.LANDSCAPER, dir);
-						builtLandscapers++;
+						int ndist = kingDistance(rc.getLocation().add(dir), locHQ);
+						if (ndist < mdist) {
+							mdist = ndist;
+							mdir = dir;
+						}
 					}
+				}
+				if (mdir != null) {
+					rc.buildRobot(RobotType.LANDSCAPER, mdir);
+					builtLandscapers++;
 				}
 				if (builtLandscapers >= TERRAFORM_LANDSCAPERS) {
 					rc.disintegrate();
@@ -107,20 +119,18 @@ public class DesignSchool extends Building {
 						}
 					}	
 				}
-				if (builtLandscapers >= 8) status = DesignSchoolStatus.TURTLING_CORNER;
-				if (builtLandscapers > 30) /*just in case */ rc.disintegrate();
-						
 				break;
 			case TURTLING_CORNER:
-				if (builtLandscapers >= 20) break;
-				for (Direction dir : directions) {
-					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-						rc.buildRobot(RobotType.LANDSCAPER, dir);
-						builtLandscapers++;
-					}
-				}	
-					
-				break;
+					if (builtLandscapers >= 30) rc.disintegrate();
+					System.out.println(vapes);
+					if (vapes < 2) break;
+					for (Direction dir : directions) {
+						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+							rc.buildRobot(RobotType.LANDSCAPER, dir);
+							builtLandscapers++;
+						}
+					}	
+					break;
 		}
 
 		/*if (builtLandscapers < 16) {
@@ -170,9 +180,15 @@ public class DesignSchool extends Building {
 			case BUILD_WALL:
 				if (status == DesignSchoolStatus.TURTLING) {
 					status = DesignSchoolStatus.TURTLING_CORNER;
+					System.out.println("changed status");
 					return true;
 				}
 				break;
+			case BIRTH_INFO:
+				RobotType unitType = robot_types[message.data[0]];
+				int unitID = message.data[1];
+				MapLocation location = new MapLocation(message.data[2], message.data[3]);
+				if (unitType == RobotType.VAPORATOR) vapes++;
 		}
 		return false;
 	}
