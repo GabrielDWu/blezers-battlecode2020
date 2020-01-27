@@ -52,7 +52,7 @@ public class Miner extends Unit {
 	final static int minNetGunRadius = 36;
 	final static int maxNetGunRadius = 100;
 	final static int netGunModulus = 20;
-	final static int netGunSpread = 6;
+	final static int netGunSpread = 8;
 	final static int netGunCoolDown = 10;
 	int lastBuiltNetGun = Integer.MIN_VALUE;
 	int buildableTiles;
@@ -98,7 +98,7 @@ public class Miner extends Unit {
 		int dist = a.distanceSquaredTo(locHQ);
 		if(dist<minNetGunRadius) return false;
 		if(dist>maxNetGunRadius) return false;
-		//if(rc.getRoundNum()<lastBuiltNetGun + netGunCoolDown) return false;
+	//	if(rc.getRoundNum()<lastBuiltNetGun + netGunCoolDown) return false;
 	//	if(rc.senseElevation(a) <= terraformHeight && locNETGUN.size()>= 3) return false;
 		if(locNETGUN.size() >= maxDefensiveNetGuns) return false;
 		for(MapLocation n: locNETGUN){
@@ -178,7 +178,7 @@ public class Miner extends Unit {
 							close = r.location.distanceSquaredTo(rc.getLocation());
 						}
 					}
-					close = Integer.MAX_VALUE;
+					//close = Integer.MAX_VALUE;
 					if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
 							status == MinerStatus.RETURNING) && numDefensiveNetGuns<maxDefensiveNetGuns){
 						if(buildDefensiveNetGunDirection != null && close>=netGunSpread){
