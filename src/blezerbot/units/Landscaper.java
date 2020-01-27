@@ -139,17 +139,21 @@ public class Landscaper extends Unit {
 					return;
 				}
 				if (!mloc.isAdjacentTo(locHQ)) {
-					Direction dir = rc.getLocation().directionTo(locHQ);
-					if (canMove(dir)) {
-						rc.move(dir);
-					} else {
-						for(int i=0; i<8; i++) {
-							dir = dir.rotateLeft();
-							if(canMove(dir) && !isLattice(mloc.add(dir))) {
-								rc.move(dir);
-								break;
+					Direction best = null;
+					int mdist = Integer.MAX_VALUE;
+					for (Direction dir: directions) {
+						if (canMove(dir) && !isLattice(mloc.add(dir))) {
+							int dist = mloc.add(dir).distanceSquaredTo(locHQ);
+							if (dist < mdist) {
+								mdist = dist;
+								best = dir;
 							}
 						}
+					}
+					
+					if (best != null) {
+						rc.move(best);
+						break;
 					}
 				}
 				if (status == LandscaperStatus.BUILDING || idDS != -1 && !rc.canSenseRobot(idDS) && mloc.distanceSquaredTo(locDS) <= rc.getCurrentSensorRadiusSquared()) {
