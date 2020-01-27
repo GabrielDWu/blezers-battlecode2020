@@ -34,6 +34,8 @@ public class Landscaper extends Unit {
 	int floodTries;
 	int terraformMoveTries;
 	int localTerraformDist;
+	int cornerTries;
+	public final static int cornerCap = 150; /* how many tries to get into a corner */
 	public final static int terraformMoveCap = 5; /* how many tries to move on terraform, before retargeting */
 	public final static int moveCap = 15; /* how many tries to move into a position without our robot */
 	public final static int floodCap = 50; /* when the design school's build location is flooded for x turns, go into building mode */
@@ -56,6 +58,7 @@ public class Landscaper extends Unit {
 		floodTries = 0;
 		terraformMoveTries = 0;
 		localTerraformDist = terraformDist;
+		cornerTries = 0;
 	}
 	public int buryPriority(RobotType r){
 		if(r == RobotType.NET_GUN) return 0;
@@ -313,6 +316,7 @@ public class Landscaper extends Unit {
 			case CORNER:
 				if(locHQ == null || locDS == null) return;
 				boolean inPlace = (kingDistance(locHQ, rc.getLocation())==2) && !isLattice(rc.getLocation());
+				if (!buildingCorner && cornerTries++ >= cornerCap) status = LandscaperStatus.TERRAFORMING;
 				if (inPlace) buildingCorner = true;
 				if (buildingCorner) {
 					if (inPlace) {
@@ -540,13 +544,28 @@ public class Landscaper extends Unit {
 						}
 	
 						if (terraformTarget == null) {
-							Direction dir = bestTerraform(nearLattice);
+							/* target a miner nearby */
+							for (Direction dir: directions) {
+								if (rc.canSenseLocation(mloc.add(dir))) {
+									RobotInfo rinfo = rc.senseRobotAtLocation(mloc.add(dir));
+									if (rinfo != null) {
+										if (rinfo.team == rc.getTeam() && rinfo.type == RobotType.MINER && !isLattice(mloc.add(dir)) && canTerraform(mloc, dir, nearLattice)) {
+											terraformTarget = dir;
+											break;
+										}
+									}
+								}
+							}
+
+							if (terraformTarget == null) {
+								Direction dir = bestTerraform(nearLattice);
 	
-							if (dir == null) {
-								if (enemyHQ != null) moveToward(mloc, enemyHQ);
-								else moveAway(mloc, locHQ);
-							} else {
-								terraformTarget = dir;
+								if (dir == null) {
+									if (enemyHQ != null) moveToward(mloc, enemyHQ);
+									else moveAway(mloc, locHQ);
+								} else {
+									terraformTarget = dir;
+								}
 							}
 						}
 					}
