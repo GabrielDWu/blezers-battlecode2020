@@ -9,7 +9,8 @@ public class DesignSchool extends Building {
 		TURTLING,
 		MAKING,
 		RUSH_ENEMY_HQ,
-		NOTHING
+		NOTHING,
+		TURTLING_CORNER
 	}
 	int builtLandscapers;
 	int lastBuildTurn;
@@ -92,9 +93,34 @@ public class DesignSchool extends Building {
 						}
 					}	
 				}
-					
-							
+						
 				break;
+			case TURTLING_CORNER:
+			if (turtleDir != null) {
+				if (rc.canBuildRobot(RobotType.LANDSCAPER, turtleDir)) {
+					rc.buildRobot(RobotType.LANDSCAPER, turtleDir);
+					lastBuildTurn = rc.getRoundNum();
+					builtLandscapers++;
+				} else {
+					for (Direction dir : directions) {
+						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+							if (rc.getRoundNum() - lastBuildTurn >= cooldown) {
+								lastBuildTurn = rc.getRoundNum();
+								builtLandscapers++;
+							}
+						}
+					}	
+				}
+			} else {
+				for (Direction dir : directions) {
+					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+						turtleDir = dir;
+						break;
+					}
+				}	
+			}
+					
+			break;
 		}
 
 		/*if (builtLandscapers < 16) {
@@ -140,7 +166,7 @@ public class DesignSchool extends Building {
 				return true;
 			case BUILD_WALL:
 				if (status == DesignSchoolStatus.TURTLING) {
-					rc.disintegrate();
+					status = DesignSchoolStatus.TURTLING_CORNER;
 					return true;
 				}
 		}
