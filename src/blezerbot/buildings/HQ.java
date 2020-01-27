@@ -27,7 +27,7 @@ public class HQ extends Building {
 	HQstatus status;
 	int wallLandscapers;
 	int buildWallTurns;
-	public final static int wallMessageDelay = 250; /* short cooldown before sending build wall message */
+	public final static int wallMessageDelay = 10; /* short cooldown before sending build wall message */
 
 	public static enum HQstatus{
 		FIRST_MINERS,

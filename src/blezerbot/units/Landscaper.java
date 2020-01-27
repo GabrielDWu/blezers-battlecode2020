@@ -448,31 +448,32 @@ public class Landscaper extends Unit {
 
 
 						if (doneMoving) {
-							if (rc.canSenseLocation(locHQ.add(locHQ.directionTo(locDS))) && rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
-								++floodTries;
-								if (floodTries == floodCap) buildingCorner = true;
-							} else floodTries = 0;
-							if (rc.getDirtCarrying() < 1) {
-								Direction mdir = null;
-								int mdirt = Integer.MIN_VALUE;
-								for (Direction dir : directions) {
-									if (rc.canSenseLocation(mloc.add(dir))) {
-										int ndirt = rc.senseElevation(mloc.add(dir));
-										if (ndirt > mdirt && rc.canDigDirt(dir)) {
-											mdir = dir;
-											mdirt = ndirt;
-										}
-									}
-								}
-								if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
-							} else {
-								attackEnemyBuilding();
-								// deposit one dirt to signal to landscaper behind that you're done
-								if (rc.canDepositDirt(Direction.CENTER) && doneMovingDeposited) {
-									doneMovingDeposited = true;
-									rc.depositDirt(Direction.CENTER);
-								}
-							}
+							// if (rc.canSenseLocation(locHQ.add(locHQ.directionTo(locDS))) && rc.senseFlooding(locHQ.add(locHQ.directionTo(locDS)))) {
+							// 	++floodTries;
+							// 	if (floodTries == floodCap) buildingCorner = true;
+							// } else floodTries = 0;
+							// if (rc.getDirtCarrying() < 1) {
+							// 	Direction mdir = null;
+							// 	int mdirt = Integer.MIN_VALUE;
+							// 	for (Direction dir : directions) {
+							// 		if (rc.canSenseLocation(mloc.add(dir))) {
+							// 			int ndirt = rc.senseElevation(mloc.add(dir));
+							// 			if (ndirt > mdirt && rc.canDigDirt(dir)) {
+							// 				mdir = dir;
+							// 				mdirt = ndirt;
+							// 			}
+							// 		}
+							// 	}
+							// 	if (mdir != null && rc.canDigDirt(mdir)) rc.digDirt(mdir);
+							// } else {
+							// 	attackEnemyBuilding();
+							// 	// deposit one dirt to signal to landscaper behind that you're done
+							// 	if (rc.canDepositDirt(Direction.CENTER) && doneMovingDeposited) {
+							// 		doneMovingDeposited = true;
+							// 		rc.depositDirt(Direction.CENTER);
+							// 	}
+							// }
+							buildingCorner = true;
 						}
 					} else {
 						Direction dir = rc.getLocation().directionTo(locHQ);
