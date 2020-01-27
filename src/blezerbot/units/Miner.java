@@ -389,6 +389,9 @@ public class Miner extends Unit {
 					if (!safeFromFlood[Direction.CENTER.ordinal()]) {
 						randomMove();
 					}
+					if (!rc.getLocation().isAdjacentTo(chosenRefinery)) {
+						status = MinerStatus.RETURNING;
+					}
 					if (rc.canDepositSoup(mloc.directionTo(chosenRefinery))) rc.depositSoup(mloc.directionTo(chosenRefinery), rc.getSoupCarrying());
 					if (rc.getSoupCarrying() == 0) {
 						chosenRefinery = null;
