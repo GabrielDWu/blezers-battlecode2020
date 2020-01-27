@@ -37,7 +37,7 @@ public abstract class Robot {
 	public int[] PADS = {-1016996230, -110260579, -1608604611, 1994246809, 1665065435, 422836453, 325111185};
 	public HashSet<Integer> nonces_seen;
 
-	public final static int TERRAFORM_LANDSCAPERS = 10;
+	public final static int TERRAFORM_LANDSCAPERS = 6;
 
 
 	public RobotType[] robot_types = {RobotType.HQ, //0

@@ -17,7 +17,6 @@ public class HQ extends Building {
 	int wallSquares; /* should be 8, unless we're in a corner or edge */
 	int specialMiner;
 	boolean builtDesignSchool;
-	Direction turtleDesignSchoolDir;
 	boolean landscaperWalled;
 	int buildingDesignSchool;
 	int attackTimer;
@@ -97,16 +96,13 @@ public class HQ extends Building {
 					status = HQstatus.FIRST_LANDSCAPERS;
 					//No break here
 				}
-			case FIRST_LANDSCAPERS:
-
 
 		}
 
-		// build wall
+		// begin terraform
 		if (buildingMinerLoc != null) {
 			writeMessage(Message.build(RobotType.DESIGN_SCHOOL, rc.senseRobotAtLocation(buildingMinerLoc).getID(), buildingDSLoc));
 			buildingDesignSchool = 1;
-			turtleDesignSchoolDir = rc.getLocation().directionTo(buildingMinerLoc);
 			buildingMinerLoc = null;
 		}
 		if (!builtDesignSchool) {
@@ -120,14 +116,7 @@ public class HQ extends Building {
 		if (buildingDesignSchool == 0 && units[2 /*refinery*/].size() > 0 && rc.getTeamSoup() > 70 && rc.isReady()) {
 			for (Direction dir : orthogonalDirections) {
 				MapLocation minerLoc = rc.getLocation().add(dir);
-				MapLocation buildLoc = minerLoc.add(dir.rotateRight());
-				if (rc.onTheMap(buildLoc) && Math.abs(rc.senseElevation(minerLoc)-rc.senseElevation(buildLoc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(buildLoc) && !rc.isLocationOccupied(minerLoc) && !rc.isLocationOccupied(buildLoc)) {
-					buildingMinerLoc = minerLoc;
-					buildingDSLoc = buildLoc;
-					rc.buildRobot(RobotType.MINER, dir);
-					break;
-				}
-				buildLoc = minerLoc.add(dir.rotateLeft());
+				MapLocation buildLoc = minerLoc.add(dir);
 				if (rc.onTheMap(buildLoc) && Math.abs(rc.senseElevation(minerLoc)-rc.senseElevation(buildLoc)) <= GameConstants.MAX_DIRT_DIFFERENCE && !rc.senseFlooding(buildLoc) && !rc.isLocationOccupied(minerLoc) && !rc.isLocationOccupied(buildLoc)) {
 					buildingMinerLoc = minerLoc;
 					buildingDSLoc = buildLoc;
@@ -145,7 +134,7 @@ public class HQ extends Building {
 			hq_sentLoc = true;
 		}
 
-        if ((landscaperWalled || rc.getRoundNum() > 500) && units[5 /*fc*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 10 && rc.getTeamSoup() > 200) {
+        if (landscaperWalled && units[5 /*fc*/].size() == 0 && units[1].size() > 0 /*miner*/ && waitingForBuilding > 10 && rc.getTeamSoup() > 200) {
             waitingForBuilding = 1;
             writeMessage(Message.build(RobotType.FULFILLMENT_CENTER));
         }
@@ -200,7 +189,7 @@ public class HQ extends Building {
 					case LANDSCAPER:
 						if(enemyHQ == null || location.distanceSquaredTo(enemyHQ) > 18){
 							domesticScapers++;
-							if(domesticScapers < TERRAFORM_LANDSCAPERS){
+							if(domesticScapers <= TERRAFORM_LANDSCAPERS){
 								writeMessage(Message.doSomething(unitID, 1));	//Terraform
 							}else if(wallLandscapers >= 8){
 								writeMessage(Message.doSomething(unitID, 3));	//Corner
@@ -222,6 +211,10 @@ public class HQ extends Building {
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}
 						break;
+					case DESIGN_SCHOOL:
+						if (units[RobotType.DESIGN_SCHOOL.ordinal()].size() == 1) {
+							writeMessage(Message.doSomething(unitID, 7)); // kill itself
+						}
 				}
 				return true;
 		}

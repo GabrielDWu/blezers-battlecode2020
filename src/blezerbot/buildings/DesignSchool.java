@@ -6,7 +6,7 @@ import blezerbot.*;
 
 public class DesignSchool extends Building {
 	enum DesignSchoolStatus {
-		TURTLE_MAKING,
+		TURTLING,
 		MAKING,
 		RUSH_ENEMY_HQ,
 		NOTHING
@@ -17,6 +17,7 @@ public class DesignSchool extends Building {
 	boolean waitingForDrone;
 	DesignSchoolStatus status;
 	boolean suicideTimer;
+	boolean initialDS;
 	int suicideTurns;
 
 	public DesignSchool(RobotController rc) throws GameActionException {
@@ -25,51 +26,19 @@ public class DesignSchool extends Building {
 
 	public void startLife() throws GameActionException{
 		super.startLife();
-		status = DesignSchoolStatus.MAKING;
 		lastBuildTurn = -cooldown;
 	}
 
 	public void run() throws GameActionException {
 		super.run();
-		if (suicideTimer) {
-			if (suicideTurns++ > 20) {
-				rc.disintegrate();
-			}
-			return;
-		}
 		if (locHQ == null) return;
+		if (initialDS) status = DesignSchoolStatus.MAKING;
+		else status = DesignSchoolStatus.TURTLING;
 		if(enemyHQ != null && rc.getLocation().distanceSquaredTo(enemyHQ)<= 8){
 			status = DesignSchoolStatus.RUSH_ENEMY_HQ;
 		}
 		// System.out.println(status);
 		switch (status){
-			// case TURTLE_MAKING:
-			// 	int turn = rc.getRoundNum();
-			// //	System.out.println("HERE");
-			// 	/* for convenience of landscapers, try this specific location first */
-
-			// 	Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
-			// 	//System.out.println(adj +  " ADJ");
-			// 	if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
-			// 		rc.buildRobot(RobotType.LANDSCAPER, adj);
-			// 		builtLandscapers++;
-			// 		lastBuildTurn = turn;
-			// 	}
-
-			// 	if (turn - lastBuildTurn >= cooldown) {
-			// 		for (Direction dir : directions) {
-			// 			if (rc.getLocation().add(dir).isAdjacentTo(locHQ)) {
-			// 			//	System.out.println(dir + " YAY " +  rc.canBuildRobot(RobotType.LANDSCAPER, dir));
-			// 				if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-			// 					rc.buildRobot(RobotType.LANDSCAPER, dir);
-			// 					builtLandscapers++;
-			// 					lastBuildTurn = turn;
-			// 				}
-			// 			}
-			// 		}
-			// 	}
-				
-			// 	break;
 			case RUSH_ENEMY_HQ:
 				/// don't want to waste resources
 				if(builtLandscapers>3) break;
@@ -87,20 +56,21 @@ public class DesignSchool extends Building {
 				}
 				//System.out.println(rc.getTeamSoup() + " SOUP");
 			case MAKING:
-				if (numVaporators < 2 && builtLandscapers > 5) break;
-				if(numVaporators<maxVaporators/2 && builtLandscapers > 10) break;
-				/* for convenience of landscapers, try this specific location first */
-				Direction adj = rc.getLocation().directionTo(locHQ.add(locHQ.directionTo(rc.getLocation())));
-				//System.out.println(adj +  " ADJ");
-				if (rc.canBuildRobot(RobotType.LANDSCAPER, adj)) {
-					rc.buildRobot(RobotType.LANDSCAPER, adj);
-					builtLandscapers++;
-				} else {
-					for (Direction dir : directions) {
-						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-							rc.buildRobot(RobotType.LANDSCAPER, dir);
-							builtLandscapers++;
-						}
+				for (Direction dir : directions) {
+					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir) && builtLandscapers < TERRAFORM_LANDSCAPERS) {
+						rc.buildRobot(RobotType.LANDSCAPER, dir);
+						builtLandscapers++;
+					}
+				}
+				if (builtLandscapers >= TERRAFORM_LANDSCAPERS) {
+					rc.disintegrate();
+				}
+				break;
+			case TURTLING:
+				for (Direction dir : directions) {
+					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+						rc.buildRobot(RobotType.LANDSCAPER, dir);
+						builtLandscapers++;
 					}
 				}
 				break;
@@ -141,11 +111,17 @@ public class DesignSchool extends Building {
 				if (message.data[0] != rc.getID()) return false;
 				status = DesignSchoolStatus.NOTHING;
 				return true;
-			case BUILD_WALL:
-				//when landscapers start turtling, no longer need to new scapers next to hq
-				suicideTimer = true;
+			case UNWAIT:
+				if (message.data[0] != rc.getID()) return false;
+				if (message.data[1] == 7) {
+					initialDS = true;
+				}
 				return true;
-
+			case BUILD_WALL:
+				if (status == DesignSchoolStatus.TURTLING) {
+					rc.disintegrate();
+					return true;
+				}
 		}
 		return false;
 	}

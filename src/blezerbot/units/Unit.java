@@ -100,24 +100,6 @@ public abstract class Unit extends Robot {
 					y = dir.dy + 2;
 					safeFromFlood[dir.ordinal()] = !rc.canSenseLocation(rc.adjacentLocation(dir)) || rc.senseElevation(rc.adjacentLocation(dir)) > w || (_notFlooded[x+1][y]&&_notFlooded[x+1][y+1]&&_notFlooded[x+1][y-1]&&_notFlooded[x-1][y]&&_notFlooded[x-1][y+1]&&_notFlooded[x-1][y-1]&&_notFlooded[x][y+1]&&_notFlooded[x][y-1]&&_notFlooded[x][y]);
 				}
-
-				// run away from drones
-				RobotInfo[] info = rc.senseNearbyRobots(DRONE_RUN_RADIUS, rc.getTeam() == Team.A ? Team.B : Team.A);
-				boolean moved = false;
-				for (RobotInfo r : info) {
-					if (r.getType() == RobotType.DELIVERY_DRONE) {
-						for (Direction dir : directions) {
-							int newDist = rc.getLocation().add(dir).distanceSquaredTo(r.getLocation());
-							if (newDist > rc.getLocation().distanceSquaredTo(r.getLocation()) && newDist > 2) {
-								if (tryMove(dir)) {
-									moved = true;
-									break;
-								}
-							}
-						}
-						if (moved) break;
-					}
-				}
 			}
 		}
 	}
