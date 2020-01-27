@@ -65,6 +65,7 @@ public class Landscaper extends Unit {
 	}
 
 	public void run() throws GameActionException {
+		System.out.println(status);
 		if (status == LandscaperStatus.DEFENDING || status == LandscaperStatus.BUILDING || status == LandscaperStatus.CORNER) noRunRadius = true;
 		else noRunRadius = false;
 		super.run();
@@ -540,6 +541,7 @@ public class Landscaper extends Unit {
 							Direction dir = bestTerraform(nearLattice);
 	
 							if (dir == null) {
+								System.out.println(enemyHQ == null);
 								if (enemyHQ != null) moveTowardEnemyHQ(mloc);
 								else moveAwayFromHQ(mloc);
 							} else {

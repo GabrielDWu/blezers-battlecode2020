@@ -453,7 +453,7 @@ public abstract class Unit extends Robot {
 			++startIndex;
 			startIndex %= directions.length;
 		} while (startIndex != stopIndex);
-
+		
 		return false;
 	}
 

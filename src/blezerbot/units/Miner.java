@@ -90,6 +90,7 @@ public class Miner extends Unit {
 		return null;
 	}
 	public void run() throws GameActionException {
+		System.out.println(status);
 		if (status == MinerStatus.GO_TO_TERRAFORM) reducedRunRadius = true;
 		else reducedRunRadius = false;
 		super.run();
