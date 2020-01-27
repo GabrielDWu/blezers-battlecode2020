@@ -35,7 +35,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation waitLocation;
 	MapLocation lastSeen;
 
-	final int wallThreshold = terraformHeight + 1;
+	final int wallThreshold = terraformHeight + 1; // detection of turtle landscapers
 
 	MapLocation closeWater;
 	int closeWaterDist;	//King distance to closeWater
@@ -54,7 +54,7 @@ public class DeliveryDrone extends Unit {
 	Team holdingTeam = null;
 
 	final static int cornerThreshold = 3;
-
+	final static int waterSenseRadius = 8;
 	public DeliveryDrone(RobotController rc) throws GameActionException {
 		super(rc);
 	}
@@ -64,6 +64,7 @@ public class DeliveryDrone extends Unit {
 		boolean b2 = (locHQ.y<=cornerThreshold || locHQ.y>=rc.getMapHeight() - cornerThreshold);
 		return (b1|| b2);
 	}
+
 	public boolean HQInCorner(){
 		boolean b1 = (locHQ.x<=cornerThreshold || locHQ.x>=rc.getMapWidth() - cornerThreshold);
 		boolean b2 = (locHQ.y<=cornerThreshold || locHQ.y>=rc.getMapHeight() - cornerThreshold);
@@ -125,7 +126,9 @@ public class DeliveryDrone extends Unit {
 
 		//Update closest water
 		if(closeWater != null && rc.canSenseLocation(closeWater) && (!rc.senseFlooding(closeWater) || rc.isLocationOccupied(closeWater))) closeWater=null;
-		ArrayList<MapLocation> senseLocations = getLocationsInRadius(rc.getLocation(), Math.min(rc.getCurrentSensorRadiusSquared(), 8));
+
+		ArrayList<MapLocation> senseLocations = getLocationsInRadius(rc.getLocation(), Math.min(rc.getCurrentSensorRadiusSquared(), waterSenseRadius));
+
 		for(MapLocation loc: senseLocations){
 			if(rc.canSenseLocation(loc) && rc.senseFlooding(loc) && !rc.isLocationOccupied(loc) &&
 					(closeWater == null || kingDistance(rc.getLocation(),loc) <= closeWaterDist)){
@@ -134,7 +137,7 @@ public class DeliveryDrone extends Unit {
 			}
 		};
 
-		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)){
+		if(rc.isCurrentlyHoldingUnit() && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER) && holdingTeam !=rc.getTeam()){
 			for(Direction dir: directions){
 				if(rc.canDropUnit(dir)){
 					rc.dropUnit(dir);
@@ -146,12 +149,16 @@ public class DeliveryDrone extends Unit {
 		//if (locHQ == null) return;
 
 		if(rc.isCurrentlyHoldingUnit() && status != DeliveryDroneStatus.DEFENDING_HQ && holdingTeam != rc.getTeam()){
-			if(status != DeliveryDroneStatus.DROP_WATER)prevStatus = status;
+			if(status != DeliveryDroneStatus.DROP_WATER) prevStatus = status;
 			status = DeliveryDroneStatus.DROP_WATER;
 		}
+
 		// assuming we will only harass their hq or ours
+		// start the bad hardcoding of conditions
 		int random = r.nextInt(100);
-		if(random >10 && enemyHQ != null && harassCenter!= null && harassCenter.distanceSquaredTo(enemyHQ) <= harassCenter.distanceSquaredTo(locHQ) && status == DeliveryDroneStatus.HARASS){
+		if(random>10 && enemyHQ != null && harassCenter!= null &&
+				harassCenter.distanceSquaredTo(enemyHQ) <= harassCenter.distanceSquaredTo(locHQ)
+				&& status == DeliveryDroneStatus.HARASS){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
 		else {
@@ -161,16 +168,19 @@ public class DeliveryDrone extends Unit {
 			}
 			else status = DeliveryDroneStatus.DEFENDING_HQ;
 		}
-		if(random%100 >10) status = DeliveryDroneStatus.DEFENDING_HQ;
 
-		if(rushRound +100<= rc.getRoundNum()  && rushRound != -1) {
-			//System.out.println("HUH");
+		// should i rush or not
+		if(rushRound != -1){
+			status = DeliveryDroneStatus.CIRCLING;
+		}
+		if(rushRound +120 <= rc.getRoundNum()  && rushRound != -1) {
 			status = DeliveryDroneStatus.ATTACKING;
 		}
 		if(rushRound + 175<= rc.getRoundNum() && rushRound!=-1){
 			status = DeliveryDroneStatus.DEFENDING_HQ;
 			rushRound = -1;
 		}
+
 		if(enemyHQ == null) status = DeliveryDroneStatus.FIND_ENEMY_HQ;
 
 		switch(status) {
