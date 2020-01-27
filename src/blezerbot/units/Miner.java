@@ -77,7 +77,7 @@ public class Miner extends Unit {
 		MapLocation mloc = rc.getLocation();
 		for(Direction dir: directions){
 			MapLocation nloc= mloc.add(dir);
-			if(rc.canBuildRobot(RobotType.VAPORATOR, dir) && canBuildVaporator(nloc)){
+			if(canBuildRobot(RobotType.VAPORATOR, dir) && canBuildVaporator(nloc)){
 				return dir;
 			}
 		}
@@ -143,7 +143,7 @@ public class Miner extends Unit {
 						int best = Integer.MAX_VALUE;
 						for(Direction d: directions){
 							int dist = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));
-							if(rc.canBuildRobot(RobotType.DESIGN_SCHOOL, d) && rushHQHelper(best, dist)) {
+							if(canBuildRobot(RobotType.DESIGN_SCHOOL, d) && rushHQHelper(best, dist)) {
 								best = enemyHQ.distanceSquaredTo(rc.getLocation().add(d));;
 								di = d;
 							}
@@ -169,7 +169,7 @@ public class Miner extends Unit {
 						}
 						for (Direction dir : directions) {
 							if (rc.getLocation().add(dir).distanceSquaredTo(locHQ) >= 9 && buildingType != null && !isLattice(rc.getLocation().add(dir)) &&
-									rc.canBuildRobot(buildingType, dir)) {
+									canBuildRobot(buildingType, dir)) {
 								rc.buildRobot(buildingType, dir);
 								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
 								if (status == MinerStatus.RETURNING) returnTries = 0;
@@ -190,7 +190,7 @@ public class Miner extends Unit {
 							//Move in a random direction
 							randomMove();
 						}else if(rc.getLocation().isAdjacentTo(buildLocation)){
-							if(rc.canBuildRobot(buildingType, rc.getLocation().directionTo(buildLocation))){
+							if(canBuildRobot(buildingType, rc.getLocation().directionTo(buildLocation))){
 								rc.buildRobot(buildingType, rc.getLocation().directionTo(buildLocation));
 								status = prevStatus == null ? MinerStatus.MINING : prevStatus;
 								if (status == MinerStatus.RETURNING) returnTries = 0;
@@ -621,4 +621,7 @@ public class Miner extends Unit {
 		return dir != null && super.canMove(dir) && (!onTerraform || rc.canSenseLocation(rc.getLocation()) && rc.senseElevation(rc.getLocation()) >= terraformHeight) &&  !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
 	}
 
+	public boolean canBuildRobot(RobotType type, Direction dir) {
+		return rc.canBuildRobot(type, dir) && (!onTerraform || isForBuilding(rc.getLocation().add(dir)));
+	}
 }
