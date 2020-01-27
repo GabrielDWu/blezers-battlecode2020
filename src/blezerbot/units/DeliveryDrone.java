@@ -33,6 +33,7 @@ public class DeliveryDrone extends Unit {
 	final static int harassRadius = 100; // Radius of circle about which you circle
 	final static int harassInnerRadius = 36;
 	final static int defenseRadius = 36;
+	final static int valleyDrop = -20;
 	MapLocation dropLocation;
 	MapLocation waitLocation;
 	MapLocation lastSeen;
@@ -92,6 +93,14 @@ public class DeliveryDrone extends Unit {
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
 		rushRound = -1;
+	}
+
+	boolean crippleDrop(Direction dir) throws GameActionException{
+		MapLocation nloc = rc.getLocation().add(dir);
+		if(rc.canSenseLocation(nloc) == false) return false;
+		if(rc.senseFlooding(nloc)) return true;
+		if(rc.senseElevation(nloc) <= valleyDrop) return true;
+		return false;
 	}
 
 	boolean adjacentToBase() throws GameActionException{
@@ -221,7 +230,7 @@ public class DeliveryDrone extends Unit {
 				if(rc.isCurrentlyHoldingUnit()){
 					for(Direction drop: directionswcenter){
 						MapLocation nloc = rc.getLocation().add(drop);
-						if(rc.canSenseLocation(nloc) && rc.senseFlooding(nloc) ){
+						if(crippleDrop(drop)){
 							if(rc.canDropUnit(drop) && holdingTeam != rc.getTeam()){
 								rc.dropUnit(drop);
 								holdingTeam = null;
