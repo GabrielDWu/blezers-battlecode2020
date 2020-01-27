@@ -18,7 +18,8 @@ public class Miner extends Unit {
 		RUSH_ENEMY_HQ,
 		BUILD_VAPORATOR,
 		GO_TO_TERRAFORM,
-		BUILDING_DS
+		BUILDING_DS,
+		BUILD_DEFENSIVE_NETGUN
 	}
 
 	boolean onTerraform;
@@ -32,6 +33,7 @@ public class Miner extends Unit {
 	RobotType buildingType = null;
 	int buildingTries = 0;
 	public ArrayList<MapLocation> locREFINERY;
+	public ArrayList<MapLocation> locNETGUN;
 	MapLocation chosenRefinery;
 	MapLocation buildLocation = null;
 	boolean findingEnemyHQ;
@@ -47,7 +49,10 @@ public class Miner extends Unit {
 	int vaporatorHeight = 0;
 	boolean sentFound = false;
 	int enemyHQc;
-
+	final static int minNetGunRadius = 36;
+	final static int maxNetGunRadius = 100;
+	final static int netGunModulus = 20;
+	final static int netGunSpread = 6;
 	int buildableTiles;
 
 	int returnTries;
@@ -61,6 +66,7 @@ public class Miner extends Unit {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		locREFINERY = new ArrayList<MapLocation>();
+		locNETGUN = new ArrayList<MapLocation>();
 		buildableTiles = -1;
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
@@ -79,6 +85,20 @@ public class Miner extends Unit {
 		if(a.distanceSquaredTo(locHQ) <= RobotType.VAPORATOR.pollutionRadiusSquared) ok = true;
 		if(!ok) return false;
 
+		return true;
+	}
+	public boolean canBuildDefensiveNetGun(MapLocation a) throws GameActionException {
+		if(rc.canSenseLocation(a) == false) return false;
+		if(isLattice(a)) return false;
+		if(rc.senseFlooding(a)) return false;
+		if(rc.isLocationOccupied(a)) return false;
+		int dist = a.distanceSquaredTo(locHQ);
+		if(dist<minNetGunRadius) return false;
+		if(dist>maxNetGunRadius) return false;
+		if(locNETGUN.size() >= maxDefensiveNetGuns) return false;
+		for(MapLocation n: locNETGUN){
+			if(rc.getLocation().distanceSquaredTo(n)< netGunSpread) return false;
+		}
 		return true;
 	}
 	public Direction buildVaporator() throws GameActionException {
@@ -133,7 +153,32 @@ public class Miner extends Unit {
 					status = MinerStatus.BUILDING_DS;
 				}
 			}
+			Direction buildDefensiveNetGunDirection = null;
+			if (onTerraform) {
+				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
+
+				if(!(numVaporators == 2 || numVaporators == 5 || rc.getRoundNum()%netGunModulus == 0)){
+					// do nothing
+				}
+				else{
+					for(Direction dir: directions){
+							if(canBuildDefensiveNetGun(rc.getLocation().add(dir)) && rc.canBuildRobot(RobotType.NET_GUN, dir)) buildDefensiveNetGunDirection = dir;
+					}
+					if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
+							status == MinerStatus.RETURNING) && numDefensiveNetGuns<maxDefensiveNetGuns){
+						if(buildDefensiveNetGunDirection != null){
+							status = MinerStatus.BUILD_DEFENSIVE_NETGUN;
+						}
+					}
+				}
+			}
+
 			switch (status) {
+				case BUILD_DEFENSIVE_NETGUN:
+					rc.buildRobot(RobotType.NET_GUN, buildDefensiveNetGunDirection);
+					status = prevStatus == null ? MinerStatus.MINING : prevStatus;
+					break;
+
 				case BUILDING_DS:
 					if (builtDS) {
 						status = MinerStatus.MINING;
@@ -257,7 +302,7 @@ public class Miner extends Unit {
 					}
 					if (soupLoc != null && !mloc.isAdjacentTo(soupLoc)) {
 						for (Direction dir : directions) {
-							if (tryMine(dir)) { 
+							if (tryMine(dir)) {
 								soupLoc = mloc.add(dir);
 								soupTries[soupLoc.x][soupLoc.y] = 0;
 								break;
@@ -591,6 +636,10 @@ public class Miner extends Unit {
 						return true;
 					}
 				}
+				if(unit_type == RobotType.NET_GUN){
+					locNETGUN.add(new MapLocation(message.data[2], message.data[3]));
+					return true;
+				}
 				if(unit_type != RobotType.REFINERY){
 					return false;
 				}
@@ -637,6 +686,9 @@ public class Miner extends Unit {
 				if (type == RobotType.REFINERY) {
 					locREFINERY.remove(new MapLocation(message.data[2], message.data[3]));
 					return true;
+				}
+				if(type == RobotType.NET_GUN){
+					locNETGUN.remove(new MapLocation(message.data[2], message.data[3]));
 				}
 				return false;
 			case BUILD_ANY:

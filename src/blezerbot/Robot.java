@@ -26,8 +26,10 @@ public abstract class Robot {
 	public int enemy_msg_cnt;   //How many enemy messages went through last round?
 	public int enemy_msg_sum;   //Total wagers of enemy messages last round.
 	public int numVaporators = 0;
-	public int maxVaporators = 8;
+	final static public int maxVaporators = 8;
 	public int numDrones = 0;
+	public int numDefensiveNetGuns = 0;
+	final static public int maxDefensiveNetGuns = 4;
 	public Random r;
 	public Direction facing;
 	//public Direction[] directions = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.SOUTHWEST};
@@ -285,6 +287,10 @@ public abstract class Robot {
 				}
 				if(unit_type == RobotType.DELIVERY_DRONE){
 					numDrones++;
+					return false;
+				}
+				if(unit_type == RobotType.NET_GUN){
+					numDefensiveNetGuns++;
 					return false;
 				}
 

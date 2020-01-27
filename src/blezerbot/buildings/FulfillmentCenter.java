@@ -15,6 +15,10 @@ public class FulfillmentCenter extends Building {
 	public void run() throws GameActionException {
 		super.run();
 		if (builtDrones < 100000) {
+
+			if(numDrones >= 2&& (numDefensiveNetGuns<= 1 &&rc.getRoundNum()<=500) && rc.getTeamSoup()<1+RobotType.NET_GUN.cost){
+				return;
+			}
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, dir)) {
 					rc.buildRobot(RobotType.DELIVERY_DRONE, dir);
