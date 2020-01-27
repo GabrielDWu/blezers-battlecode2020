@@ -141,7 +141,7 @@ public class Message {
 	        int result = ((message[ptr/32]<<(size-(32-(ptr%32)))) + (message[ptr/32+1]>>>(64-size-(ptr%32))))%(1<<size);
 	        r = (result < 0) ? result + (1<<size) : result;
 	    }else{
-	        r = (message[ptr/32]>>>(32-(ptr%32)-size))%(1<<size);
+	        r = ((message[ptr/32]>>>(32-(ptr%32)-size))%(1<<size)+(1<<size))%(1<<size);
 	    }
 	    ptr += size;
 	    return r;
