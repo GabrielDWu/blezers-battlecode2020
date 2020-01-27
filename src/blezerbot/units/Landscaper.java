@@ -824,7 +824,6 @@ public class Landscaper extends Unit {
 		}
 
 		int orig = ind;
-
 		while (true) {
 			ind = (ind + 1) % 8;
 			int curX = 1 + directions[ind].dx;
