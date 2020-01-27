@@ -83,11 +83,14 @@ public class DesignSchool extends Building {
 				/* are we surrounded by terraform squares and not on one, if so, die */
 				boolean surrounded = true;
 				for (Direction dir : directions) {
-					if (rc.canSenseLocation(rc.getLocation().add(dir)) && rc.senseElevation(rc.getLocation().add(dir)) != blezerbot.units.Unit.terraformHeight) {
-						RobotInfo rinfo = rc.senseRobotAtLocation(rc.getLocation().add(dir));
-						if (rinfo == null || rinfo.type != RobotType.LANDSCAPER) {
-							surrounded = false;
-							break;
+					if (rc.canSenseLocation(rc.getLocation().add(dir))) {
+						int el = rc.senseElevation(rc.getLocation().add(dir));
+						if (el != blezerbot.units.Unit.terraformHeight && Math.abs(el - blezerbot.units.Unit.terraformHeight) <= blezerbot.units.Landscaper.terraformThreshold) {
+							RobotInfo rinfo = rc.senseRobotAtLocation(rc.getLocation().add(dir));
+							if (rinfo == null || rinfo.type != RobotType.LANDSCAPER) {
+								surrounded = false;
+								break;
+							}
 						}
 					}
 				}
