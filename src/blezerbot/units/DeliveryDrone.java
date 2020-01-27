@@ -209,10 +209,10 @@ public class DeliveryDrone extends Unit {
 		if(rushRound != -1){
 			status = DeliveryDroneStatus.CIRCLING;
 		}
-		if(rushRound +120 <= rc.getRoundNum()  && rushRound != -1) {
+		if(enemyHQ != null  &&locHQ != null && rushRound +taxicabDistance(locHQ, enemyHQ) + 60 <= rc.getRoundNum()  && rushRound != -1) {
 			status = DeliveryDroneStatus.ATTACKING;
 		}
-		if(rushRound + 175<= rc.getRoundNum() && rushRound!=-1){
+		if(enemyHQ != null && locHQ != null && rushRound +taxicabDistance(locHQ, enemyHQ) + 60 + 50 <= rc.getRoundNum() && rushRound!=-1){
 			if(droneType == 1) status = DeliveryDroneStatus.DEFENDING_HQ;
 			else status = DeliveryDroneStatus.HARASS;
 			rushRound = -1;
