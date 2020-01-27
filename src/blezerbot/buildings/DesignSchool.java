@@ -72,8 +72,11 @@ public class DesignSchool extends Building {
 				boolean surrounded = true;
 				for (Direction dir : directions) {
 					if (rc.canSenseLocation(rc.getLocation().add(dir)) && rc.senseElevation(rc.getLocation().add(dir)) != blezerbot.units.Unit.terraformHeight) {
-						surrounded = false;
-						break;
+						RobotInfo rinfo = rc.senseRobotAtLocation(rc.getLocation().add(dir));
+						if (rinfo == null || rinfo.type != RobotType.LANDSCAPER) {
+							surrounded = false;
+							break;
+						}
 					}
 				}
 				if (surrounded && rc.senseElevation(rc.getLocation()) != blezerbot.units.Unit.terraformHeight) rc.disintegrate();

@@ -29,6 +29,7 @@ public class HQ extends Building {
 	int wallLandscapers;
 	int buildWallTurns;
 	int wallDesignSchoolID;
+	int rushTurns;
 	public final static int wallMessageDelay = 10; /* short cooldown before sending build wall message */
 
 	public static enum HQstatus{
@@ -86,11 +87,15 @@ public class HQ extends Building {
 			}
 		}
 		if(unitToShoot >= 0) rc.shootUnit(unitToShoot);
+		if (enemyHQ != null && rushTurns == 0) {
+			rushTurns = 1;
+		}
+
 
 		switch(status){
 			case FIRST_MINERS:
 			//Build original miners
-				if (builtMiners < TOTAL_MINERS) {
+				if (builtMiners < TOTAL_MINERS && (rushTurns == 0 || rushTurns++ > 40)) {
 					int di = r.nextInt(directions.length);
 					for (int i = 0; i < directions.length; i++) {
 						Direction dir = directions[(di+i)%directions.length];
