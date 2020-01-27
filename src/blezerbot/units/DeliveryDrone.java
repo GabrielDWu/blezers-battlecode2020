@@ -31,6 +31,7 @@ public class DeliveryDrone extends Unit {
 	MapLocation investigate;
 	MapLocation harassCenter;
 	final static int harassRadius = 100; // Radius of circle about which you circle
+	final static int harassInnerRadius = 36;
 	final static int defenseRadius = 36;
 	MapLocation dropLocation;
 	MapLocation waitLocation;
@@ -127,10 +128,10 @@ public class DeliveryDrone extends Unit {
 
 	public void run() throws GameActionException {
 		super.run();
-		if(harassCenter == enemyHQ || (harassCenter != locHQ && locHQ != null)) {
+		if(harassCenter.equals(enemyHQ) || (!harassCenter.equals(locHQ) && locHQ != null)) {
 			droneType = 2;
 		}
-		if(harassCenter == locHQ || (harassCenter != enemyHQ && enemyHQ != null)){
+		if(harassCenter.equals(locHQ) || (!harassCenter.equals(enemyHQ) && enemyHQ != null)){
 			droneType = 1;
 		}
 		//Update closest water
@@ -320,12 +321,16 @@ public class DeliveryDrone extends Unit {
 						MapLocation use = locHQ;
 						if(HQInCorner()) use = getCloseCornerHQ();
 						dir = rc.getLocation().directionTo(use);
+						dir.rotateRight().rotateRight();
 						if(rc.getLocation().distanceSquaredTo(use)>= circleThreshold &&goToFixed(use)){
 							break;
 						}
 						else {
-							for (int i = 0; i < 4; i++) {
-								Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+							for (int i = 0;i<8; i++) {
+								int add;
+								if(i%2 == 0) add = i/2;
+								else add = -i/2;
+								Direction nxt = directions[(getDirectionValue(dir) + add) % 8];
 								if (rc.canMove(nxt)) {
 									rc.move(nxt);
 									break;
@@ -478,9 +483,29 @@ public class DeliveryDrone extends Unit {
 					if(rc.getLocation().distanceSquaredTo(harassCenter) > harassRadius){
 						goTo(harassCenter);
 					}
+					else if(rc.getLocation().distanceSquaredTo(harassCenter) < harassInnerRadius){
+						moveAwayFromHQ(harassCenter);
+					}
 					else{
 						Direction ccw = rc.getLocation().directionTo(harassCenter).rotateRight().rotateRight();
-						randomOrthogonalMove();
+						if(badMap()) randomOrthogonalMove();
+						else{
+							MapLocation use = harassCenter;
+							Direction dir = rc.getLocation().directionTo(use);
+							if(rc.getLocation().distanceSquaredTo(use)>= circleThreshold &&goToFixed(use)){
+								break;
+							}
+							else {
+								for (int i = 0; i < 4; i++) {
+									Direction nxt = directions[(getDirectionValue(dir) + i) % 8];
+									if (rc.canMove(nxt)) {
+										rc.move(nxt);
+										break;
+									}
+								}
+							}
+						}
+
 					}
 				}
 				break;
@@ -681,10 +706,21 @@ public class DeliveryDrone extends Unit {
 				status = DeliveryDroneStatus.PICK_UP;
 				return true;
 			case DRONE_ATTACK:
+				System.out.println("RECEIVED ORDER");
 				int ri = r.nextInt(5);
-				if(ri<=2) return false;
-				if(!adjacentToBase() && (status != DeliveryDroneStatus.HARASS && enemyHQ==harassCenter) && status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) rushRound = rc.getRoundNum();
-				if(!adjacentToBase() &&  (status != DeliveryDroneStatus.HARASS && enemyHQ==harassCenter) && status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING && !(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)) status = DeliveryDroneStatus.CIRCLING;
+				if(ri%5<=3) return true;
+				if(!adjacentToBase() &&
+						(status != DeliveryDroneStatus.HARASS) &&
+						status != DeliveryDroneStatus.CIRCLING && status != DeliveryDroneStatus.ATTACKING &&
+						!(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER)){
+					rushRound = rc.getRoundNum();
+					System.out.println("RECEIVED ATTACK ORDER");
+				}
+				if(!adjacentToBase() &&  (status != DeliveryDroneStatus.HARASS) &&
+						status != DeliveryDroneStatus.CIRCLING &&
+						status != DeliveryDroneStatus.ATTACKING &&
+						!(status == DeliveryDroneStatus.DROP_OFF || status == DeliveryDroneStatus.DROP_WATER))
+					status = DeliveryDroneStatus.CIRCLING;
 			/*	if(status == DeliveryDroneStatus.CIRCLING && rc.getLocation().distanceSquaredTo(enemyHQ)<40){
 					status = DeliveryDroneStatus.ATTACKING;
 				}*/

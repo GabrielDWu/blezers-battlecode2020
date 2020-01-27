@@ -16,6 +16,7 @@ public class HQ extends Building {
 	int waitingForBuilding;
 	int wallSquares, adjacentWallSquares; /* should be 8, unless we're in a corner or edge */
 	int specialMiner;
+	final static int lessDrones = 1300;
 	boolean builtDesignSchool;
 	boolean landscaperWalled;
 	int buildingDesignSchool;
@@ -229,7 +230,10 @@ public class HQ extends Building {
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}*/
 
-						if((droneCount*67)%100<=14 || enemyHQ == null){
+
+						if(((rc.getRoundNum()<=lessDrones && numDrones%7<=1)||(rc.getRoundNum()>lessDrones&numDrones%7 == 0) )&& enemyHQ != null){
+							System.out.println("ATTACK");
+
 							writeMessage(Message.tellHarass(unitID, enemyHQ));
 						}
 						else{
