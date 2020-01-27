@@ -148,7 +148,7 @@ public class Miner extends Unit {
 			switch (status) {
 				case BUILDING_DS:
 					//if(newDS == null) System.out.println("NULLL DS");
-					else System.out.println(newDS.x + " " + newDS.y + " DES");
+					//else System.out.println(newDS.x + " " + newDS.y + " DES");
 					//System.out.println(builtDS);
 					if (builtDS) {
 						status = MinerStatus.MINING;
