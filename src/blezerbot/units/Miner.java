@@ -334,11 +334,10 @@ public class Miner extends Unit {
 					}
 					break;
 				case GO_TO_TERRAFORM:
-					if (kingDistance(mloc, locHQ) < minerTerraformDist || isLattice(mloc)) {
+					if (isLattice(mloc) || kingDistance(mloc, locHQ) > 2) {
 						/* if we're too close to HQ, move */
 						/* also if we're in a lattice square, move */
-						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-						else moveAwayFromHQ(mloc);
+						moveToward(mloc, locHQ);
 					}
 					if (rc.canSenseLocation(rc.getLocation()) && rc.senseElevation(rc.getLocation()) >= terraformHeight) {
 						onTerraform = true;

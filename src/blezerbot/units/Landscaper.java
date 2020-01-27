@@ -498,18 +498,18 @@ public class Landscaper extends Unit {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
 
-					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-					else moveAwayFromHQ(mloc);
+					if (enemyHQ != null) moveToward(mloc, enemyHQ);
+					else moveAway(mloc, locHQ);
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					if (nearLattice != null) {
 						if (!tryTerraform(mloc, nearLattice)) {
-							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-							else moveAwayFromHQ(mloc);
+							if (enemyHQ != null) moveToward(mloc, enemyHQ);
+							else moveAway(mloc, locHQ);
 						}
 					} else {
-						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-						else moveAwayFromHQ(mloc);
+						if (enemyHQ != null) moveToward(mloc, enemyHQ);
+						else moveAway(mloc, locHQ);
 					}
 				}
 
@@ -519,8 +519,8 @@ public class Landscaper extends Unit {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
 
-					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-					else moveAwayFromHQ(mloc);
+					if (enemyHQ != null) moveToward(mloc, enemyHQ);
+					else moveAway(mloc, locHQ);
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					if (!tryTerraform(mloc, Direction.CENTER, nearLattice)) {
@@ -543,8 +543,8 @@ public class Landscaper extends Unit {
 							Direction dir = bestTerraform(nearLattice);
 	
 							if (dir == null) {
-								if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-								else moveAwayFromHQ(mloc);
+								if (enemyHQ != null) moveToward(mloc, enemyHQ);
+								else moveAway(mloc, locHQ);
 							} else {
 								terraformTarget = dir;
 							}
@@ -553,7 +553,6 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BURY_ENEMY_BUILDING:
-				status = LandscaperStatus.TERRAFORMING;
 				if(buryTarget == null || surroundedLocation(buryTarget)){
 					status = lastStatus;
 					break;
