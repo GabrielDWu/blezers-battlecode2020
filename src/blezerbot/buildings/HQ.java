@@ -31,6 +31,7 @@ public class HQ extends Building {
 	int wallDesignSchoolID;
 	int rushTurns;
 	public final static int wallMessageDelay = 10; /* short cooldown before sending build wall message */
+	public final static int emergencyWallRound = 1925; /* send buildWall here no matter what */
 
 	public static enum HQstatus{
 		FIRST_MINERS,
@@ -132,6 +133,10 @@ public class HQ extends Building {
 				writeMessage(Message.buildWall(rc.getLocation()));
 			}
 		}
+		if (rc.getRoundNum() >= emergencyWallRound && !landscaperWalled) {
+			landscaperWalled = true;
+			writeMessage(Message.buildWall(rc.getLocation()));
+		}
 		if (buildingDesignSchool == 0 && units[2 /*refinery*/].size() > 0 && rc.getTeamSoup() > 70 && rc.isReady()) {
 			for (Direction dir : orthogonalDirections) {
 				MapLocation minerLoc = rc.getLocation().add(dir);
@@ -196,8 +201,8 @@ public class HQ extends Building {
 				switch(unitType){
 					case MINER:
 						if(units[RobotType.MINER.ordinal()].size() == 1){
-							writeMessage(Message.doSomething(unitID, 2));	//Rush
-							addMessageToQueue();
+							// writeMessage(Message.doSomething(unitID, 2));	//Rush
+							// addMessageToQueue();
 						}else if (status==HQstatus.FIRST_LANDSCAPERS){
 							specialMiner = unitID;
 						} else if (units[RobotType.MINER.ordinal()].size() > 3) {
