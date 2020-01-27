@@ -141,7 +141,7 @@ public class Miner extends Unit {
 			Direction buildVaporatorDirection = buildVaporator();
 			if (onTerraform) {
 				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
-				if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER) && rc.getTeamSoup() < 500){
+				if(numVaporators<= 4 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER) && rc.getTeamSoup() < 500){
 					status = MinerStatus.MINING;
 				}
 				if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
