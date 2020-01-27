@@ -19,9 +19,9 @@ public class FulfillmentCenter extends Building {
 			if(numDrones >= 2&& (numDefensiveNetGuns<= 1 &&rc.getRoundNum()<=500) && rc.getTeamSoup()<1+RobotType.NET_GUN.cost){
 				return;
 			}
-			if(rc.getRoundNum()<=800 && r.nextInt(2)%2 == 0 &&  rc.getTeamSoup() < 1 + RobotType.LANDSCAPER.cost){
+			/*if(rc.getRoundNum()<=800 && r.nextInt(2)%2 == 0 &&  rc.getTeamSoup() < 1 + RobotType.LANDSCAPER.cost){
 				return;
-			}
+			}*/
 			for (Direction dir : directions) {
 				if (rc.canBuildRobot(RobotType.DELIVERY_DRONE, dir)) {
 					rc.buildRobot(RobotType.DELIVERY_DRONE, dir);
