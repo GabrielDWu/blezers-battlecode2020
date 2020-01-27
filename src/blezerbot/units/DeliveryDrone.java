@@ -493,7 +493,7 @@ public class DeliveryDrone extends Unit {
 						goTo(harassCenter);
 					}
 					else if(rc.getLocation().distanceSquaredTo(harassCenter) < harassInnerRadius){
-						moveAwayFromHQ(harassCenter);
+						moveAway(harassCenter, locHQ);
 					}
 					else{
 						Direction ccw = rc.getLocation().directionTo(harassCenter).rotateRight().rotateRight();

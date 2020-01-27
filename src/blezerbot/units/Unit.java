@@ -396,17 +396,17 @@ public abstract class Unit extends Robot {
 		}
 	}
 
-	public boolean moveTowardEnemyHQ(MapLocation mloc) throws GameActionException {
+	public boolean moveToward(MapLocation mloc, MapLocation target) throws GameActionException {
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
-		int currentDist = taxicabDistance(mloc, enemyHQ);
+		int currentDist = taxicabDistance(mloc, target);
 
 		for (int i = 0; i < terraformTries; i++) {
 			int ind = r.nextInt(directions.length);
 			Direction dir = directions[ind];
 			MapLocation nloc = mloc.add(dir);
 
-			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+			if (taxicabDistance(nloc, target) <= currentDist && !isLattice(nloc)) {
 				if (tryMove(dir)) return true;
 			}
 		}
@@ -415,7 +415,7 @@ public abstract class Unit extends Robot {
 			Direction dir = directions[startIndex];
 			MapLocation nloc = mloc.add(dir);
 
-			if (taxicabDistance(nloc, enemyHQ) <= currentDist && !isLattice(nloc)) {
+			if (taxicabDistance(nloc, target) <= currentDist && !isLattice(nloc)) {
 				if (tryMove(dir)) return true;
 			}
 
@@ -426,18 +426,18 @@ public abstract class Unit extends Robot {
 		return false;
 	}
 
-	/* pick a random move taking me not closer to the HQ */
-	public boolean moveAwayFromHQ(MapLocation mloc) throws GameActionException {
+	/* take a random move taking me not closer to target */
+	public boolean moveAway(MapLocation mloc, MapLocation target) throws GameActionException {
 		int startIndex = r.nextInt(directions.length);
 		int stopIndex = startIndex;
-		int currentDist = taxicabDistance(mloc, locHQ);
+		int currentDist = taxicabDistance(mloc, target);
 
 		for (int i = 0; i < terraformTries; i++) {
 			int ind = r.nextInt(directions.length);
 			Direction dir = directions[ind];
 			MapLocation nloc = mloc.add(dir);
 
-			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+			if (taxicabDistance(nloc, target) >= currentDist && !isLattice(nloc)) {
 				if (tryMove(dir)) return true;
 			}
 		}
@@ -446,7 +446,7 @@ public abstract class Unit extends Robot {
 			Direction dir = directions[startIndex];
 			MapLocation nloc = mloc.add(dir);
 
-			if (taxicabDistance(nloc, locHQ) >= currentDist && !isLattice(nloc)) {
+			if (taxicabDistance(nloc, target) >= currentDist && !isLattice(nloc)) {
 				if (tryMove(dir)) return true;
 			}
 

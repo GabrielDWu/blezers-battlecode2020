@@ -112,7 +112,7 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
-		if (rc.getTeam() == Team.A) System.out.println(status);
+		// if (rc.getTeam() == Team.A) System.out.println(status);
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -498,18 +498,18 @@ public class Landscaper extends Unit {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
 
-					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-					else moveAwayFromHQ(mloc);
+					if (enemyHQ != null) moveToward(mloc, enemyHQ);
+					else moveAway(mloc, locHQ);
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					if (nearLattice != null) {
 						if (!tryTerraform(mloc, nearLattice)) {
-							if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-							else moveAwayFromHQ(mloc);
+							if (enemyHQ != null) moveToward(mloc, enemyHQ);
+							else moveAway(mloc, locHQ);
 						}
 					} else {
-						if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-						else moveAwayFromHQ(mloc);
+						if (enemyHQ != null) moveToward(mloc, enemyHQ);
+						else moveAway(mloc, locHQ);
 					}
 				}
 
@@ -519,8 +519,8 @@ public class Landscaper extends Unit {
 					/* if we're too close to HQ, move */
 					/* also if we're in a lattice square, move */
 
-					if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-					else moveAwayFromHQ(mloc);
+					if (enemyHQ != null) moveToward(mloc, enemyHQ);
+					else moveAway(mloc, locHQ);
 				} else {
 					Direction nearLattice = findLattice(mloc);
 					if (!tryTerraform(mloc, Direction.CENTER, nearLattice)) {
@@ -543,8 +543,8 @@ public class Landscaper extends Unit {
 							Direction dir = bestTerraform(nearLattice);
 	
 							if (dir == null) {
-								if (enemyHQ != null) moveTowardEnemyHQ(mloc);
-								else moveAwayFromHQ(mloc);
+								if (enemyHQ != null) moveToward(mloc, enemyHQ);
+								else moveAway(mloc, locHQ);
 							} else {
 								terraformTarget = dir;
 							}
@@ -553,7 +553,6 @@ public class Landscaper extends Unit {
 				}
 				break;
 			case BURY_ENEMY_BUILDING:
-				status = LandscaperStatus.TERRAFORMING;
 				if(buryTarget == null || surroundedLocation(buryTarget)){
 					status = lastStatus;
 					break;
@@ -938,7 +937,7 @@ public class Landscaper extends Unit {
 
 		/* clockwise */
 		int gap = getClockwiseGap(occupied);
-		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cgap");
+		// if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cgap");
 
 
 		if (count == 1) {
@@ -957,7 +956,7 @@ public class Landscaper extends Unit {
 
 		// /* counterclockwise */
 		gap = getCounterclockwiseGap(occupied);
-		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cwgap");
+		// if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cwgap");
 
 		if (count == 1) {
 			if (moveOnWall(false)) return true;
@@ -973,7 +972,7 @@ public class Landscaper extends Unit {
 			if (gap > 1) if (moveOnWall(false)) return true;
 		}
 
-		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done correctWall");
+		// if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done correctWall");
 
 		return false;
 	}
