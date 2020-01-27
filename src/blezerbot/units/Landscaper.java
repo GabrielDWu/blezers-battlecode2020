@@ -544,13 +544,28 @@ public class Landscaper extends Unit {
 						}
 	
 						if (terraformTarget == null) {
-							Direction dir = bestTerraform(nearLattice);
+							/* target a miner nearby */
+							for (Direction dir: directions) {
+								if (rc.canSenseLocation(mloc.add(dir))) {
+									RobotInfo rinfo = rc.senseRobotAtLocation(mloc.add(dir));
+									if (rinfo != null) {
+										if (rinfo.team == rc.getTeam() && rinfo.type == RobotType.MINER && !isLattice(mloc.add(dir)) && canTerraform(mloc, dir, nearLattice)) {
+											terraformTarget = dir;
+											break;
+										}
+									}
+								}
+							}
+
+							if (terraformTarget == null) {
+								Direction dir = bestTerraform(nearLattice);
 	
-							if (dir == null) {
-								if (enemyHQ != null) moveToward(mloc, enemyHQ);
-								else moveAway(mloc, locHQ);
-							} else {
-								terraformTarget = dir;
+								if (dir == null) {
+									if (enemyHQ != null) moveToward(mloc, enemyHQ);
+									else moveAway(mloc, locHQ);
+								} else {
+									terraformTarget = dir;
+								}
 							}
 						}
 					}

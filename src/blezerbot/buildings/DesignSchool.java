@@ -110,12 +110,12 @@ public class DesignSchool extends Building {
 				break;
 			case TURTLING_CORNER:
 			if (builtLandscapers >= 20) break;
-				for (Direction dir : directions) {
-					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-						rc.buildRobot(RobotType.LANDSCAPER, dir);
-						builtLandscapers++;
-					}
-				}	
+			for (Direction dir : directions) {
+				if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+					rc.buildRobot(RobotType.LANDSCAPER, dir);
+					builtLandscapers++;
+				}
+			}	
 				
 			break;
 		}
