@@ -87,6 +87,7 @@ public class DesignSchool extends Building {
 				}
 				//System.out.println(rc.getTeamSoup() + " SOUP");
 			case MAKING:
+				if (builtLandscapers > 0 && rc.getRoundNum() < 400) break;
 				if (numVaporators < 2 && builtLandscapers > 5) break;
 				if(numVaporators<maxVaporators/2 && builtLandscapers > 10) break;
 				/* for convenience of landscapers, try this specific location first */
