@@ -53,7 +53,7 @@ public class Miner extends Unit {
 	final static int maxNetGunRadius = 100;
 	final static int netGunModulus = 20;
 	final static int netGunSpread = 8;
-	final static int netGunCoolDown = 10;
+	final static int netGunCoolDown = 50;
 	int lastBuiltNetGun = Integer.MIN_VALUE;
 	int buildableTiles;
 
@@ -139,6 +139,7 @@ public class Miner extends Unit {
 			int h = rc.getMapHeight();
 			int w = rc.getMapWidth();
 			Direction buildVaporatorDirection = buildVaporator();
+			System.out.println(onTerraform + " Onterraform");
 			if (onTerraform) {
 				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
 				if(numVaporators<= 4 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER) && rc.getTeamSoup() < 500){
@@ -165,8 +166,7 @@ public class Miner extends Unit {
 				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
 				RobotInfo[] robo = rc.senseNearbyRobots();
 				int close = Integer.MAX_VALUE;
-
-				if(!(numVaporators == 1 || numVaporators == 3 || rc.getRoundNum()%netGunModulus == 0)){
+				if((numDefensiveNetGuns >=1 && numVaporators <=4) ||!(numVaporators == 1 || numVaporators == 3 || rc.getRoundNum()%netGunModulus == 0)){
 					// do nothing
 				}
 				else{
