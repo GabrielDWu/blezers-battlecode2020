@@ -72,7 +72,7 @@ public class DesignSchool extends Building {
 						rc.buildRobot(RobotType.LANDSCAPER, dir);
 						builtLandscapers++;
 					}
-				}
+				}				
 				break;
 		}
 
