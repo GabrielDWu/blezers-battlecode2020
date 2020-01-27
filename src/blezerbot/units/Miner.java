@@ -90,7 +90,6 @@ public class Miner extends Unit {
 		return null;
 	}
 	public void run() throws GameActionException {
-		//System.out.println(status);
 		super.run();
 		if (soupTries == null && sentInfo) soupTries = new int[rc.getMapWidth()][rc.getMapHeight()];
 		if (sentInfo) {
@@ -147,9 +146,6 @@ public class Miner extends Unit {
 			}
 			switch (status) {
 				case BUILDING_DS:
-					//if(newDS == null) System.out.println("NULLL DS");
-					//else System.out.println(newDS.x + " " + newDS.y + " DES");
-					//System.out.println(builtDS);
 					if (builtDS) {
 						status = MinerStatus.MINING;
 						break;
@@ -260,6 +256,7 @@ public class Miner extends Unit {
 							}
 						}
 					}
+
 					if (status == MinerStatus.SEARCHING) {
 						findSoup();
 						break;
@@ -671,7 +668,13 @@ public class Miner extends Unit {
 	}
 
 	public boolean canMove(Direction dir) throws GameActionException {
-		return dir != null && super.canMove(dir) && (!onTerraform || rc.canSenseLocation(rc.getLocation()) && rc.senseElevation(rc.getLocation()) >= terraformHeight-1) &&  !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ) && !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING) && locHQ.equals(chosenRefinery)) && !rc.getLocation().isAdjacentTo(locHQ));
+		return dir != null && super.canMove(dir)
+				&& (!onTerraform || rc.canSenseLocation(rc.getLocation())
+				&& rc.senseElevation(rc.getLocation()) >= terraformHeight-1)
+				&&  !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ)
+					&& !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING)
+						&& locHQ.equals(chosenRefinery))
+					&& !rc.getLocation().isAdjacentTo(locHQ));
 	}
 
 	public boolean canBuildRobot(RobotType type, Direction dir) {
