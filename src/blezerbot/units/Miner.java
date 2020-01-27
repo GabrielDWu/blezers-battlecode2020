@@ -52,7 +52,9 @@ public class Miner extends Unit {
 	final static int minNetGunRadius = 36;
 	final static int maxNetGunRadius = 100;
 	final static int netGunModulus = 20;
-	final static int netGunSpread = 6;
+	final static int netGunSpread = 8;
+	final static int netGunCoolDown = 10;
+	int lastBuiltNetGun = Integer.MIN_VALUE;
 	int buildableTiles;
 
 	int returnTries;
@@ -67,6 +69,7 @@ public class Miner extends Unit {
 		super.startLife();
 		locREFINERY = new ArrayList<MapLocation>();
 		locNETGUN = new ArrayList<MapLocation>();
+		lastBuiltNetGun =Integer.MIN_VALUE;
 		buildableTiles = -1;
 		enemyHQs = new MapLocation[3];
 		enemyHQc = -1;
@@ -95,6 +98,8 @@ public class Miner extends Unit {
 		int dist = a.distanceSquaredTo(locHQ);
 		if(dist<minNetGunRadius) return false;
 		if(dist>maxNetGunRadius) return false;
+	//	if(rc.getRoundNum()<lastBuiltNetGun + netGunCoolDown) return false;
+	//	if(rc.senseElevation(a) <= terraformHeight && locNETGUN.size()>= 3) return false;
 		if(locNETGUN.size() >= maxDefensiveNetGuns) return false;
 		for(MapLocation n: locNETGUN){
 			if(rc.getLocation().distanceSquaredTo(n)< netGunSpread) return false;
@@ -156,17 +161,27 @@ public class Miner extends Unit {
 			Direction buildDefensiveNetGunDirection = null;
 			if (onTerraform) {
 				//if(numVaporators<= maxVaporators/2 && status == MinerStatus.BUILDING && (buildingType == RobotType.FULFILLMENT_CENTER ||buildingType==RobotType.REFINERY && locREFINERY.size() >2)){
+				RobotInfo[] robo = rc.senseNearbyRobots();
+				int close = Integer.MAX_VALUE;
 
-				if(!(numVaporators == 2 || numVaporators == 5 || rc.getRoundNum()%netGunModulus == 0)){
+				if(!(numVaporators == 1 || numVaporators == 3 || rc.getRoundNum()%netGunModulus == 0)){
 					// do nothing
 				}
 				else{
 					for(Direction dir: directions){
 							if(canBuildDefensiveNetGun(rc.getLocation().add(dir)) && rc.canBuildRobot(RobotType.NET_GUN, dir)) buildDefensiveNetGunDirection = dir;
 					}
+					for(RobotInfo r: robo){
+						if(buildDefensiveNetGunDirection != null &&
+								r.type == RobotType.NET_GUN && r.getTeam() == rc.getTeam() &&
+								r.location.distanceSquaredTo(rc.getLocation().add(buildDefensiveNetGunDirection)) <= close){
+							close = r.location.distanceSquaredTo(rc.getLocation());
+						}
+					}
+					//close = Integer.MAX_VALUE;
 					if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
 							status == MinerStatus.RETURNING) && numDefensiveNetGuns<maxDefensiveNetGuns){
-						if(buildDefensiveNetGunDirection != null){
+						if(buildDefensiveNetGunDirection != null && close>=netGunSpread){
 							status = MinerStatus.BUILD_DEFENSIVE_NETGUN;
 						}
 					}
@@ -177,6 +192,7 @@ public class Miner extends Unit {
 				case BUILD_DEFENSIVE_NETGUN:
 					rc.buildRobot(RobotType.NET_GUN, buildDefensiveNetGunDirection);
 					status = prevStatus == null ? MinerStatus.MINING : prevStatus;
+					lastBuiltNetGun = rc.getRoundNum();
 					break;
 
 				case BUILDING_DS:
@@ -641,6 +657,7 @@ public class Miner extends Unit {
 				}
 				if(unit_type == RobotType.NET_GUN){
 					locNETGUN.add(new MapLocation(message.data[2], message.data[3]));
+					System.out.println(locNETGUN);
 					return true;
 				}
 				if(unit_type != RobotType.REFINERY){
@@ -689,6 +706,9 @@ public class Miner extends Unit {
 				if (type == RobotType.REFINERY) {
 					locREFINERY.remove(new MapLocation(message.data[2], message.data[3]));
 					return true;
+				}
+				if(type == RobotType.VAPORATOR){
+					numVaporators--;
 				}
 				if(type == RobotType.NET_GUN){
 					locNETGUN.remove(new MapLocation(message.data[2], message.data[3]));
