@@ -79,7 +79,7 @@ public class Miner extends Unit {
 		if(rc.canSenseLocation(a) == false) return false;
 		if(rc.senseElevation(a) < vaporatorHeight) return false;
 		boolean ok = false;
-		if(isLattice(a)  && !isForBuilding(a)|| a.distanceSquaredTo(locHQ) <= 16) return false;
+		if(isLattice(a)  && !isForBuilding(a)|| a.distanceSquaredTo(locHQ) <= 8) return false;
 		for(MapLocation refine: locREFINERY){
 			if(refine.distanceSquaredTo(a) <= RobotType.VAPORATOR.pollutionRadiusSquared){
 				ok = true;
