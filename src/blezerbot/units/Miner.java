@@ -160,7 +160,7 @@ public class Miner extends Unit {
 				}
 				else{
 					for(Direction dir: directions){
-							if(canBuildDefensiveNetGun(rc.getLocation().add(dir))) buildDefensiveNetGunDirection = dir;
+							if(canBuildDefensiveNetGun(rc.getLocation().add(dir)) && rc.canBuildRobot(RobotType.NET_GUN, dir)) buildDefensiveNetGunDirection = dir;
 					}
 					if((status == MinerStatus.SEARCHING || status == MinerStatus.MINING || status == MinerStatus.DEPOSITING ||
 							status == MinerStatus.RETURNING) && numDefensiveNetGuns<maxDefensiveNetGuns){
