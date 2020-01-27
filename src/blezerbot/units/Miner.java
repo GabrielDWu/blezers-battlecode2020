@@ -738,7 +738,7 @@ public class Miner extends Unit {
 				&&  !(locHQ != null && rc.getLocation().add(dir).isAdjacentTo(locHQ)
 					&& !((status == MinerStatus.DEPOSITING || status == MinerStatus.RETURNING)
 						&& locHQ.equals(chosenRefinery))
-					&& !rc.getLocation().isAdjacentTo(locHQ));
+					&& !rc.getLocation().isAdjacentTo(locHQ) && !(onTerraform && !builtDS));
 	}
 
 	public boolean canBuildRobot(RobotType type, Direction dir) {
