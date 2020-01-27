@@ -112,7 +112,7 @@ public class Landscaper extends Unit {
 			status = LandscaperStatus.ATTACKING_HQ;
 		}
 		if(status == LandscaperStatus.TERRAFORMING) status = LandscaperStatus.HQ_TERRAFORM;
-		if (rc.getTeam() == Team.A) System.out.println(status);
+		// if (rc.getTeam() == Team.A) System.out.println(status);
 		switch (status) {
 			case ATTACKING_HQ:
 				if(surroundedLocation(enemyHQ)){
@@ -937,7 +937,7 @@ public class Landscaper extends Unit {
 
 		/* clockwise */
 		int gap = getClockwiseGap(occupied);
-		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cgap");
+		// if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cgap");
 
 
 		if (count == 1) {
@@ -956,7 +956,7 @@ public class Landscaper extends Unit {
 
 		// /* counterclockwise */
 		gap = getCounterclockwiseGap(occupied);
-		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cwgap");
+		// if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done cwgap");
 
 		if (count == 1) {
 			if (moveOnWall(false)) return true;
@@ -972,7 +972,7 @@ public class Landscaper extends Unit {
 			if (gap > 1) if (moveOnWall(false)) return true;
 		}
 
-		if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done correctWall");
+		// if (rc.getTeam() == Team.B && status == LandscaperStatus.BUILDING) System.out.println("done correctWall");
 
 		return false;
 	}
