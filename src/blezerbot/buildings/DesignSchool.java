@@ -19,6 +19,7 @@ public class DesignSchool extends Building {
 	boolean suicideTimer;
 	boolean initialDS;
 	int suicideTurns;
+	Direction turtleDir;
 
 	public DesignSchool(RobotController rc) throws GameActionException {
 		super(rc);
@@ -27,6 +28,7 @@ public class DesignSchool extends Building {
 	public void startLife() throws GameActionException{
 		super.startLife();
 		lastBuildTurn = -cooldown;
+		turtleDir = null;
 	}
 
 	public void run() throws GameActionException {
@@ -67,12 +69,31 @@ public class DesignSchool extends Building {
 				}
 				break;
 			case TURTLING:
-				for (Direction dir : directions) {
-					if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
-						rc.buildRobot(RobotType.LANDSCAPER, dir);
+				if (turtleDir != null) {
+					if (rc.canBuildRobot(RobotType.LANDSCAPER, turtleDir)) {
+						rc.buildRobot(RobotType.LANDSCAPER, turtleDir);
+						lastBuildTurn = rc.getRoundNum();
 						builtLandscapers++;
+					} else {
+						for (Direction dir : directions) {
+							if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+								if (rc.getRoundNum() - lastBuildTurn >= cooldown) {
+									lastBuildTurn = rc.getRoundNum();
+									builtLandscapers++;
+								}
+							}
+						}	
 					}
-				}				
+				} else {
+					for (Direction dir : directions) {
+						if (rc.canBuildRobot(RobotType.LANDSCAPER, dir)) {
+							turtleDir = dir;
+							break;
+						}
+					}	
+				}
+					
+							
 				break;
 		}
 
